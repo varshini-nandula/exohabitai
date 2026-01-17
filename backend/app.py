@@ -142,7 +142,6 @@ def rank_planets():
             "rank": i + 1,
             "planet_name": p.planet_name,
             "habitability_probability": round(p.habitability_probability, 6),
-            "habitability": p.habitability
         }
         for i, p in enumerate(planets)
     ]
