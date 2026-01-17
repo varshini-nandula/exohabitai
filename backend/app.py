@@ -1,21 +1,23 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-import pandas as pd
+import numpy as np
 import joblib
-from datetime import datetime
 
 # APP CONFIG
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///exoplanets.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 db = SQLAlchemy(app)
 
-# LOAD ARTIFACTS
-pipeline = joblib.load("artifacts/habitability_pipeline.pkl")
-ranking_df = pd.read_csv("artifacts/ranked_exoplanets_by_habitability.csv")
+# LOAD TRAINED MODEL 
+model = joblib.load("artifacts/habitability_pipeline.pkl")
+print("MODEL TYPE:", type(model))
+print("HAS predict_proba:", hasattr(model, "predict_proba"))
 
-# BASELINE FEATURES
-BASELINE_FEATURES = [
+
+# BASELINE FEATURES 
+FEATURES = [
     "P_RADIUS",
     "P_MASS",
     "P_DENSITY",
@@ -27,89 +29,130 @@ BASELINE_FEATURES = [
     "S_METALLICITY"
 ]
 
-# DATABASE MODEL
+# DATABASE MODEL (SQLAlchemy)
 class Exoplanet(db.Model):
+    __tablename__ = "exoplanets"
+
     id = db.Column(db.Integer, primary_key=True)
     planet_name = db.Column(db.String(150), unique=True, nullable=False)
 
+    P_RADIUS = db.Column(db.Float)
+    P_MASS = db.Column(db.Float)
+    P_DENSITY = db.Column(db.Float)
+    P_TEMP_SURF = db.Column(db.Float)
+    P_PERIOD = db.Column(db.Float)
+    P_SEMI_MAJOR_AXIS = db.Column(db.Float)
+    S_TEMPERATURE = db.Column(db.Float)
+    S_LUMINOSITY = db.Column(db.Float)
+    S_METALLICITY = db.Column(db.Float)
+
     habitability_probability = db.Column(db.Float)
-    prediction = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    habitability = db.Column(db.Integer)
 
 with app.app_context():
     db.create_all()
 
+# STANDARD JSON RESPONSE FORMAT
+def make_response(status, message, data=None, code=200):
+    return jsonify({
+        "status": status,
+        "message": message,
+        "data": data
+    }), code
+
 # HEALTH CHECK
 @app.route("/", methods=["GET"])
 def health():
-    return jsonify({
-        "success": True,
-        "message": "ExoHabitAI Backend running"
-    })
-
-# PREDICT HABITABILITY
-@app.route("/api/predict", methods=["POST"])
-def predict():
-    data = request.get_json()
-
-    # Validate features
-    for feature in BASELINE_FEATURES:
-        if feature not in data:
-            return jsonify({
-                "success": False,
-                "error": f"Missing feature: {feature}"
-            }), 400
-
-    # Raw input → DataFrame
-    X = pd.DataFrame([data], columns=BASELINE_FEATURES)
-
-    # Pipeline handles scaling + prediction
-    probability = pipeline.predict_proba(X)[0][1]
-    prediction = "Habitable" if probability >= 0.6 else "Non-Habitable"
-
-    # Store in DB
-    planet = Exoplanet(
-        planet_name=data.get("planet_name", "Unknown"),
-        habitability_probability=float(probability),
-        prediction=prediction
+    return make_response(
+        "success",
+        "ExoHabitAI Backend running"
     )
-    db.session.add(planet)
-    db.session.commit()
 
-    return jsonify({
-        "success": True,
-        "prediction": prediction,
-        "habitability_probability": round(float(probability), 6)
-    })
+# API 1: ADD PLANET TO DATABASE
+@app.route("/add_planet", methods=["POST"])
+def add_planet():
+    try:
+        data = request.get_json()
 
-# USER RANKING
-@app.route("/api/rank", methods=["GET"])
-def rank():
-    planets = Exoplanet.query.order_by(
-        Exoplanet.habitability_probability.desc()
-    ).all()
+        planet = Exoplanet(
+            planet_name=data["planet_name"],
+            **{f: data[f] for f in FEATURES}
+        )
 
-    return jsonify({
-        "success": True,
-        "results": [
+        db.session.add(planet)
+        db.session.commit()
+
+        return make_response(
+            "success",
+            "Planet added successfully"
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return make_response("error", str(e), code=400)
+
+# API 2: PREDICT HABITABILITY
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        data = request.get_json()
+
+        # Ensure strict feature order
+        X = np.array([[
+            data[f] for f in FEATURES
+        ]])
+
+        probability = model.predict_proba(X)[0][1]
+        habitability = int(probability >= 0.6)
+
+        planet = Exoplanet.query.filter_by(
+            planet_name=data.get("planet_name")
+        ).first()
+
+        if planet:
+            planet.habitability_probability = float(probability)
+            planet.habitability = habitability
+            db.session.commit()
+
+        return make_response(
+            "success",
+            "Prediction generated successfully",
             {
-                "rank": i + 1,
-                "planet_name": p.planet_name,
-                "habitability_probability": round(p.habitability_probability, 6)
+                "planet_name": data.get("planet_name", "Unknown"),
+                "habitability": habitability,
+                "habitability_probability": round(float(probability), 6)
             }
-            for i, p in enumerate(planets)
-        ]
-    })
+        )
 
-# GLOBAL RANKING (CSV)
-@app.route("/api/rankings/top", methods=["GET"])
-def global_ranking():
-    n = int(request.args.get("n", 10))
-    return jsonify({
-        "success": True,
-        "results": ranking_df.head(n).to_dict(orient="records")
-    })
+    except Exception as e:
+        return make_response("error", str(e), code=400)
+
+# API 3: RANK PLANETS BY HABITABILITY
+@app.route("/rank", methods=["GET"])
+def rank_planets():
+    planets = (
+        Exoplanet.query
+        .filter(Exoplanet.habitability_probability.isnot(None))
+        .order_by(Exoplanet.habitability_probability.desc())
+        .all()
+    )
+
+    ranked = [
+        {
+            "rank": i + 1,
+            "planet_name": p.planet_name,
+            "habitability_probability": round(p.habitability_probability, 6),
+            "habitability": p.habitability
+        }
+        for i, p in enumerate(planets)
+    ]
+
+    return make_response(
+        "success",
+        "Planets ranked successfully",
+        ranked
+    )
 
 # RUN SERVER
 if __name__ == "__main__":
-    app.run(debug=True) 
+    app.run(debug=True)
