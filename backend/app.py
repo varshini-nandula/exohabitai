@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 import joblib
 
 # APP CONFIG
 app = Flask(__name__)
+CORS(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///exoplanets.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -74,6 +76,26 @@ def add_planet():
     try:
         data = request.get_json()
 
+        missing = [f for f in FEATURES if f not in data]
+        if missing:
+            return make_response(
+                "error",
+                f"Missing required features: {', '.join(missing)}",
+                code=400
+            )
+        
+        # 2️⃣ Duplicate planet name check ✅
+        existing = Exoplanet.query.filter_by(
+            planet_name=data["planet_name"]
+        ).first()
+
+        if existing:
+            return make_response(
+                "error",
+                "Planet name already exists. Please use a different name.",
+                code=400
+            )
+
         planet = Exoplanet(
             planet_name=data["planet_name"],
             **{f: data[f] for f in FEATURES}
@@ -96,6 +118,14 @@ def add_planet():
 def predict():
     try:
         data = request.get_json()
+
+        missing = [f for f in FEATURES if f not in data]
+        if missing:
+            return make_response(
+                "error",
+                f"Missing required features: {', '.join(missing)}",
+                code=400
+            )
 
         # Ensure strict feature order
         X = np.array([[
