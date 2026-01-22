@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ExoHabit AI — Predict Habitability</title>
+  <link rel="icon" href="favicon_exohabitai.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar">
+  <div class="brand" onclick="location.href='index.html'">
+    <img src="favicon_exohabitai.png" class="logo" alt="ExoHabit AI">
+    <span class="brand-text">ExoHabit AI</span>
+  </div>
+
+  <div class="nav-links">
+    <a href="index.html">HOME</a>
+    <a href="add_planet.html">ADD PLANET</a>
+    <a href="predict.html" class="active">PREDICT HABITABILITY</a>
+    <a href="rankings.html">VIEW RANKINGS</a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+
+  <div class="space-object planet planet-1"></div>
+  <div class="space-object planet planet-2"></div>
+  <div class="space-object planet planet-3"></div>
+
+  <div class="space-object star star-1"></div>
+  <div class="space-object star star-2"></div>
+  <div class="space-object star star-3"></div>
+  <div class="space-object star star-4"></div>
+
+  <div class="hero-content form-content">
+
+    <h2 class="page-title">Predict Habitability</h2>
+    <p class="page-subtitle">
+      Provide planetary and stellar parameters to predict exoplanet habitability.
+    </p>
+
+    <div class="glass-card">
+
+      <div class="form-vertical">
+
+        <div class="form-group">
+          <label>Planet Name</label>
+          <input type="text" id="planet_name" placeholder="Kepler-452b" required>
+        </div>
+
+        <div class="form-group">
+          <label>Planet Radius (P_RADIUS)</label>
+          <input type="number" step="any" id="P_RADIUS" placeholder="1.63" required>
+        </div>
+
+        <div class="form-group">
+          <label>Planet Mass (P_MASS)</label>
+          <input type="number" step="any" id="P_MASS" placeholder="5.0" required>
+        </div>
+
+        <div class="form-group">
+          <label>Planet Density (P_DENSITY)</label>
+          <input type="number" step="any" id="P_DENSITY" placeholder="5.5" required>
+        </div>
+
+        <div class="form-group">
+          <label>Surface Temperature (P_TEMP_SURF)</label>
+          <input type="number" step="any" id="P_TEMP_SURF" placeholder="288" required>
+        </div>
+
+        <div class="form-group">
+          <label>Orbital Period (P_PERIOD)</label>
+          <input type="number" step="any" id="P_PERIOD" placeholder="384.8" required>
+        </div>
+
+        <div class="form-group">
+          <label>Semi-Major Axis (P_SEMI_MAJOR_AXIS)</label>
+          <input type="number" step="any" id="P_SEMI_MAJOR_AXIS" placeholder="1.05" required>
+        </div>
+
+        <div class="form-group">
+          <label>Star Temperature (S_TEMPERATURE)</label>
+          <input type="number" step="any" id="S_TEMPERATURE" placeholder="5757" required>
+        </div>
+
+        <div class="form-group">
+          <label>Star Luminosity (S_LUMINOSITY)</label>
+          <input type="number" step="any" id="S_LUMINOSITY" placeholder="1.0" required>
+        </div>
+
+        <div class="form-group">
+          <label>Star Metallicity (S_METALLICITY)</label>
+          <input type="number" step="any" id="S_METALLICITY" placeholder="0.0" required>
+        </div>
+
+        <!-- Predict Button -->
+        <button type="button"
+                class="hero-cta hero-cta--form"
+                id="predictBtn">
+          Predict Habitability <span>→</span>
+        </button>
+
+      </div>
+
+      <!-- Loading -->
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Analyzing planet habitability...</p>
+      </div>
+
+      <!-- Result -->
+      <div id="result" class="result-box hidden"></div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+const BASE_URL = "http://127.0.0.1:5000";
+
+const predictBtn = document.getElementById("predictBtn");
+const loading = document.getElementById("loading");
+const resultBox = document.getElementById("result");
+
+/* INPUTS */
+const planet_name = document.getElementById("planet_name");
+const P_RADIUS = document.getElementById("P_RADIUS");
+const P_MASS = document.getElementById("P_MASS");
+const P_DENSITY = document.getElementById("P_DENSITY");
+const P_TEMP_SURF = document.getElementById("P_TEMP_SURF");
+const P_PERIOD = document.getElementById("P_PERIOD");
+const P_SEMI_MAJOR_AXIS = document.getElementById("P_SEMI_MAJOR_AXIS");
+const S_TEMPERATURE = document.getElementById("S_TEMPERATURE");
+const S_LUMINOSITY = document.getElementById("S_LUMINOSITY");
+const S_METALLICITY = document.getElementById("S_METALLICITY");
+
+predictBtn.addEventListener("click", async () => {
+  loading.classList.remove("hidden");
+  resultBox.classList.add("hidden");
+
+  const data = {
+    planet_name: planet_name.value.trim(),
+    P_RADIUS: Number(P_RADIUS.value),
+    P_MASS: Number(P_MASS.value),
+    P_DENSITY: Number(P_DENSITY.value),
+    P_TEMP_SURF: Number(P_TEMP_SURF.value),
+    P_PERIOD: Number(P_PERIOD.value),
+    P_SEMI_MAJOR_AXIS: Number(P_SEMI_MAJOR_AXIS.value),
+    S_TEMPERATURE: Number(S_TEMPERATURE.value),
+    S_LUMINOSITY: Number(S_LUMINOSITY.value),
+    S_METALLICITY: Number(S_METALLICITY.value)
+  };
+
+  try {
+    const res = await fetch(`${BASE_URL}/predict`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+
+    if (result.status !== "success") {
+      throw new Error(result.message);
+    }
+
+    const { habitability, habitability_probability } = result.data;
+    const prob = Math.round(habitability_probability * 100);
+
+    resultBox.innerHTML = `
+      <h3>${data.planet_name}</h3>
+      <p class="${habitability ? "habitable" : "non-habitable"}">
+        ${habitability ? "Potentially Habitable" : "Non-Habitable"}
+      </p>
+      <div class="progress-bar">
+        <div style="width:${prob}%"></div>
+      </div>
+      <span>Habitability Probability: ${prob}% </span>
+    `;
+    resultBox.classList.remove("hidden");
+
+  } catch (err) {
+    resultBox.innerHTML = `<p class="error">❌ ${err.message}</p>`;
+    resultBox.classList.remove("hidden");
+  } finally {
+    loading.classList.add("hidden");
+  }
+});
+</script>
+
+</body>
+</html>
