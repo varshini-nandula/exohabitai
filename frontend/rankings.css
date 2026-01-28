@@ -1,0 +1,120 @@
+/* ================= RANKINGS PAGE ================= */
+
+.rankings-hero {
+  padding-top: 120px; /* navbar offset */
+}
+
+.rankings-container {
+  width: 100%;
+  padding: 0 80px 80px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Header */
+.rankings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 40px;
+}
+
+.rankings-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.rankings-header p {
+  opacity: 0.8;
+  max-width: 520px;
+}
+
+/* Controls */
+.rankings-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+}
+
+.ranking-select {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 10px 16px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+
+.ranking-select option {
+  background: #0a0618;
+  color: #fff;
+}
+
+/* Table */
+.rankings-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.rankings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+
+.rankings-table thead {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+}
+
+.rankings-table th {
+  padding: 18px 20px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.rankings-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.rankings-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.rankings-table tbody tr:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* Probability */
+.probability-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.prob-bar {
+  width: 200px;
+  height: 8px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.prob-bar div {
+  height: 100%;
+  background: linear-gradient(90deg, #4ade80, #22d3ee);
+}
+
+/* Error */
+.ranking-error {
+  margin-top: 30px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: rgba(255, 80, 80, 0.15);
+  color: #ff8080;
+  font-weight: 600;
+}
