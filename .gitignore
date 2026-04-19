@@ -1,3 +1,7 @@
 .ipynb_checkpoints/
 .venv/
-.backend/__pycache__/
+__pycache__/
+backend/__pycache__/
+backend/instance/
+*.pyc
+.env
