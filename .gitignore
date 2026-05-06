@@ -5,3 +5,8 @@ backend/__pycache__/
 backend/instance/
 *.pyc
 .env
+planetsdata.csv
+backend/artifacts/*.pkl
+backend/artifacts/*.csv
+backend/artifacts/feature_defaults.json
+backend/artifacts/*_backup_*.pkl
