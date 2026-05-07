@@ -1,12 +1,43 @@
-.ipynb_checkpoints/
-.venv/
+# Python Cache & Bytecode
 __pycache__/
-backend/__pycache__/
-backend/instance/
-*.pyc
+*.py[cod]
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Environment Variables
 .env
-planetsdata.csv
+
+# Pytest
+.pytest_cache/
+
+# Database Files
+*.db
+*.sqlite3
+
+# Runtime / Instance Files
+backend/instance/
+
+# ML Artifacts & Generated Files
 backend/artifacts/*.pkl
 backend/artifacts/*.csv
-backend/artifacts/feature_defaults.json
 backend/artifacts/*_backup_*.pkl
+backend/artifacts/feature_defaults.json
+
+# Dataset Files
+planetsdata.csv
+
+# Logs
+*.log
+
+# OS / Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
