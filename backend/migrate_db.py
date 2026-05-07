@@ -1,13 +1,17 @@
 """
 ExoHabitAI — Database Migration Script
 =======================================
-Adds new columns introduced by backend upgrades to the existing SQLite
-database without dropping data.
+Adds new columns/tables introduced by backend upgrades to the existing
+SQLite database without dropping data.
 
-Managed columns:
-    - is_user_generated  BOOLEAN  DEFAULT FALSE
-    - updated_at         DATETIME DEFAULT CURRENT_TIMESTAMP
-    - model_version      VARCHAR(50)    (for stale-prediction detection)
+Managed columns (exoplanets table):
+    - is_user_generated    BOOLEAN  DEFAULT FALSE
+    - updated_at           DATETIME
+    - model_version        VARCHAR(50)
+    - created_by_user_id   INTEGER FK→users(id)
+
+Managed tables:
+    - users                (JWT authentication)
 
 This script is idempotent — safe to run multiple times.
 
@@ -81,12 +85,49 @@ def migrate():
         cursor.execute(
             "ALTER TABLE exoplanets ADD COLUMN model_version VARCHAR(50)"
         )
-        # Existing rows have no model_version → they will be treated
-        # as stale by the backend and auto-recomputed on next /rank call
-        # or when recompute_predictions.py is run.
         migrations_applied += 1
     else:
         logger.info("Column model_version already exists — skipping")
+
+    # ── created_by_user_id (user ownership tracking) ─────────────────
+    if "created_by_user_id" not in existing:
+        logger.info("Adding column: created_by_user_id (INTEGER)")
+        cursor.execute(
+            "ALTER TABLE exoplanets ADD COLUMN created_by_user_id INTEGER "
+            "REFERENCES users(id)"
+        )
+        migrations_applied += 1
+    else:
+        logger.info("Column created_by_user_id already exists — skipping")
+
+    # ── users table ──────────────────────────────────────────────────
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
+    )
+    if cursor.fetchone() is None:
+        logger.info("Creating table: users")
+        cursor.execute("""
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username VARCHAR(80) NOT NULL UNIQUE,
+                email VARCHAR(120) NOT NULL UNIQUE,
+                password_hash VARCHAR(256) NOT NULL,
+                role VARCHAR(20) NOT NULL DEFAULT 'user',
+                is_active BOOLEAN NOT NULL DEFAULT 1,
+                created_at DATETIME,
+                updated_at DATETIME,
+                last_login_at DATETIME
+            )
+        """)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_users_username ON users(username)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_users_email ON users(email)"
+        )
+        migrations_applied += 1
+    else:
+        logger.info("Table users already exists — skipping")
 
     conn.commit()
     conn.close()
