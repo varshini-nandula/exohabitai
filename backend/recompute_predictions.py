@@ -48,7 +48,10 @@ def recompute(dry_run: bool = False, reset: bool = False):
         dry_run: if True, compute predictions but do not write to DB.
         reset:   if True, wipe the entire DB and re-seed from CSV first.
     """
-    from app import app, db, Exoplanet, pipeline, Config, MODEL_VERSION, PIPELINE_INPUT_COLUMNS
+    from app import (
+        app, db, Exoplanet, pipeline, Config, MODEL_VERSION,
+        PIPELINE_INPUT_COLUMNS, _derive_star_type,
+    )
 
     with app.app_context():
 
@@ -106,6 +109,14 @@ def recompute(dry_run: bool = False, reset: bool = False):
 
         # Build DataFrame directly — pipeline handles all preprocessing
         df = pd.DataFrame(records)
+
+        # --- Derive Derived_S_TYPE (train/serve parity) ---
+        if "S_TEMPERATURE" in df.columns:
+            if "Derived_S_TYPE" not in df.columns:
+                df["Derived_S_TYPE"] = df["S_TEMPERATURE"].apply(_derive_star_type)
+            else:
+                mask = df["Derived_S_TYPE"].isna() & df["S_TEMPERATURE"].notna()
+                df.loc[mask, "Derived_S_TYPE"] = df.loc[mask, "S_TEMPERATURE"].apply(_derive_star_type)
 
         # Ensure all pipeline-required columns are present (NaN for missing)
         # The pipeline's internal imputer handles NaN values.
