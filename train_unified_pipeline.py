@@ -1,40 +1,6 @@
-"""
-ExoHabitAI — Unified Pipeline Training Script
-==============================================
-
-This script consolidates ALL preprocessing and modelling into a single
-sklearn/imblearn Pipeline object.  The serialised pipeline can then be
-loaded by the Flask backend and used to predict on **raw** input data
-without any manual feature engineering.
-
-Architecture
-------------
-ImbPipeline([
-    ("preprocessor", ColumnTransformer([
-        ("num", Pipeline([
-            ("imputer",    SimpleImputer(strategy='median')),
-            ("clipper",    QuantileClipper(lower_q=0.05, upper_q=0.95)),
-            ("scaler",     StandardScaler()),
-            ("var_thresh", VarianceThreshold(threshold=0.01)),
-        ]), numerical_columns),
-        ("cat", Pipeline([
-            ("imputer", SimpleImputer(strategy='most_frequent')),
-            ("encoder", OneHotEncoder(sparse_output=False, handle_unknown='ignore')),
-        ]), categorical_columns),
-    ])),
-    ("smote",      SMOTE(...)),
-    ("classifier", RandomForestClassifier(...)),
-])
-
-Usage
------
-    python train_unified_pipeline.py
-"""
-
 import os
 import sys
 import warnings
-import numpy as np
 import pandas as pd
 import joblib
 
@@ -46,9 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import (
     train_test_split, StratifiedKFold, cross_validate,
 )
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     roc_auc_score, average_precision_score, confusion_matrix,
@@ -56,20 +20,15 @@ from sklearn.metrics import (
 from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.over_sampling import SMOTE
 
-# Ensure project root is on the path so custom_transformers can be imported
-# when the pipeline is later deserialised by the backend.
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from custom_transformers import QuantileClipper  # noqa: E402
+from custom_transformers import QuantileClipper  
 
 warnings.filterwarnings("ignore")
 
-# ============================================================================
-# 1. CONFIGURATION
-# ============================================================================
-
+# CONFIGURATION
 DATA_PATH = os.path.join(PROJECT_ROOT, "planetsdata.csv")
 ARTIFACT_DIR = os.path.join(PROJECT_ROOT, "backend", "artifacts")
 PIPELINE_PATH = os.path.join(ARTIFACT_DIR, "habitability_pipeline.pkl")
@@ -77,8 +36,7 @@ PIPELINE_PATH = os.path.join(ARTIFACT_DIR, "habitability_pipeline.pkl")
 TARGET = "P_HABITABLE_BINARY"
 RANDOM_STATE = 42
 
-# Columns to drop — these are domain-knowledge decisions, NOT learned
-# transformations, so they stay outside the pipeline.
+# Columns to drop 
 
 # Error / limit columns (not useful for prediction)
 def _error_limit_cols(df):
@@ -119,10 +77,7 @@ REDUNDANT_COLUMNS = [
 ]
 
 
-# ============================================================================
-# 2. FEATURE ENGINEERING (deterministic, before split)
-# ============================================================================
-
+# FEATURE ENGINEERING 
 def derive_star_type(temp):
     """Derive detailed spectral type from S_TEMPERATURE."""
     if pd.isna(temp):
@@ -181,16 +136,12 @@ def prepare_dataframe(path: str) -> pd.DataFrame:
     return df
 
 
-# ============================================================================
-# 3. BUILD THE UNIFIED PIPELINE
-# ============================================================================
-
+# BUILD THE UNIFIED PIPELINE
 def build_unified_pipeline(numerical_cols, categorical_cols, use_smote=True):
     """
     Build a single ImbPipeline that encapsulates ALL preprocessing.
 
-    Parameters
-    ----------
+    Parameters:
     numerical_cols : list[str]
         Names of numerical feature columns.
     categorical_cols : list[str]
@@ -198,12 +149,10 @@ def build_unified_pipeline(numerical_cols, categorical_cols, use_smote=True):
     use_smote : bool
         Whether to include SMOTE for class balancing.
 
-    Returns
-    -------
-    ImbPipeline
+    Returns ImbPipeline
     """
 
-    # --- Numerical branch ---
+    # Numerical branch
     num_pipeline = Pipeline(steps=[
         ("imputer",    SimpleImputer(strategy="median")),
         ("clipper",    QuantileClipper(lower_q=0.05, upper_q=0.95)),
@@ -211,13 +160,13 @@ def build_unified_pipeline(numerical_cols, categorical_cols, use_smote=True):
         ("var_thresh", VarianceThreshold(threshold=0.01)),
     ])
 
-    # --- Categorical branch ---
+    # Categorical branch
     cat_pipeline = Pipeline(steps=[
         ("imputer", SimpleImputer(strategy="most_frequent")),
         ("encoder", OneHotEncoder(sparse_output=False, handle_unknown="ignore")),
     ])
 
-    # --- ColumnTransformer (replaces ALL manual preprocessing) ---
+    # ColumnTransformer (replaces all manual preprocessing)
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", num_pipeline, numerical_cols),
@@ -226,14 +175,14 @@ def build_unified_pipeline(numerical_cols, categorical_cols, use_smote=True):
         remainder="drop",  # drop any columns not listed
     )
 
-    # --- SMOTE step (conditional) ---
+    # SMOTE step
     smote_step = [
         ("smote", SMOTE(
             sampling_strategy=0.3, k_neighbors=5, random_state=RANDOM_STATE
         ))
     ] if use_smote else []
 
-    # --- Full pipeline ---
+    # Full pipeline
     pipeline = ImbPipeline(steps=[
         ("preprocessor", preprocessor),
     ] + smote_step + [
@@ -247,15 +196,12 @@ def build_unified_pipeline(numerical_cols, categorical_cols, use_smote=True):
     return pipeline
 
 
-# ============================================================================
-# 4. EVALUATION
-# ============================================================================
-
+# EVALUATION
 def evaluate(pipeline, X_train, X_test, y_train, y_test, label=""):
     """Train, predict, and print comprehensive metrics."""
     pipeline.fit(X_train, y_train)
 
-    # --- Test metrics ---
+    # Test metrics
     y_prob_test = pipeline.predict_proba(X_test)[:, 1]
     y_pred_test = (y_prob_test >= 0.5).astype(int)
 
@@ -266,7 +212,7 @@ def evaluate(pipeline, X_train, X_test, y_train, y_test, label=""):
     test_roc = roc_auc_score(y_test, y_prob_test)
     test_pr = average_precision_score(y_test, y_prob_test)
 
-    # --- Train metrics (overfitting check) ---
+    # Train metrics (overfitting check)
     y_prob_train = pipeline.predict_proba(X_train)[:, 1]
     y_pred_train = (y_prob_train >= 0.5).astype(int)
 
@@ -274,14 +220,12 @@ def evaluate(pipeline, X_train, X_test, y_train, y_test, label=""):
     train_f1 = f1_score(y_train, y_pred_train, zero_division=0)
     train_roc = roc_auc_score(y_train, y_prob_train)
 
-    # --- Gaps ---
+    # Gaps
     acc_gap = train_acc - test_acc
     f1_gap = train_f1 - test_f1
     roc_gap = train_roc - test_roc
 
-    print(f"\n{'='*60}")
     print(f"  {label}")
-    print(f"{'='*60}")
     cm = confusion_matrix(y_test, y_pred_test)
     print(f"  Confusion Matrix:\n{cm}")
     print(f"  TEST  -> Acc: {test_acc:.4f}  Prec: {test_prec:.4f}  "
@@ -293,11 +237,11 @@ def evaluate(pipeline, X_train, X_test, y_train, y_test, label=""):
           f"ROC-AUC: {roc_gap:+.4f}")
 
     if acc_gap > 0.10:
-        print("  [WARNING] Large accuracy gap -- possible overfitting")
+        print("Large accuracy gap - possible overfitting")
     elif test_roc < 0.60:
-        print("  [WARNING] Low ROC-AUC -- possible underfitting")
+        print("Low ROC-AUC - possible underfitting")
     else:
-        print("  [OK] No significant overfitting or underfitting detected")
+        print("No significant overfitting or underfitting detected")
 
     return {
         "Test_Acc": round(test_acc, 4),
@@ -311,10 +255,7 @@ def evaluate(pipeline, X_train, X_test, y_train, y_test, label=""):
     }
 
 
-# ============================================================================
-# 5. CROSS-VALIDATION
-# ============================================================================
-
+# CROSS-VALIDATION
 def cross_validate_pipeline(pipeline, X_train, y_train, label=""):
     """Run 5-fold stratified cross-validation."""
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
@@ -326,7 +267,7 @@ def cross_validate_pipeline(pipeline, X_train, y_train, label=""):
         return_train_score=True,
     )
 
-    print(f"\n--- 5-Fold CV: {label} ---")
+    print(f"\n5-Fold CV: {label}")
     for metric in scoring:
         test_key = f"test_{metric}"
         train_key = f"train_{metric}"
@@ -337,15 +278,12 @@ def cross_validate_pipeline(pipeline, X_train, y_train, label=""):
               f"Train: {tr_mean:.4f}  Gap: {tr_mean - t_mean:+.4f}")
 
 
-# ============================================================================
-# 6. MAIN
-# ============================================================================
-
+# MAIN
 def main():
-    # --- Load & clean ---
+    # Load & clean
     df = prepare_dataframe(DATA_PATH)
 
-    # --- Identify column types ---
+    # Identify column types 
     X = df.drop(columns=[TARGET, "P_NAME"], errors="ignore")
     y = df[TARGET]
 
@@ -355,28 +293,28 @@ def main():
     print(f"\nNumerical features ({len(numerical_cols)}): {numerical_cols}")
     print(f"Categorical features ({len(categorical_cols)}): {categorical_cols}")
 
-    # --- Train / Test split (before any preprocessing) ---
+    # Train / Test split (before any preprocessing)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.20, random_state=RANDOM_STATE, stratify=y,
     )
     print(f"\nTrain: {X_train.shape[0]} samples, Test: {X_test.shape[0]} samples")
     print(f"Train class distribution:\n{y_train.value_counts(normalize=True)}")
 
-    # --- Build unified pipeline ---
+    # Build unified pipeline
     pipeline = build_unified_pipeline(numerical_cols, categorical_cols,
                                        use_smote=True)
 
-    # --- Evaluate on hold-out test set ---
+    # Evaluate on hold-out test set
     metrics = evaluate(pipeline, X_train, X_test, y_train, y_test,
                        label="Unified Pipeline | Random Forest | Full (cleaned)")
 
-    # --- Cross-validation ---
+    # Cross-validation
     cv_pipeline = build_unified_pipeline(numerical_cols, categorical_cols,
                                           use_smote=True)
     cross_validate_pipeline(cv_pipeline, X_train, y_train,
                             label="Unified Pipeline | Random Forest | Full (cleaned)")
 
-    # --- Save ---
+    # Save
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
     joblib.dump(pipeline, PIPELINE_PATH)
     print(f"\n[OK] Pipeline saved to: {PIPELINE_PATH}")
