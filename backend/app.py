@@ -1,7 +1,7 @@
 """
 ExoHabitAI Backend — Production-Ready Flask API
 =================================================
-Pipeline-aware, env-secured, batch-ready ML deployment.
+Pipeline-aware, env-secured, batch-ready ML deployment with JWT authentication.
 
 Key design decisions:
 - The pipeline includes ALL preprocessing (imputation, clipping, encoding,
@@ -11,6 +11,8 @@ Key design decisions:
 - Threshold is configurable via THRESHOLD env var (default 0.5).
 - All responses follow a consistent JSON envelope.
 - Physical-validity checks reject impossible inputs without blocking NaN.
+- JWT authentication protects admin/governance endpoints.
+- Role-based access control (RBAC) separates user and admin capabilities.
 """
 
 import os
@@ -32,30 +34,13 @@ if _PROJECT_ROOT not in sys.path:
 import numpy as np
 import pandas as pd
 import joblib
-from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
-# ==============================================================================
-# 1. CONFIGURATION
-# ==============================================================================
-
-load_dotenv()  # loads .env from the backend directory
-
-class Config:
-    """Centralised configuration — every tuneable value comes from the env."""
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///exoplanets.db")
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-prod")
-    DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
-    MODEL_PATH = os.getenv("MODEL_PATH", "artifacts/habitability_pipeline.pkl")
-    THRESHOLD = float(os.getenv("THRESHOLD", "0.5"))
-    # Minimum tolerable F1 drop when replacing a model (Task 2)
-    RETRAIN_F1_TOLERANCE = float(os.getenv("RETRAIN_F1_TOLERANCE", "0.02"))
-    # Rate-limit: minimum seconds between calls per IP (Task 6)
-    RATE_LIMIT_SECONDS = float(os.getenv("RATE_LIMIT_SECONDS", "1.0"))
-
+# Import centralised extensions (avoids circular imports)
+from extensions import db, jwt
+from config import Config
 
 # ==============================================================================
 # 2. LOGGING (replaces all print statements)
@@ -76,7 +61,25 @@ logger = logging.getLogger("exohabitai")
 app = Flask(__name__)
 app.config.from_object(Config)
 CORS(app)
-db = SQLAlchemy(app)
+
+# Bind extensions to this app instance
+db.init_app(app)
+jwt.init_app(app)
+
+# Register auth blueprint and CLI commands
+from auth import auth_bp  # noqa: E402
+app.register_blueprint(auth_bp)
+
+from cli import register_cli_commands  # noqa: E402
+register_cli_commands(app)
+
+# Import models so SQLAlchemy registers them before create_all()
+from models import User, UserRole, Exoplanet, RetrainingLog  # noqa: E402
+from auth.decorators import admin_required, get_current_user  # noqa: E402
+
+# Log JWT config warnings
+if Config.JWT_SECRET_KEY == "jwt-dev-secret-change-in-prod":
+    logger.warning("Using default JWT_SECRET_KEY — change this in production!")
 
 
 # ==============================================================================
@@ -293,96 +296,17 @@ REALISTIC_LIMITS = {
 }
 
 
-# ==============================================================================
-# 5. DATABASE MODEL
-# ==============================================================================
-
-class Exoplanet(db.Model):
-    """
-    Stores planet data + prediction results.
-
-    Only the 9 baseline physical features are persisted as named columns
-    (for ranking/querying convenience). Raw input JSON is stored separately
-    so full-feature pipelines can still be audited.
-    """
-    __tablename__ = "exoplanets"
-
-    id = db.Column(db.Integer, primary_key=True)
-    planet_name = db.Column(db.String(150), unique=True, nullable=False)
-
-    # Baseline physical features (always stored when available)
-    P_RADIUS = db.Column(db.Float)
-    P_MASS = db.Column(db.Float)
-    P_DENSITY = db.Column(db.Float)
-    P_TEMP_SURF = db.Column(db.Float)
-    P_PERIOD = db.Column(db.Float)
-    P_SEMI_MAJOR_AXIS = db.Column(db.Float)
-    S_TEMPERATURE = db.Column(db.Float)
-    S_LUMINOSITY = db.Column(db.Float)
-    S_METALLICITY = db.Column(db.Float)
-
-    # Prediction outputs
-    habitability_probability = db.Column(db.Float)
-    habitability = db.Column(db.Integer)
-
-    # Model version tracking — links each prediction to the exact pipeline
-    # that produced it, enabling stale-data detection on model upgrades.
-    model_version = db.Column(db.String(50))
-
-    # Audit & continuous learning (Task 7)
-    raw_input_json = db.Column(db.Text)       # full input payload
-    is_user_generated = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(
-        db.DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-    )
-
-    # Columns that map to DB fields for dynamic storage
-    STORED_FEATURES = [
-        "P_RADIUS", "P_MASS", "P_DENSITY", "P_TEMP_SURF",
-        "P_PERIOD", "P_SEMI_MAJOR_AXIS",
-        "S_TEMPERATURE", "S_LUMINOSITY", "S_METALLICITY",
-    ]
-
 
 # ==============================================================================
-# 5b. RETRAINING LOG MODEL (Task 3)
+# 5. DATABASE MODELS — imported from models/ package
 # ==============================================================================
-
-class RetrainingLog(db.Model):
-    """
-    Audit trail for every retraining run — success or failure.
-
-    Captures metrics, dataset size, dataset version, and the resulting
-    model version so that any model in production can be traced back to
-    its training conditions.
-    """
-    __tablename__ = "retraining_logs"
-
-    id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(
-        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False,
-    )
-    status = db.Column(db.String(20), nullable=False)        # success / rejected / failed
-    model_version = db.Column(db.String(50))
-    previous_model_version = db.Column(db.String(50))
-    dataset_version = db.Column(db.String(50))
-    dataset_size = db.Column(db.Integer)
-    user_data_count = db.Column(db.Integer)
-    accuracy = db.Column(db.Float)
-    f1_score = db.Column(db.Float)
-    roc_auc = db.Column(db.Float)
-    pr_auc = db.Column(db.Float)
-    reason = db.Column(db.String(200))
-    requested_by = db.Column(db.String(100))
-    details = db.Column(db.Text)                             # JSON blob for extras
+# Exoplanet, RetrainingLog, and User models are defined in backend/models/
+# They were imported above: from models import User, UserRole, Exoplanet, RetrainingLog
 
 
 with app.app_context():
     db.create_all()
-    logger.info("Database tables ready (exoplanets + retraining_logs)")
+    logger.info("Database tables ready (exoplanets, retraining_logs, users)")
 
     # ── Startup stale-data check ─────────────────────────────────────
     stale_count = (
@@ -495,6 +419,39 @@ def validate_input(data: dict) -> tuple[dict | None, str | None, list | None]:
     return features, None, warnings_list if warnings_list else None
 
 
+def _derive_star_type(temp) -> str | None:
+    """
+    Derive detailed spectral type from S_TEMPERATURE.
+
+    This MUST mirror the identical function in train_unified_pipeline.py
+    and retrain_pipeline.py so that the feature value at serve time
+    matches what the pipeline saw during training (no train/serve skew).
+    """
+    if temp is None or (isinstance(temp, float) and np.isnan(temp)):
+        return None
+    if temp > 30000:
+        return "O-Type"
+    if temp > 10000:
+        return "B-Type"
+    if temp > 7500:
+        return "A-Type"
+    if temp > 6000:
+        return "F-Type"
+    if temp > 5000:
+        return "G-Type"
+    if temp > 3500:
+        return "K-Type"
+    if temp > 2500:
+        return "M-Type"
+    if temp > 1500:
+        return "L-Type"
+    if temp > 800:
+        return "T-Type"
+    if temp <= 800:
+        return "Y-Type"
+    return None
+
+
 def build_dataframe(features: dict) -> pd.DataFrame:
     """
     Build a single-row DataFrame from the input features dict.
@@ -503,10 +460,27 @@ def build_dataframe(features: dict) -> pd.DataFrame:
     to be present in the input DataFrame.  Missing columns are filled
     with NaN — the pipeline's internal imputer handles the actual values.
 
+    Derived features:
+        - Derived_S_TYPE is computed from S_TEMPERATURE when not
+          explicitly provided.  This mirrors the feature engineering
+          applied during training (train/serve parity).
+
     Task 5: Logs warnings on column mismatches between user input and
     pipeline expectations. Extra features are silently dropped; missing
     features are filled with NaN.
     """
+    # --- Derive Derived_S_TYPE from S_TEMPERATURE (train/serve parity) ---
+    if "Derived_S_TYPE" not in features or features.get("Derived_S_TYPE") is None:
+        s_temp = features.get("S_TEMPERATURE")
+        if s_temp is not None:
+            derived = _derive_star_type(s_temp)
+            if derived is not None:
+                features["Derived_S_TYPE"] = derived
+                logger.debug(
+                    "Derived Derived_S_TYPE='%s' from S_TEMPERATURE=%s",
+                    derived, s_temp,
+                )
+
     if PIPELINE_INPUT_COLUMNS is not None:
         expected = set(PIPELINE_INPUT_COLUMNS)
         provided = set(features.keys())
@@ -544,7 +518,7 @@ def run_prediction(df: pd.DataFrame) -> tuple[list[float], list[int]]:
 
 
 def store_planet(data: dict, probability: float = None, label: int = None,
-                 is_user_generated: bool = True):
+                 is_user_generated: bool = True, user_id: int = None):
     """
     Persist a planet to the database.
 
@@ -554,6 +528,8 @@ def store_planet(data: dict, probability: float = None, label: int = None,
         label: binary habitability label.
         is_user_generated: True when the planet comes from user input
                            (API call), False for dataset-seeded rows.
+        user_id: ID of the authenticated user who submitted this planet.
+                 None for anonymous/seeded submissions.
 
     Returns (success: bool, message: str).
     """
@@ -587,6 +563,7 @@ def store_planet(data: dict, probability: float = None, label: int = None,
             model_version=MODEL_VERSION if probability is not None else None,
             raw_input_json=json.dumps(data, default=str),
             is_user_generated=is_user_generated,
+            created_by_user_id=user_id,
             **feature_kwargs,
         )
         db.session.add(planet)
@@ -1063,6 +1040,7 @@ def rank_planets():
 
 # ---- RECOMPUTE STALE PREDICTIONS (Task 4 — dedicated endpoint) ----
 @app.route("/recompute", methods=["POST"])
+@admin_required()
 def recompute_predictions():
     """
     Detect and recompute all stale predictions (model_version mismatch).
@@ -1111,6 +1089,15 @@ def recompute_predictions():
             records.append(features)
 
         df = pd.DataFrame(records)
+
+        # --- Derive Derived_S_TYPE (train/serve parity) ---
+        if "S_TEMPERATURE" in df.columns:
+            if "Derived_S_TYPE" not in df.columns:
+                df["Derived_S_TYPE"] = df["S_TEMPERATURE"].apply(_derive_star_type)
+            else:
+                # Fill only where Derived_S_TYPE is missing but S_TEMPERATURE is available
+                mask = df["Derived_S_TYPE"].isna() & df["S_TEMPERATURE"].notna()
+                df.loc[mask, "Derived_S_TYPE"] = df.loc[mask, "S_TEMPERATURE"].apply(_derive_star_type)
 
         if PIPELINE_INPUT_COLUMNS is not None:
             for col in PIPELINE_INPUT_COLUMNS:
@@ -1348,6 +1335,7 @@ def _run_retraining_background(reason: str, requested_by: str):
 
 
 @app.route("/trigger_retraining", methods=["POST"])
+@admin_required()
 def trigger_retraining():
     """
     Trigger model retraining in a background thread.
@@ -1355,7 +1343,7 @@ def trigger_retraining():
     Returns immediately with status 'accepted'. Use GET /retraining_status
     to poll for completion.
 
-    Rate-limited and protected against concurrent runs.
+    Rate-limited, admin-only, and protected against concurrent runs.
     """
     try:
         if not _check_rate_limit():
@@ -1363,7 +1351,11 @@ def trigger_retraining():
 
         payload = request.get_json(silent=True) or {}
         reason = payload.get("reason", "manual trigger")
-        requested_by = payload.get("requested_by", "unknown")
+        # Use the authenticated admin's identity from the JWT for audit trails
+        # instead of trusting a client-supplied value.
+        from flask_jwt_extended import get_jwt
+        claims = get_jwt()
+        requested_by = claims.get("username", "admin")
 
         # --- Prevent concurrent retraining (Task 1) ---
         if not _retrain_lock.acquire(blocking=False):
@@ -1439,6 +1431,7 @@ def retraining_status():
 
 # ---- RETRAINING LOGS (Task 3) ----
 @app.route("/retraining_logs", methods=["GET"])
+@admin_required()
 def retraining_logs():
     """Return the audit trail of all retraining runs."""
     try:
