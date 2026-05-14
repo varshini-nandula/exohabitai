@@ -10,3 +10,5 @@ joblib
 python-dotenv
 werkzeug
 pytest
+pytest-cov
+PyJWT
