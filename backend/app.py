@@ -225,7 +225,9 @@ def _check_rate_limit() -> bool:
     ip = request.remote_addr or "unknown"
     now = _monotime()
     last = _rate_limit_store.get(ip, 0.0)
-    if now - last < Config.RATE_LIMIT_SECONDS:
+    # Read from app.config so TestConfig overrides take effect
+    limit_seconds = app.config.get("RATE_LIMIT_SECONDS", Config.RATE_LIMIT_SECONDS)
+    if now - last < limit_seconds:
         return False
     _rate_limit_store[ip] = now
     return True
@@ -382,6 +384,12 @@ def validate_input(data: dict) -> tuple[dict | None, str | None, list | None]:
                         f"Invalid category for {key}: '{value}'. "
                         f"Must be one of {VALID_CATEGORIES[key]}"
                     ), None
+            elif key not in VALID_CATEGORIES:
+                # String value for a non-categorical field → reject.
+                # Numeric fields should receive int/float/None, not strings.
+                return None, (
+                    f"Feature '{key}' must be numeric, got string '{value}'"
+                ), None
             continue
 
         if not isinstance(value, (int, float)):
