@@ -41,3 +41,4 @@ planetsdata.csv
 Thumbs.db
 .vscode/
 .idea/
+.coverage
