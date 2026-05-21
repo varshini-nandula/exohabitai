@@ -1,6 +1,6 @@
 # 🌌 ExoHabitAI
 
-> **AI-powered exoplanet habitability prediction platform** — a production-oriented MLOps system combining scikit-learn pipelines, a Flask REST API, JWT authentication, and an interactive frontend for classifying whether exoplanets can support life.
+**AI-powered exoplanet habitability prediction platform** — a production-oriented MLOps system combining scikit-learn pipelines, a Flask REST API, JWT authentication, and an interactive frontend for classifying whether exoplanets can support life.
 
 ---
 
@@ -561,12 +561,6 @@ The test suite covers:
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript |
 | **Testing** | pytest, pytest-cov |
 | **Python** | 3.10+ |
-
----
-
-## License
-
-This project is for research and educational purposes.
 
 ---
 
