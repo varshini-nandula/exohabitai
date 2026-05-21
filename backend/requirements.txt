@@ -1,5 +1,14 @@
 flask
-flask_sqlalchemy
+flask-sqlalchemy
+flask-cors
+flask-jwt-extended
 pandas
 numpy
 scikit-learn
+imbalanced-learn
+joblib
+python-dotenv
+werkzeug
+pytest
+pytest-cov
+PyJWT
