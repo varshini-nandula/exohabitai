@@ -1320,22 +1320,29 @@ def _run_retraining_background(reason: str, requested_by: str):
     except Exception as exc:
         logger.exception("Background retraining failed")
 
-        with app.app_context():
-            log_entry = RetrainingLog(
-                status="failed",
-                previous_model_version=previous_version,
-                dataset_version=DATASET_VERSION,
-                reason=reason,
-                requested_by=requested_by,
-                details=json.dumps({"error": str(exc)}),
+        try:
+            with app.app_context():
+                log_entry = RetrainingLog(
+                    status="failed",
+                    previous_model_version=previous_version,
+                    dataset_version=DATASET_VERSION,
+                    reason=reason,
+                    requested_by=requested_by,
+                    details=json.dumps({"error": str(exc)}),
+                )
+                db.session.add(log_entry)
+                db.session.commit()
+        except Exception as db_exc:
+            logger.warning(
+                "Could not write failure log to DB (DB may be unavailable): %s",
+                db_exc,
             )
-            db.session.add(log_entry)
-            db.session.commit()
 
         _retrain_status["last_result"] = {
             "status": "failed",
             "error": str(exc),
         }
+
 
     finally:
         _retrain_status["is_running"] = False
@@ -1390,7 +1397,13 @@ def trigger_retraining():
             try:
                 _run_retraining_background(reason, requested_by)
             finally:
-                _retrain_lock.release()
+                # Guard against releasing an already-unlocked lock.
+                # This can happen in tests when conftest resets the lock
+                # between test functions while a daemon thread is still running.
+                try:
+                    _retrain_lock.release()
+                except RuntimeError:
+                    pass
 
         thread = threading.Thread(target=_worker, daemon=True)
         thread.start()

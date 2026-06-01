@@ -323,9 +323,17 @@ ExoHabitAI/
 │   │   └── habitability_pipeline.pkl   # Serialised trained pipeline
 │   │
 │   └── tests/                    # Pytest test suite
-│       ├── test_auth.py          # 32 authentication tests
-│       ├── test_api.py           # API contract + prediction tests
-│       └── conftest.py           # Fixtures and test configuration
+│       ├── conftest.py           # Fixtures, shared helpers, test configuration
+│       ├── test_auth.py          # Authentication, JWT, RBAC tests
+│       ├── test_prediction.py    # /predict endpoint and schema tests
+│       ├── test_validation.py    # Input validation and physical constraint tests
+│       ├── test_ml_sanity.py     # ML behavioural sanity checks
+│       ├── test_batch_prediction.py  # /predict_and_store_batch tests
+│       ├── test_retraining.py    # Retraining workflow and status tests
+│       ├── test_admin_protection.py  # Admin route protection tests
+│       ├── test_health.py        # Health check endpoint tests
+│       ├── test_rankings.py      # /rank endpoint tests
+│       └── test_database.py      # Database model and integrity tests
 │
 └── frontend/
     ├── index.html                # Landing page
@@ -351,13 +359,13 @@ ExoHabitAI/
 | `POST` | `/add_planet` | Store planet without prediction |
 | `GET` | `/rank` | Planets ranked by habitability probability |
 | `GET` | `/stats` | Aggregate DB statistics (total, habitable, user-generated) |
+| `GET` | `/retraining_status` | Poll background retraining progress (read-only) |
 
 ### Admin-Only Endpoints (JWT Required, `admin` Role)
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/trigger_retraining` | Trigger async model retraining |
-| `GET` | `/retraining_status` | Poll background retraining progress |
 | `GET` | `/retraining_logs` | Full audit trail of past retraining runs |
 | `POST` | `/recompute` | Recompute all stale predictions (model version mismatch) |
 
@@ -515,10 +523,10 @@ See `backend/.env.example` for the full list. Key variables:
 | Variable | Default | Description |
 |---|---|---|
 | `JWT_SECRET_KEY` | `jwt-dev-secret-change-in-prod` | **Change this in production!** |
-| `JWT_ACCESS_TOKEN_HOURS` | `24` | Token lifetime in hours |
+| `JWT_ACCESS_TOKEN_HOURS` | `1` | Token lifetime in hours |
 | `THRESHOLD` | `0.5` | Habitability classification cutoff |
 | `RETRAIN_F1_TOLERANCE` | `0.02` | Max allowed F1 regression before rejecting new model |
-| `RATE_LIMIT_SECONDS` | `2` | Minimum seconds between predictions per IP |
+| `RATE_LIMIT_SECONDS` | `1` | Minimum seconds between predictions per IP |
 | `ADMIN_USERNAME` | — | Bootstrap admin username |
 | `ADMIN_EMAIL` | — | Bootstrap admin email |
 | `ADMIN_PASSWORD` | — | Bootstrap admin password |
@@ -534,19 +542,25 @@ cd backend
 # Run all tests
 python -m pytest tests/ -v
 
-# Run only auth tests (32 tests)
+# Run only auth tests
 python -m pytest tests/test_auth.py -v
+
+# Run only ML sanity tests
+python -m pytest tests/test_ml_sanity.py -v
 
 # Run with coverage report
 python -m pytest tests/ --cov=. --cov-report=term-missing
 ```
 
-The test suite covers:
+The test suite (~220 tests across 11 files) covers:
 - JWT registration, login, and token validation flows
 - Role-based access control (admin vs. user)
-- API contract validation (predict, add, rank, stats)
-- ML sanity checks (prediction range, probability output format)
-- Rate limiting and error handler responses
+- API contract validation (predict, batch predict, add, rank, stats)
+- ML behavioural sanity checks (Earth-like, gas giant, lava world, relative ordering)
+- Input validation (physical constraints, categorical values, type checking)
+- Batch prediction consistency and storage
+- Retraining trigger, status polling, and concurrency locking
+- Health check and database integrity
 
 ---
 

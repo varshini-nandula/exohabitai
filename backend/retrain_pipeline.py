@@ -129,7 +129,7 @@ def derive_star_type(temp):
         return "T-Type"
     if temp <= 800:
         return "Y-Type"
-    return "Unclassified"
+    return None  # unreachable — all numeric temps are handled above
 
 
 def prepare_dataframe(path: str) -> pd.DataFrame:
@@ -350,8 +350,8 @@ def retrain(dry_run: bool = False) -> dict:
     X = combined_df.drop(columns=[TARGET, "P_NAME"], errors="ignore")
     y = combined_df[TARGET]
 
-    numerical_cols = X.select_dtypes(include=["int", "float"]).columns.tolist()
-    categorical_cols = X.select_dtypes(include=["object"]).columns.tolist()
+    numerical_cols = X.select_dtypes(include=["number"]).columns.tolist()
+    categorical_cols = X.select_dtypes(exclude=["number"]).columns.tolist()
 
     logger.info("Numerical features (%d): %s", len(numerical_cols), numerical_cols)
     logger.info("Categorical features (%d): %s", len(categorical_cols), categorical_cols)
