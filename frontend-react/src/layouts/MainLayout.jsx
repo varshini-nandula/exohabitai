@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Starfield from '../components/Starfield';
@@ -6,17 +6,39 @@ import Starfield from '../components/Starfield';
 export default function MainLayout({ children }) {
   const { isAuthenticated, user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const userMenuRef = useRef(null);
 
   const handleLogout = async () => {
     try {
       await logout();
       setMobileMenuOpen(false);
+      setUserMenuOpen(false);
       navigate('/');
     } catch (err) {
       console.error('Logout error:', err);
     }
   };
+
+  const handleContributeData = () => {
+    if (isAuthenticated) {
+      navigate('/add-planet');
+    } else {
+      navigate('/login?redirect=%2Fadd-planet');
+    }
+  };
+
+  // Close user dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const activeClassName = ({ isActive }) =>
     `text-sm font-semibold transition-colors py-2 px-2 relative font-mono inline-flex items-center ${
@@ -64,39 +86,90 @@ export default function MainLayout({ children }) {
             <NavLink to="/rankings" className={activeClassName}>
               RANKINGS
             </NavLink>
+            <NavLink to="/about" className={activeClassName}>
+              ABOUT
+            </NavLink>
+            <button
+              onClick={handleContributeData}
+              className="text-sm font-semibold transition-colors py-2 px-2 relative font-mono inline-flex items-center text-text-secondary hover:text-text-primary"
+            >
+              CONTRIBUTE DATA
+            </button>
 
-            {isAuthenticated ? (
-              <>
-                <NavLink to="/add-planet" className={activeClassName}>
-                  ADD PLANET
-                </NavLink>
-                <NavLink to="/history" className={activeClassName}>
-                  HISTORY
-                </NavLink>
-                <NavLink to="/profile" className={activeClassName}>
-                  PROFILE
-                </NavLink>
+            {/* User area */}
+            {isAuthenticated && (
+              <div className="relative border-l border-white/10 pl-6 ml-2" ref={userMenuRef}>
                 <button
-                  onClick={handleLogout}
-                  className="btn-ghost font-mono text-xs text-danger/80 hover:text-danger hover:bg-danger/10 border border-danger/20 rounded-lg px-3 py-1.5 transition-all inline-flex items-center justify-center"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 group"
+                  aria-label="User menu"
                 >
-                  LOGOUT
+                  <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-bold text-primary font-mono uppercase text-xs group-hover:bg-primary/30 transition-colors">
+                    {user?.username?.[0] || 'U'}
+                  </div>
+                  <svg
+                    className={`w-3 h-3 text-text-muted transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
-              </>
-            ) : (
-              <div className="flex items-center gap-4 border-l border-white/10 pl-6 ml-2">
-                <Link
-                  to="/login"
-                  className="font-mono text-xs text-text-secondary hover:text-text-primary px-3 py-2 transition-colors inline-flex items-center justify-center"
-                >
-                  LOGIN
-                </Link>
-                <Link
-                  to="/register"
-                  className="font-mono text-xs bg-primary hover:bg-primary-light text-white font-semibold rounded-lg px-4 py-2 transition-all hover:shadow-[0_0_15px_rgba(79,140,255,0.4)] inline-flex items-center justify-center"
-                >
-                  REGISTER
-                </Link>
+
+                {/* Dropdown */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 glass-strong rounded-xl border border-white/10 py-2 shadow-xl shadow-black/30 z-50">
+                    {/* User info */}
+                    <div className="px-4 py-3 border-b border-white/5">
+                      <p className="text-sm font-semibold text-text-primary font-mono">{user?.username}</p>
+                      <p className="text-xs text-text-muted mt-0.5">{user?.email}</p>
+                    </div>
+
+                    <Link
+                      to="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors font-mono"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Profile
+                    </Link>
+                    <Link
+                      to="/add-planet"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors font-mono"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Planet
+                    </Link>
+                    <Link
+                      to="/history"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors font-mono"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      History
+                    </Link>
+
+                    <div className="border-t border-white/5 mt-1 pt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-danger/80 hover:text-danger hover:bg-danger/5 transition-colors font-mono w-full text-left"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </nav>
@@ -139,18 +212,21 @@ export default function MainLayout({ children }) {
             <NavLink to="/rankings" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
               RANKINGS
             </NavLink>
+            <NavLink to="/about" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
+              ABOUT
+            </NavLink>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleContributeData();
+              }}
+              className="text-lg font-semibold transition-colors py-3 px-4 font-mono rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 text-left"
+            >
+              CONTRIBUTE DATA
+            </button>
 
             {isAuthenticated ? (
               <>
-                <NavLink to="/add-planet" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
-                  ADD PLANET
-                </NavLink>
-                <NavLink to="/history" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
-                  HISTORY
-                </NavLink>
-                <NavLink to="/profile" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
-                  PROFILE
-                </NavLink>
                 <div className="mt-8 pt-6 border-t border-white/5">
                   <div className="flex items-center gap-3 px-4 mb-4">
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary font-mono uppercase">
@@ -161,9 +237,18 @@ export default function MainLayout({ children }) {
                       <span className="text-xs text-text-muted">{user?.email}</span>
                     </div>
                   </div>
+                  <NavLink to="/profile" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
+                    PROFILE
+                  </NavLink>
+                  <NavLink to="/add-planet" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
+                    ADD PLANET
+                  </NavLink>
+                  <NavLink to="/history" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
+                    HISTORY
+                  </NavLink>
                   <button
                     onClick={handleLogout}
-                    className="w-full btn-secondary text-danger hover:bg-danger/10 border-danger/20 justify-start"
+                    className="w-full btn-secondary text-danger hover:bg-danger/10 border-danger/20 justify-start mt-4"
                   >
                     Logout
                   </button>

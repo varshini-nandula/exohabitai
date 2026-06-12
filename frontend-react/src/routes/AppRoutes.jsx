@@ -5,6 +5,7 @@ import ProtectedRoute from '../auth/ProtectedRoute';
 import HomePage from '../pages/HomePage';
 import PredictPage from '../pages/PredictPage';
 import RankingsPage from '../pages/RankingsPage';
+import AboutPage from '../pages/AboutPage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import AddPlanetPage from '../pages/AddPlanetPage';
@@ -18,6 +19,7 @@ export default function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/predict" element={<PredictPage />} />
       <Route path="/rankings" element={<RankingsPage />} />
+      <Route path="/about" element={<AboutPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 

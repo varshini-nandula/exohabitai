@@ -79,37 +79,38 @@ export default function RegisterPage() {
   const activeError = localError || authError;
 
   return (
-    <div className="site-container flex-grow flex items-center justify-center py-10 md:py-14">
+    <div className="site-container flex-grow flex items-center justify-center py-12 md:py-20">
       <GlassCard
         glow={true}
         hoverable={false}
         animate={true}
-        className="w-full max-w-md border-primary/20 bg-space-800/50 relative overflow-hidden"
+        variant="raised"
+        className="w-full max-w-md border-primary/20 relative overflow-hidden p-10"
       >
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-accent/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-10">
           <span className="font-mono text-[10px] tracking-[0.25em] text-accent uppercase font-bold">
             OBSERVATORY REGISTRY
           </span>
-          <h2 className="text-2xl font-bold font-mono text-text-primary tracking-tight mt-1.5">
+          <h2 className="text-2xl font-bold font-mono text-text-primary tracking-tight mt-3">
             Navigator Registration
           </h2>
-          <p className="text-xs text-text-secondary mt-1">
+          <p className="text-xs text-text-secondary mt-3" style={{ lineHeight: '1.7' }}>
             Sign up to save customized planetary systems and predictions.
           </p>
         </div>
 
         {activeError && (
-          <div className="mb-6 text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-3.5 rounded-lg leading-relaxed">
-            <div className="font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+          <div className="mb-8 text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-4 rounded-lg leading-relaxed">
+            <div className="font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <span>⚠️</span> Registration Alert
             </div>
             {activeError}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="flex flex-col">
             <label htmlFor="username">Username</label>
             <input
@@ -168,7 +169,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            className="btn-primary mt-3 w-full shadow-[0_0_20px_rgba(94,234,212,0.2)]"
+            className="btn-primary mt-4 w-full shadow-[0_0_20px_rgba(94,234,212,0.2)]"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -185,7 +186,7 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <div className="text-center mt-6 pt-6 border-t border-white/5 text-xs text-text-secondary">
+        <div className="text-center mt-8 pt-8 border-t border-white/5 text-xs text-text-secondary">
           Already a registered navigator?{' '}
           <Link
             to={`/login${location.search}`}

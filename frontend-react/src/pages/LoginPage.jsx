@@ -54,38 +54,39 @@ export default function LoginPage() {
   const activeError = localError || authError;
 
   return (
-    <div className="site-container flex-grow flex items-center justify-center py-10 md:py-16">
+    <div className="site-container flex-grow flex items-center justify-center py-12 md:py-20">
       <GlassCard
         glow={true}
         hoverable={false}
         animate={true}
-        className="w-full max-w-md border-primary/20 bg-space-800/50 relative overflow-hidden"
+        variant="raised"
+        className="w-full max-w-md border-primary/20 relative overflow-hidden p-10"
       >
         {/* Glow orb */}
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-10">
           <span className="font-mono text-[10px] tracking-[0.25em] text-primary uppercase font-bold">
             OBSERVATORY SECURITY
           </span>
-          <h2 className="text-2xl font-bold font-mono text-text-primary tracking-tight mt-1.5">
+          <h2 className="text-2xl font-bold font-mono text-text-primary tracking-tight mt-3">
             Navigator Login
           </h2>
-          <p className="text-xs text-text-secondary mt-1">
+          <p className="text-xs text-text-secondary mt-3" style={{ lineHeight: '1.7' }}>
             Authenticate to sync candidates and access database sectors.
           </p>
         </div>
 
         {activeError && (
-          <div className="mb-6 text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-3.5 rounded-lg leading-relaxed">
-            <div className="font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+          <div className="mb-8 text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-4 rounded-lg leading-relaxed">
+            <div className="font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <span>⚠️</span> Authorization Error
             </div>
             {activeError}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="flex flex-col">
             <label htmlFor="username">Username</label>
             <input
@@ -116,7 +117,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="btn-primary mt-3 w-full"
+            className="btn-primary mt-4 w-full"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -133,7 +134,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="text-center mt-6 pt-6 border-t border-white/5 text-xs text-text-secondary">
+        <div className="text-center mt-8 pt-8 border-t border-white/5 text-xs text-text-secondary">
           Not yet a registered navigator?{' '}
           <Link
             to={`/register${location.search}`}

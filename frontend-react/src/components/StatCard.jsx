@@ -52,12 +52,12 @@ export default function StatCard({
     : displayValue;
 
   return (
-    <GlassCard glow={glow} hoverable={true} animate={true} delay={delay} className="flex flex-col gap-2 min-w-[140px] flex-1">
+    <GlassCard glow={glow} hoverable={true} animate={true} delay={delay} className="flex flex-col gap-3 min-w-[140px] flex-1 p-6">
       <div className="flex items-center justify-between gap-3 text-text-secondary">
-        <span className="text-xs uppercase tracking-wider font-semibold font-mono">{label}</span>
+        <span className="text-[10px] uppercase tracking-wider font-semibold font-mono leading-tight">{label}</span>
         {icon && <div className="text-primary text-lg">{icon}</div>}
       </div>
-      <div className="flex items-baseline gap-1 mt-1">
+      <div className="flex items-baseline gap-1.5">
         <span className="text-2xl font-bold font-mono text-text-primary tracking-tight">
           {formattedValue}
         </span>

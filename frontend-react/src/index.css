@@ -64,7 +64,7 @@
 
 .site-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
   padding-inline: var(--space-md);
@@ -87,15 +87,173 @@
    ================================================================ */
 
 .section-padding {
-  padding-top: var(--space-3xl);
-  padding-bottom: var(--space-3xl);
+  padding-top: 80px;
+  padding-bottom: 80px;
 }
 
 @media (max-width: 768px) {
   .section-padding {
-    padding-top: var(--space-2xl);
-    padding-bottom: var(--space-2xl);
+    padding-top: 56px;
+    padding-bottom: 56px;
   }
+}
+
+/* ================================================================
+   Section Header — Consistent typography hierarchy
+   Eyebrow (12px) → Heading (20px) → Description (40px) → Content
+   ================================================================ */
+
+.section-header {
+  text-align: center;
+  max-width: 65ch;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 56px;
+}
+
+.section-header .section-eyebrow {
+  display: block;
+  font-family: 'Courier New', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.section-header h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+  margin-bottom: 20px;
+}
+
+.section-header p {
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  max-width: 55ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ================================================================
+   Page Header — For non-homepage pages (Predict, Rankings, etc.)
+   Centered eyebrow → heading → description with consistent rhythm
+   ================================================================ */
+
+.page-header {
+  text-align: center;
+  max-width: 55ch;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 48px;
+}
+
+.page-header .page-eyebrow {
+  display: block;
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.page-header h1 {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+
+.page-header p {
+  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  max-width: 50ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ================================================================
+   Surface Variants — Card depth hierarchy
+   ================================================================ */
+
+.surface-raised {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.surface-inset {
+  background: rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ================================================================
+   Form Utilities
+   ================================================================ */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-section-label {
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  letter-spacing: 0.05em;
+}
+
+/* ================================================================
+   Flip Card — 3D Animation System
+   ================================================================ */
+
+.flip-card {
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner,
+.flip-card.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
 }
 
 /* ================================================================
@@ -276,14 +434,14 @@ input[type="password"],
 select,
 textarea {
   width: 100%;
-  padding: 10px 14px;
+  padding: 12px 16px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   color: var(--color-text-primary);
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  transition: all 0.25s ease;
   outline: none;
 }
 
@@ -291,7 +449,8 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.12),
+              0 0 12px rgba(79, 140, 255, 0.06);
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -309,7 +468,7 @@ label {
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--color-text-secondary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   letter-spacing: 0.025em;
 }
 

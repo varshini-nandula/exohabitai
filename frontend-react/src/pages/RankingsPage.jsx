@@ -145,24 +145,20 @@ export default function RankingsPage() {
   };
 
   return (
-    <div className="site-container flex flex-col gap-8 py-10 md:py-14">
-      {/* HEADER */}
-      <section className="text-center max-w-2xl mx-auto pt-2">
-        <span className="font-mono text-xs font-semibold tracking-[0.25em] text-primary uppercase">
-          Observatory Archives Catalog
-        </span>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-2 mb-3 font-mono">
-          Exoplanet Habitability Rankings
-        </h1>
-        <p className="text-sm text-text-secondary leading-relaxed">
+    <div className="site-container section-padding flex flex-col" style={{ gap: '48px' }}>
+      {/* PAGE HEADER */}
+      <div className="page-header">
+        <span className="page-eyebrow text-primary">Observatory Archives Catalog</span>
+        <h1 className="font-mono">Exoplanet Habitability Rankings</h1>
+        <p>
           Examine the compiled registry of exoplanets classified by their computed habitability indexes.
         </p>
-      </section>
+      </div>
 
       {/* TOP 10 CHART VISUALIZATION */}
       {top10.length > 0 && (
         <section className="w-full">
-          <GlassCard glow={true} className="flex flex-col gap-6 w-full">
+          <GlassCard glow={true} variant="raised" className="flex flex-col gap-6 w-full p-8">
             <span className="font-mono text-xs font-semibold text-accent uppercase tracking-wider">
               Telemetry Chart: Top 10 Habitable Candidates
             </span>
@@ -198,48 +194,50 @@ export default function RankingsPage() {
       )}
 
       {/* FILTER & EXPLORER CONTROLS */}
-      <section className="flex flex-col md:flex-row gap-4 items-center justify-between border-b border-white/5 pb-4">
-        {/* Search */}
-        <div className="relative w-full md:max-w-md">
-          <span className="absolute inset-y-0 left-3 flex items-center text-text-muted">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </span>
-          <input
-            type="text"
-            className="pl-9 w-full font-mono text-xs py-2.5"
-            placeholder="Search candidate name..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1); // Reset page on filter
-            }}
-          />
-        </div>
+      <section>
+        <GlassCard variant="raised" className="flex flex-col md:flex-row gap-5 items-center justify-between p-6">
+          {/* Search */}
+          <div className="relative w-full md:max-w-md">
+            <span className="absolute inset-y-0 left-3 flex items-center text-text-muted">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input
+              type="text"
+              className="pl-9 w-full font-mono text-xs py-2.5"
+              placeholder="Search candidate name..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1); // Reset page on filter
+              }}
+            />
+          </div>
 
-        {/* Sorting selection */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-          <span className="font-mono text-xs text-text-secondary select-none uppercase font-semibold">
-            Telemetry Sort:
-          </span>
-          <select
-            className="font-mono text-xs max-w-[200px] py-2 px-3 rounded-lg"
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="rank">Database Rank (Asc)</option>
-            <option value="probability">Habitability Prob. (Desc)</option>
-          </select>
-        </div>
+          {/* Sorting selection */}
+          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+            <span className="font-mono text-xs text-text-secondary select-none uppercase font-semibold whitespace-nowrap">
+              Sort:
+            </span>
+            <select
+              className="font-mono text-xs max-w-[200px] py-2.5 px-4 rounded-lg"
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="rank">Database Rank (Asc)</option>
+              <option value="probability">Habitability Prob. (Desc)</option>
+            </select>
+          </div>
+        </GlassCard>
       </section>
 
       {/* DATA GRID & LIST CARD SECTION */}
       {paginatedPlanets.length > 0 ? (
-        <section className="flex flex-col gap-6">
+        <section className="flex flex-col gap-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {paginatedPlanets.map((planet, index) => {
               const probPercent = (planet.habitability_probability * 100).toFixed(1);
@@ -250,28 +248,34 @@ export default function RankingsPage() {
                 <GlassCard
                   key={planet.planet_name || index}
                   hoverable={true}
-                  className="flex items-center gap-4 py-4 px-5 relative overflow-hidden"
+                  className="flex items-center gap-5 py-5 px-6 relative overflow-hidden"
                 >
                   {/* Dynamic background line */}
                   <div
-                    className="absolute bottom-0 left-0 h-1 transition-all"
+                    className="absolute bottom-0 left-0 h-0.5 transition-all opacity-60"
                     style={{ width: `${probPercent}%`, backgroundColor: color }}
                   />
 
-                  {/* Rank Circle */}
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-mono font-bold text-xs bg-white/5 border border-white/10 text-text-primary shadow shrink-0">
+                  {/* Rank Badge */}
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-mono font-bold text-xs border shrink-0 text-text-primary"
+                    style={{
+                      borderColor: `${color}30`,
+                      background: `${color}10`,
+                    }}
+                  >
                     #{planet.rank}
                   </div>
 
                   {/* Planet Details */}
                   <div className="flex-grow min-w-0">
-                    <h4 className="font-bold text-sm font-mono text-text-primary truncate mb-1">
+                    <h4 className="font-bold text-sm font-mono text-text-primary truncate mb-2">
                       {planet.planet_name}
                     </h4>
                     {/* Compact probability progress line */}
-                    <div className="w-full bg-white/5 h-1 rounded overflow-hidden">
+                    <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded transition-all duration-1000"
+                        className="h-full rounded-full transition-all duration-1000"
                         style={{ width: `${probPercent}%`, backgroundColor: color }}
                       />
                     </div>
@@ -285,7 +289,7 @@ export default function RankingsPage() {
                     >
                       {probPercent}%
                     </span>
-                    <div className="text-[9px] font-mono uppercase text-text-muted mt-0.5">
+                    <div className="text-[9px] font-mono uppercase text-text-muted mt-1">
                       Prob
                     </div>
                   </div>
@@ -296,16 +300,16 @@ export default function RankingsPage() {
 
           {/* PAGINATION NAVIGATION CONTROLS */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-4 font-mono text-xs">
+            <div className="flex items-center justify-center gap-3 mt-2 font-mono text-xs">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="btn-secondary py-2 px-3 border-white/5 rounded-lg disabled:opacity-30 disabled:pointer-events-none"
+                className="btn-secondary py-2.5 px-4 border-white/5 rounded-xl disabled:opacity-30 disabled:pointer-events-none text-xs"
               >
                 ◀ Prev
               </button>
 
-              <span className="text-text-secondary select-none">
+              <span className="text-text-secondary select-none px-3 py-2 rounded-xl bg-white/5 border border-white/5">
                 Sector <strong className="text-text-primary">{currentPage}</strong> of{' '}
                 <strong className="text-text-primary">{totalPages}</strong>
               </span>
@@ -313,7 +317,7 @@ export default function RankingsPage() {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="btn-secondary py-2 px-3 border-white/5 rounded-lg disabled:opacity-30 disabled:pointer-events-none"
+                className="btn-secondary py-2.5 px-4 border-white/5 rounded-xl disabled:opacity-30 disabled:pointer-events-none text-xs"
               >
                 Next ▶
               </button>
