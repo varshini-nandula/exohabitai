@@ -1,6 +1,7 @@
 import client from './client';
 
 export const planetsAPI = {
-  addPlanet: (data) =>
-    client.post('/add_planet', data),
+  // Returns the authenticated user's own submissions (with moderation status).
+  getMySubmissions: () =>
+    client.get('/my_planets'),
 };
