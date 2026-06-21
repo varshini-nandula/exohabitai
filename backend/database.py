@@ -12,23 +12,42 @@ import sys
 import logging
 
 import pandas as pd
-from app import app, db, Exoplanet
+from app import app, db, Exoplanet, MODEL_VERSION
+from models import PlanetStatus
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("exohabitai.seed")
 
-CSV_PATH = "artifacts/ranked_exoplanets_by_habitability.csv"
+# Canonical ranked output produced by generate_ranked_dataset.py.
+CSV_PATH = "artifacts/exoplanets_ranked_latest.csv"
 
 # The columns we persist as named DB fields
 STORED_FEATURES = Exoplanet.STORED_FEATURES
 
 
+def _first_present(row, df, candidates):
+    """Return the first candidate column value present and non-null, else None."""
+    for col in candidates:
+        if col in df.columns and pd.notna(row.get(col)):
+            return row.get(col)
+    return None
+
+
 def seed_database(csv_path: str = CSV_PATH):
-    """Read the CSV and insert planets that don't already exist."""
+    """
+    Read the ranked CSV and insert planets that don't already exist.
+
+    Seeded planets are dataset-derived reference data, so they are inserted
+    as is_user_generated=False and status='approved' (immediately visible in
+    public rankings). Column names are detected defensively so this works
+    with both the current ranked export (planet_name / habitability_probability
+    / habitability) and older richer exports (P_NAME / P_HABITABLE_BINARY).
+    """
     try:
         df = pd.read_csv(csv_path)
     except FileNotFoundError:
-        logger.error("CSV not found: %s", csv_path)
+        logger.error("CSV not found: %s — run generate_ranked_dataset.py first",
+                     csv_path)
         sys.exit(1)
 
     logger.info("Loaded %d rows from %s", len(df), csv_path)
@@ -38,17 +57,18 @@ def seed_database(csv_path: str = CSV_PATH):
         skipped = 0
 
         for _, row in df.iterrows():
-            planet_name = row.get("P_NAME")
+            planet_name = _first_present(row, df, ["planet_name", "P_NAME"])
             if not planet_name or pd.isna(planet_name):
                 skipped += 1
                 continue
+            planet_name = str(planet_name).strip()
 
             # Avoid duplicates
             if Exoplanet.query.filter_by(planet_name=planet_name).first():
                 skipped += 1
                 continue
 
-            # Collect baseline features if present
+            # Collect baseline features if present (older exports only)
             feature_data = {}
             for feat in STORED_FEATURES:
                 if feat in df.columns and pd.notna(row.get(feat)):
@@ -59,17 +79,19 @@ def seed_database(csv_path: str = CSV_PATH):
                 else:
                     feature_data[feat] = None
 
-            # Probability column
-            prob_col = "Predicted_Habitability_Probability"
-            probability = (
-                float(row[prob_col])
-                if prob_col in df.columns and pd.notna(row.get(prob_col))
-                else None
+            # Probability column (current export uses habitability_probability)
+            prob_raw = _first_present(
+                row, df,
+                ["habitability_probability", "Predicted_Habitability_Probability"],
             )
+            probability = float(prob_raw) if prob_raw is not None else None
 
-            # Use dataset label for seeding (not the threshold-based label)
-            if "P_HABITABLE_BINARY" in df.columns and pd.notna(row.get("P_HABITABLE_BINARY")):
-                habitability = int(row["P_HABITABLE_BINARY"])
+            # Habitability label (current export uses habitability)
+            label_raw = _first_present(
+                row, df, ["habitability", "P_HABITABLE_BINARY"],
+            )
+            if label_raw is not None:
+                habitability = int(label_raw)
             elif probability is not None:
                 habitability = int(probability >= 0.5)
             else:
@@ -79,7 +101,9 @@ def seed_database(csv_path: str = CSV_PATH):
                 planet_name=planet_name,
                 habitability_probability=probability,
                 habitability=habitability,
+                model_version=MODEL_VERSION if probability is not None else None,
                 is_user_generated=False,
+                status=PlanetStatus.APPROVED,
                 **feature_data,
             )
 
