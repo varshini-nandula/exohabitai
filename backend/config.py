@@ -55,6 +55,12 @@ class Config:
     # --- Rate Limiting ---
     RATE_LIMIT_SECONDS = float(os.getenv("RATE_LIMIT_SECONDS", "1.0"))
 
+    # --- CORS ---
+    # Comma-separated list of allowed origins, or "*" for any (dev default).
+    # In production set CORS_ORIGINS to the frontend origin(s), e.g.
+    #   CORS_ORIGINS=https://exohabitai.example.com
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
+
 
 class TestConfig(Config):
     """
