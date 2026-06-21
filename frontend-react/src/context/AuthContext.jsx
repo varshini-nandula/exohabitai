@@ -22,10 +22,14 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('exohabitai_token'));
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const logoutTimerRef = useRef(null);
 
   const isAuthenticated = !!user && !!token;
+
+  // Clear any surfaced auth error (used by the login/register forms)
+  const clearError = useCallback(() => setError(null), []);
 
   // Clear the auto-logout timer
   const clearLogoutTimer = useCallback(() => {
@@ -103,22 +107,33 @@ export function AuthProvider({ children }) {
 
   // Login
   const login = useCallback(async (username, password) => {
-    const response = await authAPI.login(username, password);
-    const { access_token, user: userData } = response.data.data;
+    try {
+      const response = await authAPI.login(username, password);
+      const { access_token, user: userData } = response.data.data;
 
-    localStorage.setItem('exohabitai_token', access_token);
-    localStorage.setItem('exohabitai_user', JSON.stringify(userData));
-    setToken(access_token);
-    setUser(userData);
-    scheduleAutoLogout(access_token);
+      localStorage.setItem('exohabitai_token', access_token);
+      localStorage.setItem('exohabitai_user', JSON.stringify(userData));
+      setToken(access_token);
+      setUser(userData);
+      scheduleAutoLogout(access_token);
+      setError(null);
 
-    return userData;
+      return userData;
+    } catch (err) {
+      setError(extractError(err));
+      throw err;
+    }
   }, [scheduleAutoLogout]);
 
   // Register + auto-login
   const register = useCallback(async (username, email, password) => {
-    await authAPI.register(username, email, password);
-    // Auto-login after registration
+    try {
+      await authAPI.register(username, email, password);
+    } catch (err) {
+      setError(extractError(err));
+      throw err;
+    }
+    // Auto-login after registration (login sets/clears error itself)
     return login(username, password);
   }, [login]);
 
@@ -138,6 +153,8 @@ export function AuthProvider({ children }) {
     token,
     isAuthenticated,
     isLoading,
+    error,
+    clearError,
     login,
     register,
     logout,
