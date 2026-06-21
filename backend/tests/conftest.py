@@ -302,3 +302,19 @@ def create_admin(client):
     resp = login_user(client, username="admin", password="adminpass123")
     token = resp.get_json()["data"]["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+def approve_all_planets():
+    """
+    Mark every stored planet as APPROVED.
+
+    User-submitted planets are PENDING by default and hidden from public
+    rankings. Tests that exercise /rank content seed planets and then call
+    this helper to make them visible — mirroring an admin approval.
+    """
+    from extensions import db
+    from models.exoplanet import Exoplanet, PlanetStatus
+    Exoplanet.query.update(
+        {Exoplanet.status: PlanetStatus.APPROVED}, synchronize_session=False
+    )
+    db.session.commit()
