@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { planetsAPI } from '../api/planets';
+import { predictionAPI } from '../api/prediction';
 import { extractError } from '../api/client';
 import GlassCard from '../components/GlassCard';
 import Tooltip from '../components/Tooltip';
@@ -35,6 +35,7 @@ export default function AddPlanetPage() {
   const [formData, setFormData] = useState({ ...EARTH_DEFAULTS });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [result, setResult] = useState(null);
   const [errorState, setErrorState] = useState(null);
 
   const handleInputChange = (field, val) => {
@@ -50,6 +51,7 @@ export default function AddPlanetPage() {
   const handleReset = () => {
     setFormData({ ...EARTH_DEFAULTS });
     setSuccess(false);
+    setResult(null);
     setErrorState(null);
   };
 
@@ -81,9 +83,17 @@ export default function AddPlanetPage() {
     }
 
     try {
-      const res = await planetsAPI.addPlanet(formData);
-      if (res.data?.status === 'success' || res.data?.data?.stored) {
+      const res = await predictionAPI.predictAndStore(formData);
+      const data = res.data?.data;
+      if (res.data?.status === 'success' && data?.stored) {
+        setResult(data);
         setSuccess(true);
+      } else if (data && data.stored === false) {
+        // Prediction ran but storage was rejected (e.g. duplicate name)
+        setErrorState({
+          variant: 'generic',
+          message: data.storage_message || 'Database rejected candidate addition.',
+        });
       } else {
         setErrorState({
           variant: 'generic',
@@ -93,7 +103,7 @@ export default function AddPlanetPage() {
     } catch (err) {
       console.error('Submit candidate to database failed:', err);
       const extracted = extractError(err);
-      
+
       let errorVariant = 'generic';
       if (err.response?.status === 429) {
         errorVariant = 'rate-limit';
@@ -120,7 +130,7 @@ export default function AddPlanetPage() {
           hoverable={false}
           animate={true}
           variant="raised"
-          className="w-full max-w-md border-success/20 text-center p-10 flex flex-col items-center gap-8"
+          className="w-full max-w-md border-success/20 text-center p-12 flex flex-col items-center gap-10"
         >
           <div className="w-16 h-16 rounded-full bg-success/15 border border-success/30 flex items-center justify-center text-success text-3xl animate-bounce">
             ✓
@@ -130,10 +140,27 @@ export default function AddPlanetPage() {
               TRANSMISSION RECEIVED
             </span>
             <h2 className="text-xl font-bold font-mono text-text-primary tracking-tight mt-3">
-              Candidate Charted Successfully
+              Candidate Submitted Successfully
             </h2>
-            <p className="text-xs text-text-secondary leading-relaxed mt-3 max-w-xs" style={{ lineHeight: '1.7' }}>
-              Exoplanet <strong>{formData.planet_name}</strong> is officially entered into the database registry and queued for future model retraining runs.
+
+            {result && (
+              <div className="mt-6 mb-2 flex flex-col items-center gap-2">
+                <span className="font-mono text-[10px] tracking-[0.2em] text-text-secondary uppercase">
+                  Predicted Habitability
+                </span>
+                <span className="font-mono text-3xl font-bold text-primary">
+                  {(result.habitability_probability * 100).toFixed(1)}%
+                </span>
+                <span className={`font-mono text-[10px] tracking-wider uppercase px-2 py-0.5 rounded border ${result.habitability === 1 ? 'text-success border-success/40 bg-success/10' : 'text-text-secondary border-white/10'}`}>
+                  {result.habitability === 1 ? 'Potentially Habitable' : 'Non-Habitable'}
+                </span>
+              </div>
+            )}
+
+            <p className="text-xs text-text-secondary leading-relaxed mt-4 max-w-xs" style={{ lineHeight: '1.7' }}>
+              Exoplanet <strong>{formData.planet_name}</strong> has been recorded and is{' '}
+              <strong className="text-highlight">pending admin approval</strong>. It will appear in
+              public rankings once a moderator approves it. Track its status in your History.
             </p>
           </div>
 
@@ -141,8 +168,8 @@ export default function AddPlanetPage() {
             <button onClick={handleReset} className="btn-primary w-full text-xs py-3">
               Chart Another Candidate
             </button>
-            <Link to="/rankings" className="btn-secondary w-full text-xs py-3 border-white/5">
-              View Updated Rankings
+            <Link to="/history" className="btn-secondary w-full text-xs py-3 border-white/5">
+              View My Submissions
             </Link>
           </div>
         </GlassCard>
@@ -151,7 +178,7 @@ export default function AddPlanetPage() {
   }
 
   return (
-    <div className="site-container section-padding flex flex-col" style={{ gap: '48px' }}>
+    <div className="site-container section-padding flex flex-col" style={{ gap: '56px' }}>
       {/* PAGE HEADER */}
       <div className="page-header">
         <span className="page-eyebrow text-accent">Observatory Catalog Submitter</span>
@@ -174,8 +201,8 @@ export default function AddPlanetPage() {
         )}
 
         <form onSubmit={handleSubmit}>
-          <GlassCard glow={true} variant="raised" className="flex flex-col gap-7 w-full p-8">
-            <div className="border-b border-white/5 pb-5">
+          <GlassCard glow={true} variant="raised" className="flex flex-col gap-8 w-full p-10">
+            <div className="border-b border-white/5 pb-6">
               <span className="font-mono text-sm font-bold text-text-primary tracking-wide uppercase">
                 Registry Telemetry Parameters
               </span>
@@ -196,9 +223,9 @@ export default function AddPlanetPage() {
             </div>
 
             {/* Three Column Attributes Inputs */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               {/* Column 1: Planet Properties */}
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-7">
                 <span className="form-section-label text-primary">
                   Planet Dimensions
                 </span>
@@ -237,7 +264,7 @@ export default function AddPlanetPage() {
               </div>
 
               {/* Column 2: Orbit Properties */}
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-7">
                 <span className="form-section-label text-accent">
                   Orbital Mechanics
                 </span>
@@ -260,7 +287,7 @@ export default function AddPlanetPage() {
               </div>
 
               {/* Column 3: Star Properties */}
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-7">
                 <span className="form-section-label text-highlight">
                   Stellar Attributes
                 </span>
@@ -294,7 +321,7 @@ export default function AddPlanetPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full mt-4 font-mono shadow-[0_0_20px_rgba(94,234,212,0.25)]"
+              className="btn-primary w-full mt-6 font-mono shadow-[0_0_20px_rgba(94,234,212,0.25)]"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
