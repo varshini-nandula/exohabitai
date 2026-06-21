@@ -56,6 +56,17 @@
   --space-2xl: 64px;
   --space-3xl: 96px;
   --space-4xl: 128px;
+
+  /* Card Composition Tokens */
+  --card-padding: 32px;
+  --card-padding-lg: 40px;
+  --card-padding-xl: 48px;
+  --card-gap-section: 28px;
+  --card-gap-title: 16px;
+  --card-gap-desc: 24px;
+  --card-gap-content: 20px;
+  --card-gap-actions: 28px;
+  --card-content-inset: 4px;
 }
 
 /* ================================================================
@@ -207,6 +218,7 @@
 .form-group {
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
 
 .form-section-label {
@@ -214,10 +226,47 @@
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   letter-spacing: 0.05em;
+}
+
+/* ================================================================
+   Card Composition Utilities
+   ================================================================ */
+
+.card-body {
+  padding: var(--card-padding);
+}
+
+.card-body-lg {
+  padding: var(--card-padding-lg);
+}
+
+.card-body-xl {
+  padding: var(--card-padding-xl);
+}
+
+/* Internal spacing rhythm for card content */
+.card-eyebrow {
+  font-family: 'Courier New', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.card-eyebrow+.card-title {
+  margin-top: var(--card-gap-title);
+}
+
+.card-title+.card-desc {
+  margin-top: var(--card-gap-content);
+}
+
+.card-desc+.card-metrics {
+  margin-top: var(--card-gap-actions);
 }
 
 /* ================================================================
@@ -263,13 +312,11 @@
 .section-divider {
   width: 100%;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.06) 20%,
-    rgba(255, 255, 255, 0.06) 80%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.06) 20%,
+      rgba(255, 255, 255, 0.06) 80%,
+      transparent 100%);
 }
 
 /* ================================================================
@@ -356,17 +403,17 @@ body {
 
 .glow-border {
   box-shadow: 0 0 0 1px rgba(79, 140, 255, 0.1),
-              0 0 20px rgba(79, 140, 255, 0.05);
+    0 0 20px rgba(79, 140, 255, 0.05);
 }
 
 .glow-border:hover {
   box-shadow: 0 0 0 1px rgba(79, 140, 255, 0.2),
-              0 0 30px rgba(79, 140, 255, 0.1);
+    0 0 30px rgba(79, 140, 255, 0.1);
 }
 
 .glow-accent {
   box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.1),
-              0 0 20px rgba(94, 234, 212, 0.05);
+    0 0 20px rgba(94, 234, 212, 0.05);
 }
 
 /* ================================================================
@@ -392,24 +439,51 @@ body {
    ================================================================ */
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  33% { transform: translateY(-10px) rotate(1deg); }
-  66% { transform: translateY(5px) rotate(-1deg); }
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  33% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+
+  66% {
+    transform: translateY(5px) rotate(-1deg);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
 }
 
 @keyframes orbit {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeInUp {
@@ -417,6 +491,7 @@ body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -434,7 +509,7 @@ input[type="password"],
 select,
 textarea {
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 18px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
@@ -450,7 +525,7 @@ select:focus,
 textarea:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.12),
-              0 0 12px rgba(79, 140, 255, 0.06);
+    0 0 12px rgba(79, 140, 255, 0.06);
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -468,7 +543,7 @@ label {
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--color-text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   letter-spacing: 0.025em;
 }
 
@@ -552,5 +627,3 @@ label {
   color: var(--color-text-primary);
   background: rgba(255, 255, 255, 0.05);
 }
-
-
