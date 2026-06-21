@@ -60,12 +60,12 @@ export default function LoginPage() {
         hoverable={false}
         animate={true}
         variant="raised"
-        className="w-full max-w-md border-primary/20 relative overflow-hidden p-10"
+        className="w-full max-w-md border-primary/20 relative overflow-hidden p-12"
       >
         {/* Glow orb */}
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="text-center mb-10">
+        <div className="text-center mb-12">
           <span className="font-mono text-[10px] tracking-[0.25em] text-primary uppercase font-bold">
             OBSERVATORY SECURITY
           </span>
@@ -78,7 +78,7 @@ export default function LoginPage() {
         </div>
 
         {activeError && (
-          <div className="mb-8 text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-4 rounded-lg leading-relaxed">
+          <div className="mb-10 text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-5 rounded-lg leading-relaxed">
             <div className="font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <span>⚠️</span> Authorization Error
             </div>
@@ -86,7 +86,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-7">
           <div className="flex flex-col">
             <label htmlFor="username">Username</label>
             <input
@@ -117,7 +117,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="btn-primary mt-4 w-full"
+            className="btn-primary mt-6 w-full"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -134,7 +134,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="text-center mt-8 pt-8 border-t border-white/5 text-xs text-text-secondary">
+        <div className="text-center mt-10 pt-10 border-t border-white/5 text-xs text-text-secondary">
           Not yet a registered navigator?{' '}
           <Link
             to={`/register${location.search}`}

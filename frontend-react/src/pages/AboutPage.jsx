@@ -132,19 +132,19 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             {/* Dataset credibility section */}
             <motion.div variants={itemVariants} className="lg:col-span-7 flex flex-col justify-between">
-              <GlassCard glow={true} variant="raised" className="h-full flex flex-col justify-between gap-6 p-8">
+              <GlassCard glow={true} variant="raised" className="h-full flex flex-col justify-between gap-7 p-10">
                 <div>
                   <span className="font-mono text-xs font-semibold text-primary tracking-wider uppercase">
                     SCIENTIFIC FOUNDATION
                   </span>
-                  <h3 className="text-xl font-bold font-mono text-text-primary mt-4">
+                  <h3 className="text-xl font-bold font-mono text-text-primary mt-5">
                     PHL Exoplanet Catalog Archive
                   </h3>
-                  <p className="text-sm text-text-secondary mt-4" style={{ lineHeight: '1.7', maxWidth: '50ch' }}>
+                  <p className="text-sm text-text-secondary mt-5" style={{ lineHeight: '1.7', maxWidth: '50ch' }}>
                     Our classification networks are trained on verified data curated by the Planetary Habitability Laboratory (PHL) at UPR Arecibo.
                   </p>
-                  <div className="grid grid-cols-2 gap-5 mt-8">
-                    <div className="p-5 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-2">
+                  <div className="grid grid-cols-2 gap-5 mt-10">
+                    <div className="p-6 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
                       <span className="text-[10px] text-text-muted font-mono uppercase font-semibold">
                         Catalog Records
                       </span>
@@ -152,7 +152,7 @@ export default function AboutPage() {
                         {stats ? stats.total_planets.toLocaleString() : '6,000+'}
                       </span>
                     </div>
-                    <div className="p-5 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-2">
+                    <div className="p-6 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
                       <span className="text-[10px] text-text-muted font-mono uppercase font-semibold">
                         Parameters Loaded
                       </span>
@@ -163,7 +163,7 @@ export default function AboutPage() {
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-white/5 text-xs text-text-muted leading-relaxed" style={{ lineHeight: '1.7' }}>
+                <div className="pt-7 border-t border-white/5 text-xs text-text-muted leading-relaxed" style={{ lineHeight: '1.7' }}>
                   <strong>Dataset Attributes Evaluated:</strong> Planet Radius, Planet Mass, Stellar Temperature, Semi-Major Axis, Stellar Luminosity, Orbital Period, Planet Density, Planet Surface Temperature, Stellar Metallicity.
                 </div>
               </GlassCard>
@@ -171,7 +171,7 @@ export default function AboutPage() {
 
             {/* Model Status control panel */}
             <motion.div variants={itemVariants} className="lg:col-span-5">
-              <GlassCard glow={true} hoverable={false} variant="raised" className="h-full flex flex-col justify-between gap-6 border-accent/20 p-8">
+              <GlassCard glow={true} hoverable={false} variant="raised" className="h-full flex flex-col justify-between gap-7 border-accent/20 p-10">
                 <div>
                   <span className="font-mono text-xs font-semibold text-accent tracking-wider uppercase flex items-center gap-1.5">
                     <span className="relative flex h-2 w-2">
@@ -180,7 +180,7 @@ export default function AboutPage() {
                     </span>
                     Observatory Telemetry Status
                   </span>
-                  <h3 className="text-xl font-bold font-mono text-text-primary mt-4">
+                  <h3 className="text-xl font-bold font-mono text-text-primary mt-5">
                     Mainframe Control Panel
                   </h3>
 
@@ -195,31 +195,31 @@ export default function AboutPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-4 mt-6 font-mono text-xs text-text-secondary">
-                      <div className="flex justify-between items-center py-3 border-b border-white/5">
+                    <div className="flex flex-col gap-4 mt-8 font-mono text-xs text-text-secondary">
+                      <div className="flex justify-between items-center py-3.5 border-b border-white/5">
                         <span>Model Engine</span>
                         <span className="text-text-primary font-semibold">Random Forest</span>
                       </div>
-                      <div className="flex justify-between items-center py-3 border-b border-white/5">
+                      <div className="flex justify-between items-center py-3.5 border-b border-white/5">
                         <span>Version</span>
                         <span className="text-text-primary font-semibold">
                           {health?.model_version || 'v1.0.0'}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center py-3 border-b border-white/5">
+                      <div className="flex justify-between items-center py-3.5 border-b border-white/5">
                         <span>Database Connection</span>
                         <span className={health?.db_connected ? 'text-success font-semibold' : 'text-danger font-semibold'}>
                           {health?.db_connected ? 'ACTIVE' : 'OFFLINE'}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center py-3 border-b border-white/5">
+                      <div className="flex justify-between items-center py-3.5 border-b border-white/5">
                         <span>Retraining State</span>
                         <span className={retraining?.is_running ? 'text-warning font-semibold animate-pulse' : 'text-text-muted font-semibold'}>
                           {retraining?.is_running ? 'RUNNING' : 'STANDBY'}
                         </span>
                       </div>
                       {retraining?.last_completed && (
-                        <div className="flex justify-between items-center py-3 border-b border-white/5">
+                        <div className="flex justify-between items-center py-3.5 border-b border-white/5">
                           <span>Last Engine Calibr.</span>
                           <span className="text-text-primary text-[10px]">
                             {new Date(retraining.last_completed).toLocaleDateString()}
@@ -230,7 +230,7 @@ export default function AboutPage() {
                   )}
                 </div>
 
-                <div className="text-[10px] text-text-muted font-mono text-center pt-3">
+                <div className="text-[10px] text-text-muted font-mono text-center pt-5">
                   SATELLITE INTERFEROMETRY SYSTEM ONBOARD &amp; ACTIVE.
                 </div>
               </GlassCard>
@@ -262,14 +262,14 @@ export default function AboutPage() {
                 className="min-h-[220px]"
                 front={
                   <>
-                    <div className="text-3xl mb-2">{cap.icon}</div>
+                    <div className="text-3xl mb-4">{cap.icon}</div>
                     <h4 className="font-bold font-mono text-text-primary text-sm">{cap.title}</h4>
                   </>
                 }
                 back={
                   <>
-                    <div className="text-xl mb-1">{cap.icon}</div>
-                    <h4 className="font-bold font-mono text-text-primary text-xs mb-2">{cap.title}</h4>
+                    <div className="text-xl mb-2">{cap.icon}</div>
+                    <h4 className="font-bold font-mono text-text-primary text-xs mb-3">{cap.title}</h4>
                     <p className="text-xs text-text-secondary" style={{ lineHeight: '1.7', maxWidth: '30ch' }}>
                       {cap.description}
                     </p>

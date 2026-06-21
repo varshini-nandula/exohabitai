@@ -85,11 +85,11 @@ export default function RegisterPage() {
         hoverable={false}
         animate={true}
         variant="raised"
-        className="w-full max-w-md border-primary/20 relative overflow-hidden p-10"
+        className="w-full max-w-md border-primary/20 relative overflow-hidden p-12"
       >
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-accent/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="text-center mb-10">
+        <div className="text-center mb-12">
           <span className="font-mono text-[10px] tracking-[0.25em] text-accent uppercase font-bold">
             OBSERVATORY REGISTRY
           </span>
@@ -102,7 +102,7 @@ export default function RegisterPage() {
         </div>
 
         {activeError && (
-          <div className="mb-8 text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-4 rounded-lg leading-relaxed">
+          <div className="mb-10 text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-5 rounded-lg leading-relaxed">
             <div className="font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <span>⚠️</span> Registration Alert
             </div>
@@ -110,7 +110,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-7">
           <div className="flex flex-col">
             <label htmlFor="username">Username</label>
             <input
@@ -169,7 +169,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            className="btn-primary mt-4 w-full shadow-[0_0_20px_rgba(94,234,212,0.2)]"
+            className="btn-primary mt-6 w-full shadow-[0_0_20px_rgba(94,234,212,0.2)]"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -186,7 +186,7 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <div className="text-center mt-8 pt-8 border-t border-white/5 text-xs text-text-secondary">
+        <div className="text-center mt-10 pt-10 border-t border-white/5 text-xs text-text-secondary">
           Already a registered navigator?{' '}
           <Link
             to={`/login${location.search}`}
