@@ -60,13 +60,13 @@ export default function ErrorState({
       hoverable={false}
       animate={true}
       variant="raised"
-      className={`flex flex-col items-center justify-center text-center p-10 max-w-lg mx-auto my-8 border-danger/25 ${className}`}
+      className={`flex flex-col items-center justify-center text-center p-14 max-w-lg mx-auto my-8 border-danger/25 ${className}`}
     >
-      <div className="mb-6">{getIcon()}</div>
-      <h3 className="text-lg font-bold font-mono text-text-primary tracking-tight mb-3">
+      <div className="mb-8">{getIcon()}</div>
+      <h3 className="text-lg font-bold font-mono text-text-primary tracking-tight mb-4">
         {title || defaultTitles[variant]}
       </h3>
-      <p className="text-sm text-text-secondary mb-8 leading-relaxed max-w-sm" style={{ lineHeight: '1.7' }}>
+      <p className="text-sm text-text-secondary mb-10 leading-relaxed max-w-sm" style={{ lineHeight: '1.7' }}>
         {message || defaultMessages[variant]}
       </p>
       {onRetry && (

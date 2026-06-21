@@ -44,20 +44,20 @@ export default function StatCard({
   }, [value, decimals]);
 
   // Format helper for display
-  const formattedValue = typeof displayValue === 'number' 
+  const formattedValue = typeof displayValue === 'number'
     ? displayValue.toLocaleString(undefined, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-      })
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    })
     : displayValue;
 
   return (
-    <GlassCard glow={glow} hoverable={true} animate={true} delay={delay} className="flex flex-col gap-3 min-w-[140px] flex-1 p-6">
+    <GlassCard glow={glow} hoverable={true} animate={true} delay={delay} className="flex flex-col gap-5 min-w-[140px] flex-1 p-7">
       <div className="flex items-center justify-between gap-3 text-text-secondary">
         <span className="text-[10px] uppercase tracking-wider font-semibold font-mono leading-tight">{label}</span>
         {icon && <div className="text-primary text-lg">{icon}</div>}
       </div>
-      <div className="flex items-baseline gap-1.5">
+      <div className="flex items-baseline gap-1.5 mt-auto">
         <span className="text-2xl font-bold font-mono text-text-primary tracking-tight">
           {formattedValue}
         </span>
