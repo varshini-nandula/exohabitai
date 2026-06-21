@@ -1,21 +1,115 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { planetsAPI } from '../api/planets';
+import { extractError } from '../api/client';
+import GlassCard from '../components/GlassCard';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorState from '../components/ErrorState';
 import EmptyState from '../components/EmptyState';
 
+const STATUS_STYLES = {
+  approved: { label: 'Approved', cls: 'text-success border-success/40 bg-success/10' },
+  pending: { label: 'Pending Review', cls: 'text-highlight border-highlight/40 bg-highlight/10' },
+  rejected: { label: 'Rejected', cls: 'text-danger border-danger/40 bg-danger/10' },
+};
+
 export default function HistoryPage() {
-  const telescopeIcon = (
-    <svg className="w-16 h-16 opacity-40 animate-pulse text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  );
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [planets, setPlanets] = useState([]);
+  const [errorState, setErrorState] = useState(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setErrorState(null);
+    const fetchSubmissions = async () => {
+      try {
+        const res = await planetsAPI.getMySubmissions();
+        if (!active) return;
+        if (res.data?.status === 'success') {
+          setPlanets(res.data.data?.planets || []);
+        } else {
+          setErrorState({
+            variant: 'generic',
+            message: res.data?.message || 'Could not retrieve submission history.',
+          });
+        }
+        setLoading(false);
+      } catch (err) {
+        if (!active) return;
+        setErrorState({
+          variant: !err.response ? 'offline' : 'generic',
+          message: extractError(err),
+        });
+        setLoading(false);
+      }
+    };
+    fetchSubmissions();
+    return () => { active = false; };
+  }, [reloadToken]);
+
+  if (loading) {
+    return <div className="site-container py-16"><LoadingSpinner message="Retrieving your submission history..." /></div>;
+  }
+
+  if (errorState) {
+    return (
+      <div className="site-container py-16">
+        <ErrorState
+          variant={errorState.variant}
+          message={errorState.message}
+          onRetry={() => setReloadToken((t) => t + 1)}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="site-container flex-grow flex items-center justify-center py-10 md:py-16">
-      <EmptyState
-        icon={telescopeIcon}
-        title="Prediction History System"
-        description="The predictive history audit logs and telemetry databases will be integrated in a future mainframe update. Stay tuned!"
-        className="w-full max-w-md border-primary/10 bg-space-800/20"
-      />
+    <div className="site-container section-padding flex flex-col" style={{ gap: '48px' }}>
+      <div className="page-header">
+        <span className="page-eyebrow text-accent">Navigator Logbook</span>
+        <h1 className="font-mono">My Submissions</h1>
+        <p>
+          Track the candidates you have charted and their moderation status. Approved
+          candidates appear in the public rankings.
+        </p>
+      </div>
+
+      {planets.length === 0 ? (
+        <EmptyState
+          title="No Submissions Yet"
+          description="You haven't charted any exoplanet candidates. Submit one to see it tracked here."
+          actionLabel="Add a Candidate"
+          onAction={() => navigate('/add-planet')}
+        />
+      ) : (
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {planets.map((p) => {
+            const status = STATUS_STYLES[p.status] || STATUS_STYLES.pending;
+            const prob = p.habitability_probability != null
+              ? (p.habitability_probability * 100).toFixed(1)
+              : '—';
+            return (
+              <GlassCard key={p.id} hoverable={true} className="flex items-center gap-5 py-6 px-8">
+                <div className="flex-grow min-w-0">
+                  <h4 className="font-bold text-sm font-mono text-text-primary truncate mb-2">
+                    {p.planet_name}
+                  </h4>
+                  <span className={`font-mono text-[10px] tracking-wider uppercase px-2 py-0.5 rounded border ${status.cls}`}>
+                    {status.label}
+                  </span>
+                </div>
+                <div className="text-right shrink-0 pl-4">
+                  <span className="font-bold font-mono text-sm text-primary">{prob}{prob !== '—' ? '%' : ''}</span>
+                  <div className="text-[9px] font-mono uppercase text-text-muted mt-1">Habitability</div>
+                </div>
+              </GlassCard>
+            );
+          })}
+        </section>
+      )}
     </div>
   );
 }
