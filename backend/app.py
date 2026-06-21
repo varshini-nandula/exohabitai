@@ -60,7 +60,12 @@ logger = logging.getLogger("exohabitai")
 
 app = Flask(__name__)
 app.config.from_object(Config)
-CORS(app)
+# Restrict CORS to configured origins in production (default "*" for dev).
+_cors_origins = (
+    "*" if Config.CORS_ORIGINS.strip() == "*"
+    else [o.strip() for o in Config.CORS_ORIGINS.split(",") if o.strip()]
+)
+CORS(app, origins=_cors_origins)
 
 # Bind extensions to this app instance
 db.init_app(app)
@@ -74,7 +79,7 @@ from cli import register_cli_commands  # noqa: E402
 register_cli_commands(app)
 
 # Import models so SQLAlchemy registers them before create_all()
-from models import User, UserRole, Exoplanet, RetrainingLog  # noqa: E402
+from models import User, UserRole, Exoplanet, PlanetStatus, RetrainingLog  # noqa: E402
 from auth.decorators import admin_required, get_current_user  # noqa: E402
 
 # Log JWT config warnings
@@ -754,60 +759,35 @@ def predict():
         return api_response("error", f"Prediction failed: {exc}", code=500)
 
 
-# ---- ADD PLANET (storage only — no prediction) ----
+# ---- ADD PLANET (DEPRECATED) ----
 @app.route("/add_planet", methods=["POST"])
 def add_planet():
     """
-    Store one or many planets in the database (no prediction).
+    DEPRECATED — store-only endpoint with no prediction and no auth.
 
-    Accepts:
-        - single object:  { "planet_name": "...", "P_RADIUS": 1.2, ... }
-        - batch array:    [{ ... }, { ... }]
+    Superseded by the authenticated POST /predict_and_store, which predicts,
+    records ownership (created_by_user_id), and marks the submission as
+    PENDING for moderation. Returns 410 Gone to steer clients to the new path.
     """
-    try:
-        payload = request.get_json(silent=True)
-        if payload is None:
-            return api_response("error", "Request body must be valid JSON", code=400)
-
-        is_batch = isinstance(payload, list)
-        items = payload if is_batch else [payload]
-
-        if not items:
-            return api_response("error", "Empty input list", code=400)
-
-        results = []
-        for idx, item in enumerate(items):
-            features, err, _warnings = validate_input(item)
-            if err:
-                return api_response(
-                    "error",
-                    f"Validation failed (item {idx}): {err}",
-                    code=400,
-                )
-
-            ok, msg = store_planet(item)
-            results.append({
-                "planet_name": item.get("planet_name", f"Unknown-{idx}"),
-                "stored": ok,
-                "message": msg,
-            })
-
-        return api_response(
-            "success",
-            "Add planet request processed",
-            results if is_batch else results[0],
-        )
-
-    except Exception as exc:
-        logger.exception("Add planet error")
-        return api_response("error", f"Add planet failed: {exc}", code=500)
+    return api_response(
+        "error",
+        "This endpoint is deprecated. Use POST /predict_and_store "
+        "(authentication required) to submit a planet.",
+        {"superseded_by": "/predict_and_store"},
+        code=410,
+    )
 
 
 # ---- PREDICT AND STORE (combined) ----
 @app.route("/predict_and_store", methods=["POST"])
+@jwt_required()
 def predict_and_store():
     """
     Predict habitability AND store the planet + result in the database.
+
+    Authentication required — storing a planet links it to the submitting
+    user (created_by_user_id) and records it as a PENDING submission that
+    only becomes visible in public rankings after an admin approves it.
 
     Accepts:
         - single object:  { "planet_name": "...", "P_RADIUS": 1.2, ... }
@@ -818,6 +798,12 @@ def predict_and_store():
     try:
         if not _check_rate_limit():
             return api_response("error", "Rate limit exceeded. Try again shortly.", code=429)
+
+        # Identify the submitting user for ownership tracking.
+        try:
+            current_user_id = int(get_jwt_identity())
+        except (TypeError, ValueError):
+            current_user_id = None
 
         payload = request.get_json(silent=True)
         if payload is None:
@@ -835,11 +821,14 @@ def predict_and_store():
             if err_resp is not None:
                 return err_resp
 
-            # Storage is optional — prediction is still returned on DB failure
+            # Storage is optional — prediction is still returned on DB failure.
+            # User submissions default to PENDING status (see Exoplanet model)
+            # and are owned by the authenticated submitter.
             ok, msg = store_planet(
                 item,
                 probability=result["habitability_probability"],
                 label=result["habitability"],
+                user_id=current_user_id,
             )
 
             result["stored"] = ok
@@ -995,9 +984,12 @@ def rank_planets():
 
         raw_limit = request.args.get("limit", "all").strip().lower()
 
+        # Public rankings only show APPROVED planets. User submissions stay
+        # pending (and hidden) until an admin approves them.
         query = (
             Exoplanet.query
             .filter(Exoplanet.habitability_probability.isnot(None))
+            .filter(Exoplanet.status == PlanetStatus.APPROVED)
             .order_by(Exoplanet.habitability_probability.desc())
         )
 
@@ -1167,6 +1159,24 @@ def stats():
             .count()
         )
 
+        # Moderation breakdown — "approved" is the count visible in public
+        # rankings; "pending" awaits admin review.
+        approved = (
+            Exoplanet.query
+            .filter(Exoplanet.status == PlanetStatus.APPROVED)
+            .count()
+        )
+        pending = (
+            Exoplanet.query
+            .filter(Exoplanet.status == PlanetStatus.PENDING)
+            .count()
+        )
+        rejected = (
+            Exoplanet.query
+            .filter(Exoplanet.status == PlanetStatus.REJECTED)
+            .count()
+        )
+
         return api_response(
             "success",
             "Database statistics retrieved",
@@ -1177,6 +1187,9 @@ def stats():
                 "non_habitable": with_prediction - habitable,
                 "user_generated": user_generated,
                 "dataset_seeded": total - user_generated,
+                "approved": approved,
+                "pending": pending,
+                "rejected": rejected,
                 "threshold": Config.THRESHOLD,
             },
         )
@@ -1184,6 +1197,57 @@ def stats():
     except Exception as exc:
         logger.exception("Stats error")
         return api_response("error", f"Stats retrieval failed: {exc}", code=500)
+
+
+# ---- MY PLANETS (authenticated user's own submissions) ----
+@app.route("/my_planets", methods=["GET"])
+@jwt_required()
+def my_planets():
+    """
+    Return the submissions created by the authenticated user.
+
+    Powers the frontend History page: each entry includes the moderation
+    status (pending / approved / rejected) and the prediction result so the
+    user can track what they submitted and whether it has been approved.
+    """
+    try:
+        try:
+            current_user_id = int(get_jwt_identity())
+        except (TypeError, ValueError):
+            return api_response("error", "Invalid user identity", code=401)
+
+        planets = (
+            Exoplanet.query
+            .filter(Exoplanet.created_by_user_id == current_user_id)
+            .order_by(Exoplanet.created_at.desc())
+            .all()
+        )
+
+        entries = [
+            {
+                "id": p.id,
+                "planet_name": p.planet_name,
+                "habitability": p.habitability,
+                "habitability_probability": (
+                    round(p.habitability_probability, 6)
+                    if p.habitability_probability is not None else None
+                ),
+                "status": p.status,
+                "model_version": p.model_version,
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+            }
+            for p in planets
+        ]
+
+        return api_response(
+            "success",
+            f"Retrieved {len(entries)} submission(s)",
+            {"count": len(entries), "planets": entries},
+        )
+
+    except Exception as exc:
+        logger.exception("My planets error")
+        return api_response("error", f"Failed to retrieve submissions: {exc}", code=500)
 
 
 # ---- TRIGGER RETRAINING (Tasks 1,2,3,4,6 — async, validated, audited) ----
