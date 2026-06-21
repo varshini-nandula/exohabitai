@@ -125,15 +125,15 @@ export default function HomePage() {
             className="grid grid-cols-3 gap-5 sm:gap-6 w-full"
             style={{ marginTop: '48px', maxWidth: '560px' }}
           >
-            <div className="glass rounded-xl py-5 px-4 flex flex-col items-center gap-2 text-center">
+            <div className="glass rounded-xl py-6 px-5 flex flex-col items-center gap-3 text-center">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-accent leading-none">6,000+</span>
               <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider leading-tight">Planet Records</span>
             </div>
-            <div className="glass rounded-xl py-5 px-4 flex flex-col items-center gap-2 text-center">
+            <div className="glass rounded-xl py-6 px-5 flex flex-col items-center gap-3 text-center">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-primary leading-none">9</span>
               <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider leading-tight">Planetary Features</span>
             </div>
-            <div className="glass rounded-xl py-5 px-4 flex flex-col items-center gap-2 text-center">
+            <div className="glass rounded-xl py-6 px-5 flex flex-col items-center gap-3 text-center">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-success leading-none">96%</span>
               <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider leading-tight">Model Accuracy</span>
             </div>
@@ -192,22 +192,22 @@ export default function HomePage() {
                 key={card.step}
                 animate={true}
                 delay={parseFloat(card.step) * 0.1}
-                className="flex flex-col relative group overflow-hidden h-full p-8"
+                className="flex flex-col relative group overflow-hidden h-full p-10"
               >
-                <div className={`absolute top-0 right-0 w-24 h-24 bg-${card.color}/5 rounded-full filter blur-xl group-hover:bg-${card.color}/10 transition-colors`} />
+                <div className={`absolute top-0 right-0 w-28 h-28 bg-${card.color}/5 rounded-full filter blur-xl group-hover:bg-${card.color}/10 transition-colors`} />
 
-                {/* Step number — 24px gap to title */}
-                <div className={`w-11 h-11 rounded-lg bg-${card.color}/10 border border-${card.color}/20 flex items-center justify-center font-bold font-mono text-${card.color} select-none shrink-0`}>
+                {/* Step number */}
+                <div className={`w-12 h-12 rounded-lg bg-${card.color}/10 border border-${card.color}/20 flex items-center justify-center font-bold font-mono text-${card.color} select-none shrink-0`}>
                   {card.step}
                 </div>
 
-                {/* Title — 24px from number */}
-                <h3 className="font-bold text-base font-mono text-text-primary" style={{ marginTop: '24px' }}>
+                {/* Title — 28px from number */}
+                <h3 className="font-bold text-base font-mono text-text-primary" style={{ marginTop: '28px' }}>
                   {card.title}
                 </h3>
 
-                {/* Description — 12px from title */}
-                <p className="text-xs text-text-secondary mt-3" style={{ lineHeight: '1.6' }}>
+                {/* Description — 16px from title */}
+                <p className="text-xs text-text-secondary" style={{ marginTop: '16px', lineHeight: '1.7' }}>
                   {card.desc}
                 </p>
               </GlassCard>
@@ -247,7 +247,7 @@ export default function HomePage() {
                       >
                         <GlassCard
                           hoverable={true}
-                          className="flex items-center gap-5 py-5 px-6 relative overflow-hidden"
+                          className="flex items-center gap-6 py-6 px-8 relative overflow-hidden"
                         >
                           {/* Rank badge */}
                           <div
@@ -259,7 +259,7 @@ export default function HomePage() {
 
                           {/* Planet info */}
                           <div className="flex-grow min-w-0">
-                            <h4 className="font-bold text-sm font-mono text-text-primary truncate mb-2">
+                            <h4 className="font-bold text-sm font-mono text-text-primary truncate mb-3">
                               {planet.planet_name}
                             </h4>
                             <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
@@ -325,30 +325,30 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full" style={{ maxWidth: '1100px' }}>
             {/* Left — Dataset */}
             <motion.div variants={itemVariants}>
-              <GlassCard glow={true} className="h-full flex flex-col justify-between p-8">
+              <GlassCard glow={true} className="h-full flex flex-col justify-between p-10">
                 <div>
                   {/* Eyebrow */}
                   <span className="font-mono text-[11px] font-semibold text-primary tracking-wider uppercase">
                     Data Source
                   </span>
 
-                  {/* Title — 16px from eyebrow */}
-                  <h3 className="text-lg font-bold font-mono text-text-primary" style={{ marginTop: '16px' }}>
+                  {/* Title — 20px from eyebrow */}
+                  <h3 className="text-lg font-bold font-mono text-text-primary" style={{ marginTop: '20px' }}>
                     PHL Exoplanet Catalog
                   </h3>
 
-                  {/* Description — 20px from title */}
-                  <p className="text-sm text-text-secondary" style={{ marginTop: '20px', lineHeight: '1.7', maxWidth: '50ch' }}>
+                  {/* Description — 24px from title */}
+                  <p className="text-sm text-text-secondary" style={{ marginTop: '24px', lineHeight: '1.7', maxWidth: '50ch' }}>
                     Verified data curated by the Planetary Habitability Laboratory (PHL) at UPR Arecibo. Over 6,000 exoplanetary records across 9 physical and orbital dimensions.
                   </p>
 
-                  {/* Metric mini-cards — 28px from description */}
-                  <div className="grid grid-cols-2 gap-4" style={{ marginTop: '28px' }}>
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-2">
+                  {/* Metric mini-cards — 32px from description */}
+                  <div className="grid grid-cols-2 gap-5" style={{ marginTop: '32px' }}>
+                    <div className="p-5 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
                       <span className="text-[10px] text-text-muted font-mono uppercase font-semibold">Dataset Size</span>
                       <span className="text-lg font-bold font-mono text-accent">6,000+</span>
                     </div>
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-2">
+                    <div className="p-5 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
                       <span className="text-[10px] text-text-muted font-mono uppercase font-semibold">Features</span>
                       <span className="text-lg font-bold font-mono text-accent">9 Dimensions</span>
                     </div>
@@ -356,7 +356,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Attributes footer — separated */}
-                <div className="border-t border-white/5 text-xs text-text-muted" style={{ paddingTop: '20px', marginTop: '28px', lineHeight: '1.7' }}>
+                <div className="border-t border-white/5 text-xs text-text-muted" style={{ paddingTop: '24px', marginTop: '32px', lineHeight: '1.7' }}>
                   <strong>Attributes:</strong> Planet Radius, Planet Mass, Stellar Temperature, Semi-Major Axis, Stellar Luminosity, Orbital Period, Planet Density, Surface Temperature, Stellar Metallicity.
                 </div>
               </GlassCard>
@@ -364,24 +364,24 @@ export default function HomePage() {
 
             {/* Right — Model performance */}
             <motion.div variants={itemVariants}>
-              <GlassCard glow={true} className="h-full flex flex-col p-8">
+              <GlassCard glow={true} className="h-full flex flex-col p-10">
                 {/* Eyebrow */}
                 <span className="font-mono text-[11px] font-semibold text-accent tracking-wider uppercase">
                   Performance Metrics
                 </span>
 
-                {/* Title — 16px from eyebrow */}
-                <h3 className="text-lg font-bold font-mono text-text-primary" style={{ marginTop: '16px' }}>
+                {/* Title — 20px from eyebrow */}
+                <h3 className="text-lg font-bold font-mono text-text-primary" style={{ marginTop: '20px' }}>
                   Random Forest Classifier
                 </h3>
 
-                {/* Description — 20px from title */}
-                <p className="text-sm text-text-secondary" style={{ marginTop: '20px', lineHeight: '1.7', maxWidth: '50ch' }}>
+                {/* Description — 24px from title */}
+                <p className="text-sm text-text-secondary" style={{ marginTop: '24px', lineHeight: '1.7', maxWidth: '50ch' }}>
                   Validation results from stratified cross-validation on the PHL catalog dataset.
                 </p>
 
-                {/* Metric grid — 32px from description, pushed to bottom */}
-                <div className="grid grid-cols-2 gap-4 mt-auto" style={{ paddingTop: '32px' }}>
+                {/* Metric grid — 36px from description, pushed to bottom */}
+                <div className="grid grid-cols-2 gap-5 mt-auto" style={{ paddingTop: '36px' }}>
                   <StatCard label="F1 Score" value="0.94" decimals={2} suffix="" delay={0.1} />
                   <StatCard label="ROC-AUC" value="0.985" decimals={3} suffix="" delay={0.2} />
                   <StatCard label="PR-AUC" value="0.979" decimals={3} suffix="" delay={0.3} />
