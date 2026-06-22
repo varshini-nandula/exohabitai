@@ -348,3 +348,59 @@ class TestDerivedStarType:
             "Derived_S_TYPE": "G-Type",
         })
         assert resp.status_code == 200
+
+
+# ===========================================================================
+# 9. IMPUTATION STRATEGY — customized feature filling
+# ===========================================================================
+
+class TestImputationStrategy:
+    """Verify that backend respects imputation strategy and returns fill details."""
+
+    def test_imputation_strategy_earth(self, client):
+        """Earth strategy should fill missing features with Earth defaults."""
+        payload = {
+            "planet_name": "Earth-Strategy-Test",
+            "P_RADIUS": 1.0,
+            "P_MASS": 1.0,
+            "S_TEMPERATURE": 5778,
+            "S_LUMINOSITY": 1.0,
+            "P_SEMI_MAJOR_AXIS": 1.0,
+            "imputation_strategy": "earth"
+        }
+        resp = client.post("/predict", json=payload)
+        assert resp.status_code == 200
+        result = resp.get_json()["data"]
+        assert "fill_info" in result
+        fill_info = result["fill_info"]
+        assert fill_info["strategy_used"] == "earth"
+        assert "P_PERIOD" in fill_info["strategy_filled"]
+        assert "P_FLUX" in fill_info["auto_derived"]
+
+    def test_imputation_strategy_zeros(self, client):
+        """Zeros strategy should fill missing features with 0.0."""
+        payload = {
+            "planet_name": "Zeros-Strategy-Test",
+            "P_RADIUS": 1.0,
+            "imputation_strategy": "zeros"
+        }
+        resp = client.post("/predict", json=payload)
+        assert resp.status_code == 200
+        result = resp.get_json()["data"]
+        assert "fill_info" in result
+        fill_info = result["fill_info"]
+        assert fill_info["strategy_used"] == "zeros"
+        assert "P_MASS" in fill_info["strategy_filled"]
+
+    def test_imputation_strategy_invalid(self, client):
+        """Invalid strategy should fallback to median."""
+        payload = {
+            "planet_name": "Invalid-Strategy-Test",
+            "P_RADIUS": 1.0,
+            "imputation_strategy": "invalid_value_here"
+        }
+        resp = client.post("/predict", json=payload)
+        assert resp.status_code == 200
+        result = resp.get_json()["data"]
+        assert result["fill_info"]["strategy_used"] == "median"
+

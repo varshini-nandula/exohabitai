@@ -6,8 +6,32 @@ import GlassCard from '../components/GlassCard';
 import HabitabilityGauge from '../components/HabitabilityGauge';
 import Tooltip from '../components/Tooltip';
 import ErrorState from '../components/ErrorState';
+import ImputationModal, { computeMissingFeatures } from '../components/ImputationModal';
+
+const EMPTY_FORM_STATE = {
+  planet_name: '',
+  P_RADIUS: '',
+  P_MASS: '',
+  P_DENSITY: '',
+  P_TEMP_SURF: '',
+  P_PERIOD: '',
+  P_SEMI_MAJOR_AXIS: '',
+  S_TEMPERATURE: '',
+  S_LUMINOSITY: '',
+  S_METALLICITY: '',
+  P_ECCENTRICITY: '',
+  P_INCLINATION: '',
+  S_MAG: '',
+  S_DISTANCE: '',
+  S_MASS: '',
+  S_RADIUS: '',
+  S_AGE: '',
+  S_LOG_G: '',
+  P_HILL_SPHERE: '',
+};
 
 const EARTH_DEFAULTS = {
+  ...EMPTY_FORM_STATE,
   planet_name: 'Sol-d (Earth-like)',
   P_RADIUS: 1.0,
   P_MASS: 1.0,
@@ -109,6 +133,15 @@ const FIELD_DESCRIPTIONS = {
   S_TEMPERATURE: "Surface temperature of the host star in Kelvin (Sun ≈ 5778 K)",
   S_LUMINOSITY: "Luminosity relative to the Sun (Sun = 1.0)",
   S_METALLICITY: "Metal content relative to the Sun in [Fe/H] log-ratio (Sun = 0.0)",
+  P_ECCENTRICITY: "Orbital eccentricity, shape of the orbit (0 = circular, < 1 = elliptical)",
+  P_INCLINATION: "Orbital inclination in degrees relative to the sky plane (0 - 180°)",
+  S_MAG: "Apparent magnitude (brightness) of host star as seen from Earth",
+  S_DISTANCE: "Distance to host star in parsecs (1 parsec ≈ 3.26 light years)",
+  S_MASS: "Mass of the host star relative to the Sun (Sun = 1.0)",
+  S_RADIUS: "Radius of the host star relative to the Sun (Sun = 1.0)",
+  S_AGE: "Age of the host star in billions of years (Sun ≈ 4.6 Gyr)",
+  S_LOG_G: "Logarithm of surface gravity of host star in cgs units (log g)",
+  P_HILL_SPHERE: "Radius of the planet's gravitational influence sphere in AU",
 };
 
 export default function PredictPage() {
@@ -118,11 +151,13 @@ export default function PredictPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [errorState, setErrorState] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [missingInfo, setMissingInfo] = useState(null);
 
   const applyPreset = (presetKey, isFamous = false) => {
     const dataSource = isFamous ? FAMOUS_EXOPLANETS : PRESETS;
     if (dataSource[presetKey]) {
-      setFormData({ ...dataSource[presetKey] });
+      setFormData({ ...EMPTY_FORM_STATE, ...dataSource[presetKey] });
     }
   };
 
@@ -136,32 +171,24 @@ export default function PredictPage() {
     setFormData((prev) => ({ ...prev, [field]: numVal }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const executePrediction = async (strategy) => {
     setLoading(true);
     setErrorState(null);
     setResult(null);
 
-    // Form validation check
-    for (const key of Object.keys(formData)) {
-      if (key !== 'planet_name' && (formData[key] === '' || isNaN(formData[key]))) {
-        setErrorState({
-          variant: 'validation',
-          message: `Parameter "${key}" has an invalid numeric entry. Please verify.`,
-        });
-        setLoading(false);
-        return;
-      }
-    }
+    // Clean payload: convert empty strings to null so backend handles them as missing (None)
+    const cleanedFeatures = {};
+    Object.keys(formData).forEach((key) => {
+      cleanedFeatures[key] = formData[key] === '' ? null : formData[key];
+    });
 
     try {
       let res;
-      // Strip planet name or other details depending on backend structure
-      // Wait, let's include the whole formData.
+      const payload = { ...cleanedFeatures, imputation_strategy: strategy };
       if (isAuthenticated && shouldStore) {
-        res = await predictionAPI.predictAndStore(formData);
+        res = await predictionAPI.predictAndStore(payload);
       } else {
-        res = await predictionAPI.predict(formData);
+        res = await predictionAPI.predict(payload);
       }
 
       if (res.data?.status === 'success') {
@@ -192,6 +219,36 @@ export default function PredictPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setErrorState(null);
+    setResult(null);
+
+    // Form validation check — ignore empty fields
+    for (const key of Object.keys(formData)) {
+      if (key !== 'planet_name' && formData[key] !== '' && isNaN(formData[key])) {
+        setErrorState({
+          variant: 'validation',
+          message: `Parameter "${key}" has an invalid numeric entry. Please verify.`,
+        });
+        return;
+      }
+    }
+
+    const info = computeMissingFeatures(formData);
+    if (info.needsStrategy.length > 0) {
+      setMissingInfo(info);
+      setIsModalOpen(true);
+    } else {
+      executePrediction('median');
+    }
+  };
+
+  const handleSelectStrategy = (strategy) => {
+    setIsModalOpen(false);
+    executePrediction(strategy);
   };
 
   return (
@@ -301,7 +358,7 @@ export default function PredictPage() {
                     <label htmlFor="P_RADIUS" className="m-0">Radius (R_Earth)</label>
                     <Tooltip content={FIELD_DESCRIPTIONS.P_RADIUS} />
                   </div>
-                  <input type="number" id="P_RADIUS" step="0.01" min="0.01" max="100.0" value={formData.P_RADIUS} onChange={(e) => handleInputChange('P_RADIUS', e.target.value)} required />
+                  <input type="number" id="P_RADIUS" step="0.01" min="0.01" max="100.0" value={formData.P_RADIUS} onChange={(e) => handleInputChange('P_RADIUS', e.target.value)} />
                 </div>
 
                 {/* Mass */}
@@ -310,7 +367,7 @@ export default function PredictPage() {
                     <label htmlFor="P_MASS" className="m-0">Mass (M_Earth)</label>
                     <Tooltip content={FIELD_DESCRIPTIONS.P_MASS} />
                   </div>
-                  <input type="number" id="P_MASS" step="0.01" min="0.01" max="10000.0" value={formData.P_MASS} onChange={(e) => handleInputChange('P_MASS', e.target.value)} required />
+                  <input type="number" id="P_MASS" step="0.01" min="0.01" max="10000.0" value={formData.P_MASS} onChange={(e) => handleInputChange('P_MASS', e.target.value)} />
                 </div>
 
                 {/* Density */}
@@ -319,7 +376,7 @@ export default function PredictPage() {
                     <label htmlFor="P_DENSITY" className="m-0">Density (g/cm³)</label>
                     <Tooltip content={FIELD_DESCRIPTIONS.P_DENSITY} />
                   </div>
-                  <input type="number" id="P_DENSITY" step="0.01" min="0.01" max="50.0" value={formData.P_DENSITY} onChange={(e) => handleInputChange('P_DENSITY', e.target.value)} required />
+                  <input type="number" id="P_DENSITY" step="0.01" min="0.01" max="50.0" value={formData.P_DENSITY} onChange={(e) => handleInputChange('P_DENSITY', e.target.value)} />
                 </div>
 
                 {/* Surf Temp */}
@@ -328,7 +385,16 @@ export default function PredictPage() {
                     <label htmlFor="P_TEMP_SURF" className="m-0">Surf Temp (K)</label>
                     <Tooltip content={FIELD_DESCRIPTIONS.P_TEMP_SURF} />
                   </div>
-                  <input type="number" id="P_TEMP_SURF" step="1" min="1" max="5000" value={formData.P_TEMP_SURF} onChange={(e) => handleInputChange('P_TEMP_SURF', e.target.value)} required />
+                  <input type="number" id="P_TEMP_SURF" step="1" min="1" max="5000" value={formData.P_TEMP_SURF} onChange={(e) => handleInputChange('P_TEMP_SURF', e.target.value)} />
+                </div>
+
+                {/* Hill Sphere */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="P_HILL_SPHERE" className="m-0">Hill Sphere (AU)</label>
+                    <Tooltip content={FIELD_DESCRIPTIONS.P_HILL_SPHERE} />
+                  </div>
+                  <input type="number" id="P_HILL_SPHERE" step="0.0001" min="0.0001" value={formData.P_HILL_SPHERE} onChange={(e) => handleInputChange('P_HILL_SPHERE', e.target.value)} />
                 </div>
               </div>
 
@@ -344,7 +410,7 @@ export default function PredictPage() {
                     <label htmlFor="P_PERIOD" className="m-0">Period (Days)</label>
                     <Tooltip content={FIELD_DESCRIPTIONS.P_PERIOD} />
                   </div>
-                  <input type="number" id="P_PERIOD" step="0.01" min="0.01" max="100000.0" value={formData.P_PERIOD} onChange={(e) => handleInputChange('P_PERIOD', e.target.value)} required />
+                  <input type="number" id="P_PERIOD" step="0.01" min="0.01" max="100000.0" value={formData.P_PERIOD} onChange={(e) => handleInputChange('P_PERIOD', e.target.value)} />
                 </div>
 
                 {/* Semi Major Axis */}
@@ -353,7 +419,25 @@ export default function PredictPage() {
                     <label htmlFor="P_SEMI_MAJOR_AXIS" className="m-0">Semi-Major Axis (AU)</label>
                     <Tooltip content={FIELD_DESCRIPTIONS.P_SEMI_MAJOR_AXIS} />
                   </div>
-                  <input type="number" id="P_SEMI_MAJOR_AXIS" step="0.001" min="0.001" max="500.0" value={formData.P_SEMI_MAJOR_AXIS} onChange={(e) => handleInputChange('P_SEMI_MAJOR_AXIS', e.target.value)} required />
+                  <input type="number" id="P_SEMI_MAJOR_AXIS" step="0.001" min="0.001" max="500.0" value={formData.P_SEMI_MAJOR_AXIS} onChange={(e) => handleInputChange('P_SEMI_MAJOR_AXIS', e.target.value)} />
+                </div>
+
+                {/* Eccentricity */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="P_ECCENTRICITY" className="m-0">Eccentricity</label>
+                    <Tooltip content={FIELD_DESCRIPTIONS.P_ECCENTRICITY} />
+                  </div>
+                  <input type="number" id="P_ECCENTRICITY" step="0.001" min="0.0" max="1.0" value={formData.P_ECCENTRICITY} onChange={(e) => handleInputChange('P_ECCENTRICITY', e.target.value)} />
+                </div>
+
+                {/* Inclination */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="P_INCLINATION" className="m-0">Inclination (°)</label>
+                    <Tooltip content={FIELD_DESCRIPTIONS.P_INCLINATION} />
+                  </div>
+                  <input type="number" id="P_INCLINATION" step="0.01" min="0.0" max="180.0" value={formData.P_INCLINATION} onChange={(e) => handleInputChange('P_INCLINATION', e.target.value)} />
                 </div>
               </div>
 
@@ -369,7 +453,7 @@ export default function PredictPage() {
                     <label htmlFor="S_TEMPERATURE" className="m-0">Star Temp (K)</label>
                     <Tooltip content={FIELD_DESCRIPTIONS.S_TEMPERATURE} />
                   </div>
-                  <input type="number" id="S_TEMPERATURE" step="1" min="500" max="50000" value={formData.S_TEMPERATURE} onChange={(e) => handleInputChange('S_TEMPERATURE', e.target.value)} required />
+                  <input type="number" id="S_TEMPERATURE" step="1" min="500" max="50000" value={formData.S_TEMPERATURE} onChange={(e) => handleInputChange('S_TEMPERATURE', e.target.value)} />
                 </div>
 
                 {/* Luminosity */}
@@ -378,7 +462,7 @@ export default function PredictPage() {
                     <label htmlFor="S_LUMINOSITY" className="m-0">Luminosity (L_Sun)</label>
                     <Tooltip content={FIELD_DESCRIPTIONS.S_LUMINOSITY} />
                   </div>
-                  <input type="number" id="S_LUMINOSITY" step="0.00001" min="0.00001" max="1000000.0" value={formData.S_LUMINOSITY} onChange={(e) => handleInputChange('S_LUMINOSITY', e.target.value)} required />
+                  <input type="number" id="S_LUMINOSITY" step="0.00001" min="0.00001" max="1000000.0" value={formData.S_LUMINOSITY} onChange={(e) => handleInputChange('S_LUMINOSITY', e.target.value)} />
                 </div>
 
                 {/* Metallicity */}
@@ -387,7 +471,61 @@ export default function PredictPage() {
                     <label htmlFor="S_METALLICITY" className="m-0">Metallicity ([Fe/H])</label>
                     <Tooltip content={FIELD_DESCRIPTIONS.S_METALLICITY} />
                   </div>
-                  <input type="number" id="S_METALLICITY" step="0.01" min="-10.0" max="10.0" value={formData.S_METALLICITY} onChange={(e) => handleInputChange('S_METALLICITY', e.target.value)} required />
+                  <input type="number" id="S_METALLICITY" step="0.01" min="-10.0" max="10.0" value={formData.S_METALLICITY} onChange={(e) => handleInputChange('S_METALLICITY', e.target.value)} />
+                </div>
+
+                {/* Star Apparent Magnitude */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="S_MAG" className="m-0">Star Apparent Mag</label>
+                    <Tooltip content={FIELD_DESCRIPTIONS.S_MAG} />
+                  </div>
+                  <input type="number" id="S_MAG" step="0.01" value={formData.S_MAG} onChange={(e) => handleInputChange('S_MAG', e.target.value)} />
+                </div>
+
+                {/* Star Distance */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="S_DISTANCE" className="m-0">Distance (parsecs)</label>
+                    <Tooltip content={FIELD_DESCRIPTIONS.S_DISTANCE} />
+                  </div>
+                  <input type="number" id="S_DISTANCE" step="0.01" min="0.01" value={formData.S_DISTANCE} onChange={(e) => handleInputChange('S_DISTANCE', e.target.value)} />
+                </div>
+
+                {/* Star Mass */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="S_MASS" className="m-0">Star Mass (M_Sun)</label>
+                    <Tooltip content={FIELD_DESCRIPTIONS.S_MASS} />
+                  </div>
+                  <input type="number" id="S_MASS" step="0.01" min="0.01" value={formData.S_MASS} onChange={(e) => handleInputChange('S_MASS', e.target.value)} />
+                </div>
+
+                {/* Star Radius */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="S_RADIUS" className="m-0">Star Radius (R_Sun)</label>
+                    <Tooltip content={FIELD_DESCRIPTIONS.S_RADIUS} />
+                  </div>
+                  <input type="number" id="S_RADIUS" step="0.01" min="0.01" value={formData.S_RADIUS} onChange={(e) => handleInputChange('S_RADIUS', e.target.value)} />
+                </div>
+
+                {/* Star Age */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="S_AGE" className="m-0">Star Age (Gyr)</label>
+                    <Tooltip content={FIELD_DESCRIPTIONS.S_AGE} />
+                  </div>
+                  <input type="number" id="S_AGE" step="0.01" min="0.01" value={formData.S_AGE} onChange={(e) => handleInputChange('S_AGE', e.target.value)} />
+                </div>
+
+                {/* Star Surface Gravity */}
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="S_LOG_G" className="m-0">Star Gravity (log g)</label>
+                    <Tooltip content={FIELD_DESCRIPTIONS.S_LOG_G} />
+                  </div>
+                  <input type="number" id="S_LOG_G" step="0.01" value={formData.S_LOG_G} onChange={(e) => handleInputChange('S_LOG_G', e.target.value)} />
                 </div>
               </div>
             </div>
@@ -478,6 +616,38 @@ export default function PredictPage() {
                 </div>
               )}
 
+              {/* Imputation & Calculation Details */}
+              {result.fill_info && (
+                <div className="text-[11px] text-text-secondary bg-white/5 border border-white/5 p-4 rounded-lg font-mono leading-relaxed mt-2 space-y-2">
+                  <div className="flex justify-between border-b border-white/5 pb-1.5">
+                    <span className="text-text-muted">Imputation Strategy:</span>
+                    <span className="font-bold text-text-primary capitalize">
+                      {result.fill_info.strategy_used === 'earth' && '🌍 Earth-like Defaults'}
+                      {result.fill_info.strategy_used === 'non_habitable' && '📊 Dataset Averages'}
+                      {result.fill_info.strategy_used === 'zeros' && '0️⃣ Zeros'}
+                      {result.fill_info.strategy_used === 'median' && '📊 Dataset Averages'}
+                    </span>
+                  </div>
+                  {result.fill_info.auto_derived && result.fill_info.auto_derived.length > 0 && (
+                    <div>
+                      <div className="text-text-muted mb-1.5 font-semibold">
+                        ⚙️ Calculated Features ({result.fill_info.auto_derived.length}):
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {result.fill_info.auto_derived.map((feat) => (
+                          <span
+                            key={feat}
+                            className="px-1.5 py-0.5 rounded bg-success/10 border border-success/20 text-success text-[10px]"
+                          >
+                            {feat}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Storage confirmation (if saved) */}
               {result.stored && (
                 <div className="text-[10px] text-success bg-success/5 border border-success/10 p-4 rounded-lg font-mono text-center">
@@ -512,6 +682,13 @@ export default function PredictPage() {
           )}
         </div>
       </section>
+
+      <ImputationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelectStrategy={handleSelectStrategy}
+        missingInfo={missingInfo}
+      />
     </div>
   );
 }

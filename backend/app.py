@@ -302,6 +302,44 @@ REALISTIC_LIMITS = {
     "S_AGE":             (0, 20),
 }
 
+# Earth / Solar System reference values for all pipeline features.
+# Used as the "Earth-like" imputation strategy when users don't provide
+# all 30 features the pipeline expects.
+EARTH_LIKE_DEFAULTS = {
+    "P_MASS": 1.0,
+    "P_RADIUS": 1.0,
+    "P_PERIOD": 365.25,
+    "P_SEMI_MAJOR_AXIS": 1.0,
+    "P_ECCENTRICITY": 0.017,
+    "P_INCLINATION": 89.97,
+    "S_MAG": 4.83,
+    "S_DISTANCE": 10.0,
+    "S_TEMPERATURE": 5778,
+    "S_MASS": 1.0,
+    "S_RADIUS": 1.0,
+    "S_METALLICITY": 0.0,
+    "S_AGE": 4.6,
+    "S_LOG_LUM": 0.0,
+    "S_LOG_G": 4.44,
+    "P_ESCAPE": 1.0,
+    "P_POTENTIAL": 1.0,
+    "P_GRAVITY": 1.0,
+    "P_DENSITY": 5.51,
+    "P_HILL_SPHERE": 0.01,
+    "P_DISTANCE": 1.0,
+    "P_PERIASTRON": 0.983,
+    "P_APASTRON": 1.017,
+    "P_FLUX": 1.0,
+    "P_TEMP_EQUIL": 255.0,
+    "P_TEMP_SURF": 288.0,
+    "P_TYPE": "Terran",
+    "S_TYPE_TEMP": "G",
+    "S_LUMINOSITY": 1.0,
+    "Derived_S_TYPE": "G-Type",
+}
+
+# Imputation strategies that the frontend can request.
+VALID_IMPUTATION_STRATEGIES = {"median", "earth", "zeros", "non_habitable"}
 
 
 # ==============================================================================
@@ -368,7 +406,7 @@ def validate_input(data: dict) -> tuple[dict | None, str | None, list | None]:
     if not data or not isinstance(data, dict):
         return None, "Input must be a non-empty JSON object", None
 
-    METADATA_KEYS = {"planet_name"}
+    METADATA_KEYS = {"planet_name", "imputation_strategy"}
     features = {k: v for k, v in data.items() if k not in METADATA_KEYS}
 
     if not features:
@@ -465,55 +503,204 @@ def _derive_star_type(temp) -> str | None:
     return None
 
 
-def build_dataframe(features: dict) -> pd.DataFrame:
+def _derive_star_type_temp(temp):
+    """Derive single-letter spectral type from S_TEMPERATURE."""
+    if temp is None or (isinstance(temp, float) and np.isnan(temp)):
+        return None
+    if temp > 30000: return "O"
+    if temp > 10000: return "B"
+    if temp > 7500:  return "A"
+    if temp > 6000:  return "F"
+    if temp > 5000:  return "G"
+    if temp > 3500:  return "K"
+    if temp > 2500:  return "M"
+    return None
+
+
+def _derive_planet_type(radius):
+    """Derive planet type classification from P_RADIUS (Earth radii)."""
+    if radius is None or (isinstance(radius, float) and np.isnan(radius)):
+        return None
+    if radius < 0.5:  return "Miniterran"
+    if radius < 0.8:  return "Subterran"
+    if radius < 1.25: return "Terran"
+    if radius < 2.5:  return "Superterran"
+    if radius < 6.0:  return "Neptunian"
+    return "Jovian"
+
+
+def _derive_computable_features(features: dict) -> list:
+    """
+    Derive physically computable features from available inputs.
+
+    Uses standard astrophysical relationships.  Only features that
+    are NOT already provided are derived.  Mutates ``features``
+    in-place and returns the list of derived feature names.
+    """
+    derived = []
+
+    def _get(key):
+        val = features.get(key)
+        if val is None or (isinstance(val, float) and np.isnan(val)):
+            return None
+        return val
+
+    s_lum = _get("S_LUMINOSITY")
+    p_sma = _get("P_SEMI_MAJOR_AXIS")
+    p_mass = _get("P_MASS")
+    p_radius = _get("P_RADIUS")
+    s_temp = _get("S_TEMPERATURE")
+
+    # P_FLUX = S_LUMINOSITY / P_SEMI_MAJOR_AXIS**2  (Earth flux units)
+    if _get("P_FLUX") is None and s_lum is not None and p_sma is not None and p_sma > 0:
+        features["P_FLUX"] = s_lum / (p_sma ** 2)
+        derived.append("P_FLUX")
+
+    # P_TEMP_EQUIL ~ 278.5 * P_FLUX**0.25  (blackbody equilibrium, no albedo)
+    p_flux = _get("P_FLUX")
+    if _get("P_TEMP_EQUIL") is None and p_flux is not None and p_flux > 0:
+        features["P_TEMP_EQUIL"] = 278.5 * (p_flux ** 0.25)
+        derived.append("P_TEMP_EQUIL")
+
+    # P_GRAVITY = P_MASS / P_RADIUS**2  (Earth surface-gravity units)
+    if _get("P_GRAVITY") is None and p_mass is not None and p_radius is not None and p_radius > 0:
+        features["P_GRAVITY"] = p_mass / (p_radius ** 2)
+        derived.append("P_GRAVITY")
+
+    # P_ESCAPE = sqrt(P_MASS / P_RADIUS)  (Earth escape-velocity units)
+    if _get("P_ESCAPE") is None and p_mass is not None and p_radius is not None and p_radius > 0:
+        features["P_ESCAPE"] = float(np.sqrt(p_mass / p_radius))
+        derived.append("P_ESCAPE")
+
+    # P_POTENTIAL = P_MASS / P_RADIUS  (Earth gravitational-potential units)
+    if _get("P_POTENTIAL") is None and p_mass is not None and p_radius is not None and p_radius > 0:
+        features["P_POTENTIAL"] = p_mass / p_radius
+        derived.append("P_POTENTIAL")
+
+    # P_DISTANCE ~ P_SEMI_MAJOR_AXIS  (circular-orbit approximation)
+    if _get("P_DISTANCE") is None and p_sma is not None:
+        features["P_DISTANCE"] = p_sma
+        derived.append("P_DISTANCE")
+
+    # P_PERIASTRON = a * (1 - e);  assume e = 0 when unknown
+    if _get("P_PERIASTRON") is None and p_sma is not None:
+        ecc = _get("P_ECCENTRICITY") or 0.0
+        features["P_PERIASTRON"] = p_sma * (1 - ecc)
+        derived.append("P_PERIASTRON")
+
+    # P_APASTRON = a * (1 + e);  assume e = 0 when unknown
+    if _get("P_APASTRON") is None and p_sma is not None:
+        ecc = _get("P_ECCENTRICITY") or 0.0
+        features["P_APASTRON"] = p_sma * (1 + ecc)
+        derived.append("P_APASTRON")
+
+    # S_LOG_LUM = log10(S_LUMINOSITY)
+    if _get("S_LOG_LUM") is None and s_lum is not None and s_lum > 0:
+        features["S_LOG_LUM"] = float(np.log10(s_lum))
+        derived.append("S_LOG_LUM")
+
+    # S_TYPE_TEMP  from S_TEMPERATURE
+    if _get("S_TYPE_TEMP") is None and s_temp is not None:
+        st = _derive_star_type_temp(s_temp)
+        if st is not None:
+            features["S_TYPE_TEMP"] = st
+            derived.append("S_TYPE_TEMP")
+
+    # P_TYPE  from P_RADIUS
+    if _get("P_TYPE") is None and p_radius is not None:
+        pt = _derive_planet_type(p_radius)
+        if pt is not None:
+            features["P_TYPE"] = pt
+            derived.append("P_TYPE")
+
+    if derived:
+        logger.info("Auto-derived %d feature(s): %s", len(derived), derived)
+
+    return derived
+
+
+def build_dataframe(features: dict, imputation_strategy: str = "median"):
     """
     Build a single-row DataFrame from the input features dict.
 
-    sklearn's ColumnTransformer requires all columns it was trained on
-    to be present in the input DataFrame.  Missing columns are filled
-    with NaN — the pipeline's internal imputer handles the actual values.
+    Processing order:
+        1. Derive ``Derived_S_TYPE`` from ``S_TEMPERATURE``.
+        2. Derive computable features (P_FLUX, P_TEMP_EQUIL, etc.)
+           from available inputs using astrophysical formulas.
+        3. Fill remaining missing features according to
+           *imputation_strategy*:
+           - ``"median"`` / ``"non_habitable"`` — leave as NaN for
+             the pipeline's internal SimpleImputer (backward-compat).
+           - ``"earth"``  — fill with Earth / Solar system baselines.
+           - ``"zeros"``  — fill with 0.0 for numeric features.
 
-    Derived features:
-        - Derived_S_TYPE is computed from S_TEMPERATURE when not
-          explicitly provided.  This mirrors the feature engineering
-          applied during training (train/serve parity).
-
-    Task 5: Logs warnings on column mismatches between user input and
-    pipeline expectations. Extra features are silently dropped; missing
-    features are filled with NaN.
+    Returns ``(DataFrame, fill_info_dict)``.
     """
     # --- Derive Derived_S_TYPE from S_TEMPERATURE (train/serve parity) ---
     if "Derived_S_TYPE" not in features or features.get("Derived_S_TYPE") is None:
         s_temp = features.get("S_TEMPERATURE")
         if s_temp is not None:
-            derived = _derive_star_type(s_temp)
-            if derived is not None:
-                features["Derived_S_TYPE"] = derived
+            derived_st = _derive_star_type(s_temp)
+            if derived_st is not None:
+                features["Derived_S_TYPE"] = derived_st
                 logger.debug(
                     "Derived Derived_S_TYPE='%s' from S_TEMPERATURE=%s",
-                    derived, s_temp,
+                    derived_st, s_temp,
                 )
+
+    # --- Derive computable features from available inputs ---
+    auto_derived = _derive_computable_features(features)
+
+    fill_info = {
+        "auto_derived": auto_derived,
+        "strategy_used": imputation_strategy,
+        "strategy_filled": [],
+    }
 
     if PIPELINE_INPUT_COLUMNS is not None:
         expected = set(PIPELINE_INPUT_COLUMNS)
-        provided = set(features.keys())
+        provided = set(
+            k for k, v in features.items()
+            if v is not None and not (isinstance(v, float) and np.isnan(v))
+        )
 
-        missing = expected - provided
+        missing = sorted(expected - provided)
         extra = provided - expected
 
         if missing:
-            logger.warning(
-                "Pipeline input mismatch — missing features (will be NaN-imputed): %s",
-                sorted(missing),
+            logger.info(
+                "After derivation, %d feature(s) still missing: %s",
+                len(missing), missing,
             )
         if extra:
             logger.debug(
                 "Extra features ignored by pipeline: %s", sorted(extra),
             )
 
+        # --- Apply imputation strategy for remaining missing features ---
+        strategy = (imputation_strategy or "median").lower()
+
+        if strategy == "earth":
+            for col in missing:
+                if col in EARTH_LIKE_DEFAULTS:
+                    features[col] = EARTH_LIKE_DEFAULTS[col]
+                    fill_info["strategy_filled"].append(col)
+        elif strategy == "zeros":
+            _CATEGORICAL = {"P_TYPE", "S_TYPE_TEMP", "Derived_S_TYPE"}
+            for col in missing:
+                if col not in _CATEGORICAL:
+                    features[col] = 0.0
+                    fill_info["strategy_filled"].append(col)
+        # "median" / "non_habitable": leave NaN for pipeline SimpleImputer
+
+        fill_info["total_expected"] = len(expected)
+        fill_info["provided_by_user"] = len(provided - set(auto_derived))
+        fill_info["remaining_missing"] = len(missing) - len(fill_info["strategy_filled"])
+
         row = {col: features.get(col, np.nan) for col in PIPELINE_INPUT_COLUMNS}
-        return pd.DataFrame([row])
-    return pd.DataFrame([features])
+        return pd.DataFrame([row]), fill_info
+
+    return pd.DataFrame([features]), fill_info
 
 
 def run_prediction(df: pd.DataFrame) -> tuple[list[float], list[int]]:
@@ -669,6 +856,34 @@ def health():
     )
 
 
+# ---- Pipeline Info (feature metadata for frontend) ----
+@app.route("/pipeline_info", methods=["GET"])
+def pipeline_info():
+    """
+    Return metadata about the pipeline's expected input features.
+
+    The frontend uses this to determine which features are missing
+    and to show the imputation strategy modal.
+    """
+    auto_derivable = [
+        "P_FLUX", "P_TEMP_EQUIL", "P_GRAVITY", "P_ESCAPE",
+        "P_POTENTIAL", "P_DISTANCE", "P_PERIASTRON", "P_APASTRON",
+        "S_LOG_LUM", "P_TYPE", "S_TYPE_TEMP", "Derived_S_TYPE",
+    ]
+
+    return api_response(
+        "success",
+        "Pipeline feature metadata",
+        {
+            "expected_columns": PIPELINE_INPUT_COLUMNS or [],
+            "auto_derivable": auto_derivable,
+            "total_expected": len(PIPELINE_INPUT_COLUMNS) if PIPELINE_INPUT_COLUMNS else 0,
+            "model_version": MODEL_VERSION,
+            "available_strategies": ["earth", "non_habitable", "zeros"],
+        },
+    )
+
+
 # ---- PREDICT (prediction only — no DB write) ----
 def _process_prediction_item(item: dict, idx: int):
     """
@@ -688,8 +903,13 @@ def _process_prediction_item(item: dict, idx: int):
             code=400,
         )
 
+    # --- Read imputation strategy ---
+    imputation_strategy = item.get("imputation_strategy", "median")
+    if imputation_strategy not in VALID_IMPUTATION_STRATEGIES:
+        imputation_strategy = "median"
+
     # --- Build DataFrame & predict ---
-    df = build_dataframe(features)
+    df, fill_info = build_dataframe(features, imputation_strategy)
     probabilities, labels = run_prediction(df)
 
     planet_name = item.get("planet_name", f"Unknown-{idx}")
@@ -697,8 +917,8 @@ def _process_prediction_item(item: dict, idx: int):
     label = labels[0]
 
     logger.info(
-        "Prediction — planet=%s  prob=%.6f  label=%d  threshold=%.2f",
-        planet_name, prob, label, Config.THRESHOLD,
+        "Prediction — planet=%s  prob=%.6f  label=%d  threshold=%.2f  strategy=%s",
+        planet_name, prob, label, Config.THRESHOLD, imputation_strategy,
     )
 
     result = {
@@ -706,6 +926,7 @@ def _process_prediction_item(item: dict, idx: int):
         "habitability": label,
         "habitability_probability": round(prob, 6),
         "threshold_used": Config.THRESHOLD,
+        "fill_info": fill_info,
     }
     if warnings_list:
         result["warnings"] = warnings_list
@@ -873,7 +1094,8 @@ def predict_and_store_batch():
             validated.append((item, features, warnings_list))
 
         # --- Build batch DataFrame ---
-        dfs = [build_dataframe(feat) for _, feat, _ in validated]
+        build_results = [build_dataframe(feat) for _, feat, _ in validated]
+        dfs = [br[0] for br in build_results]
         batch_df = pd.concat(dfs, ignore_index=True)
 
         # --- Batch predict (single call) ---
