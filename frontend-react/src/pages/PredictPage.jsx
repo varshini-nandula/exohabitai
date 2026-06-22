@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { predictionAPI } from '../api/prediction';
 import { extractError } from '../api/client';
@@ -145,13 +145,13 @@ const FAMOUS_EXOPLANETS = {
   trappist1e: {
     planet_name: 'TRAPPIST-1e',
     P_RADIUS: 0.92,
-    P_MASS: 0.692,
+    P_MASS: 0.69,
     P_DENSITY: 5.65,
     P_TEMP_SURF: 246,
     P_PERIOD: 6.1,
     P_SEMI_MAJOR_AXIS: 0.029,
     S_TEMPERATURE: 2566,
-    S_LUMINOSITY: 0.000553,
+    S_LUMINOSITY: 0.00055,
     S_METALLICITY: 0.04,
     P_ECCENTRICITY: 0.008,
     P_INCLINATION: 89.86,
@@ -207,9 +207,260 @@ const FIELD_DESCRIPTIONS = {
   P_HILL_SPHERE: "Radius of the planet's gravitational influence sphere in AU",
 };
 
+/**
+ * Validation constraints for each numeric form field, extracted from the
+ * HTML <input> attributes.  Used by clampPreset() to guarantee that every
+ * preset value passes browser-native HTML5 validation, and by validateField()
+ * to provide real-time inline feedback.
+ */
+const FIELD_CONSTRAINTS = {
+  P_RADIUS:          { min: 0.01,    max: 100.0,      step: 0.01    },
+  P_MASS:            { min: 0.01,    max: 10000.0,    step: 0.01    },
+  P_DENSITY:         { min: 0.01,    max: 50.0,       step: 0.01    },
+  P_TEMP_SURF:       { min: 1,       max: 5000,       step: 1       },
+  P_HILL_SPHERE:     { min: 0.0001,  max: null,       step: 0.0001  },
+  P_PERIOD:          { min: 0.01,    max: 100000.0,   step: 0.01    },
+  P_SEMI_MAJOR_AXIS: { min: 0.001,   max: 500.0,      step: 0.001   },
+  P_ECCENTRICITY:    { min: 0.0,     max: 1.0,        step: 0.001   },
+  P_INCLINATION:     { min: 0.0,     max: 180.0,      step: 0.01    },
+  S_TEMPERATURE:     { min: 500,     max: 50000,      step: 1       },
+  S_LUMINOSITY:      { min: 0.00001, max: 1000000.0,  step: 0.00001 },
+  S_METALLICITY:     { min: -10.0,   max: 10.0,       step: 0.01    },
+  S_MAG:             { min: null,    max: null,       step: 0.01    },
+  S_DISTANCE:        { min: 0.01,    max: null,       step: 0.01    },
+  S_MASS:            { min: 0.01,    max: null,       step: 0.01    },
+  S_RADIUS:          { min: 0.01,    max: null,       step: 0.01    },
+  S_AGE:             { min: 0.01,    max: null,       step: 0.01    },
+  S_LOG_G:           { min: null,    max: null,       step: 0.01    },
+};
+
+/**
+ * Clamp every numeric value in a preset to the nearest valid value according
+ * to FIELD_CONSTRAINTS.  This is a safeguard so that if a preset value ever
+ * falls outside a field's allowed range (or doesn't align with the step), it
+ * is automatically corrected before being inserted into the form.
+ */
+function clampPreset(preset) {
+  const clamped = { ...preset };
+  for (const [field, constraints] of Object.entries(FIELD_CONSTRAINTS)) {
+    const value = clamped[field];
+    if (value === '' || value === undefined || value === null) continue;
+
+    let v = Number(value);
+    if (isNaN(v)) continue;
+
+    const { min, max, step } = constraints;
+
+    // Clamp to [min, max]
+    if (min !== null && v < min) v = min;
+    if (max !== null && v > max) v = max;
+
+    // Snap to the nearest valid step value:  min + n * step
+    if (step != null && step > 0) {
+      const base = min ?? 0;
+      const diff = v - base;
+      const n = Math.round(diff / step);
+      v = base + n * step;
+      // Clamp again in case rounding pushed it out of range
+      if (min !== null && v < min) v = min;
+      if (max !== null && v > max) v = max;
+    }
+
+    // Round to avoid floating-point artefacts (match step precision)
+    if (step != null && step > 0) {
+      const decimals = (step.toString().split('.')[1] || '').length;
+      v = parseFloat(v.toFixed(decimals));
+    }
+
+    clamped[field] = v;
+  }
+  return clamped;
+}
+
+// ---------------------------------------------------------------------------
+// Inline Validation
+// ---------------------------------------------------------------------------
+
+/**
+ * Helper to determine the number of decimal places of a number.
+ * Handles scientific notation correctly.
+ */
+function getDecimalPlaces(num) {
+  const match = ('' + num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
+  if (!match) return 0;
+  return Math.max(
+    0,
+    (match[1] ? match[1].length : 0) - (match[2] ? +match[2] : 0)
+  );
+}
+
+/**
+ * Validate a single field value against its constraints.
+ * Returns an error message string or null if valid.
+ */
+function validateField(field, value) {
+  // Empty / blank fields are optional — not an error
+  if (value === '' || value === undefined || value === null) return null;
+
+  const numVal = Number(value);
+
+  if (isNaN(numVal)) {
+    return 'Please enter a valid number';
+  }
+
+  const constraints = FIELD_CONSTRAINTS[field];
+  if (!constraints) return null;
+
+  const { min, max, step } = constraints;
+
+  if (min !== null && max !== null && (numVal < min || numVal > max)) {
+    return `Value must be between ${min} and ${max}`;
+  }
+  if (min !== null && numVal < min) {
+    return `Minimum allowed value is ${min}`;
+  }
+  if (max !== null && numVal > max) {
+    return `Maximum allowed value is ${max}`;
+  }
+
+  // Decimal precision / step validation
+  if (step !== null && step !== undefined && step > 0) {
+    const valueDecimals = getDecimalPlaces(numVal);
+    const stepDecimals = getDecimalPlaces(step);
+    if (valueDecimals > stepDecimals) {
+      if (stepDecimals === 0) {
+        return 'Value must be an integer';
+      }
+      return `Value must have at most ${stepDecimals} decimal places`;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Validate all numeric fields in a form data object.
+ * Returns a map of { fieldName: errorMessage } for every invalid field.
+ */
+function validateAllFields(data) {
+  const errors = {};
+  for (const field of Object.keys(FIELD_CONSTRAINTS)) {
+    const err = validateField(field, data[field]);
+    if (err) errors[field] = err;
+  }
+  return errors;
+}
+
+/**
+ * Build a human-readable range hint for a constrained field.
+ */
+function rangeHint(field) {
+  const c = FIELD_CONSTRAINTS[field];
+  if (!c) return null;
+  const { min, max } = c;
+  if (min !== null && max !== null) return `Range: ${min} – ${max}`;
+  if (min !== null) return `Min: ${min}`;
+  if (max !== null) return `Max: ${max}`;
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Form field layout definition  (data-driven → less JSX repetition)
+// ---------------------------------------------------------------------------
+
+const COLUMN_DEFS = [
+  {
+    label: 'Planet Dimensions',
+    colorClass: 'text-primary',
+    fields: [
+      { key: 'P_RADIUS',     label: 'Radius (R_Earth)' },
+      { key: 'P_MASS',       label: 'Mass (M_Earth)' },
+      { key: 'P_DENSITY',    label: 'Density (g/cm³)' },
+      { key: 'P_TEMP_SURF',  label: 'Surf Temp (K)' },
+      { key: 'P_HILL_SPHERE', label: 'Hill Sphere (AU)' },
+    ],
+  },
+  {
+    label: 'Orbital Mechanics',
+    colorClass: 'text-accent',
+    fields: [
+      { key: 'P_PERIOD',          label: 'Period (Days)' },
+      { key: 'P_SEMI_MAJOR_AXIS', label: 'Semi-Major Axis (AU)' },
+      { key: 'P_ECCENTRICITY',    label: 'Eccentricity' },
+      { key: 'P_INCLINATION',     label: 'Inclination (°)' },
+    ],
+  },
+  {
+    label: 'Stellar Attributes',
+    colorClass: 'text-highlight',
+    fields: [
+      { key: 'S_TEMPERATURE', label: 'Star Temp (K)' },
+      { key: 'S_LUMINOSITY',  label: 'Luminosity (L_Sun)' },
+      { key: 'S_METALLICITY', label: 'Metallicity ([Fe/H])' },
+      { key: 'S_MAG',         label: 'Star Apparent Mag' },
+      { key: 'S_DISTANCE',    label: 'Distance (parsecs)' },
+      { key: 'S_MASS',        label: 'Star Mass (M_Sun)' },
+      { key: 'S_RADIUS',      label: 'Star Radius (R_Sun)' },
+      { key: 'S_AGE',         label: 'Star Age (Gyr)' },
+      { key: 'S_LOG_G',       label: 'Star Gravity (log g)' },
+    ],
+  },
+];
+
+
+// ---------------------------------------------------------------------------
+// ValidatedInput — reusable field wrapper with inline feedback
+// ---------------------------------------------------------------------------
+
+function ValidatedInput({ field, label, value, error, touched, onChange, onBlur }) {
+  const c = FIELD_CONSTRAINTS[field];
+  const hint = rangeHint(field);
+  const hasError = touched && !!error;
+  const isValid = touched && !error && value !== '' && value !== undefined && value !== null;
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between mb-1">
+        <label htmlFor={field} className="m-0">{label}</label>
+        <Tooltip content={FIELD_DESCRIPTIONS[field]} />
+      </div>
+      <input
+        type="number"
+        id={field}
+        step={c?.step}
+        min={c?.min ?? undefined}
+        max={c?.max ?? undefined}
+        value={value}
+        onChange={(e) => onChange(field, e.target.value)}
+        onBlur={() => onBlur(field)}
+        className={hasError ? 'field-error' : isValid ? 'field-valid' : ''}
+        aria-invalid={hasError || undefined}
+        aria-describedby={hasError ? `${field}-error` : hint ? `${field}-hint` : undefined}
+      />
+      {/* Error message — shown beneath the input */}
+      {hasError && (
+        <span id={`${field}-error`} className="field-error-msg" role="alert">
+          {error}
+        </span>
+      )}
+      {/* Range hint — shown when no error is active */}
+      {!hasError && hint && (
+        <span id={`${field}-hint`} className="field-hint">
+          {hint}
+        </span>
+      )}
+    </div>
+  );
+}
+
+
+// ===========================================================================
+// PredictPage Component
+// ===========================================================================
+
 export default function PredictPage() {
   const { isAuthenticated } = useAuth();
-  const [formData, setFormData] = useState({ ...EARTH_DEFAULTS });
+  const [formData, setFormData] = useState(() => clampPreset({ ...EARTH_DEFAULTS }));
   const [shouldStore, setShouldStore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -217,14 +468,52 @@ export default function PredictPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [missingInfo, setMissingInfo] = useState(null);
 
-  const applyPreset = (presetKey, isFamous = false) => {
-    const dataSource = isFamous ? FAMOUS_EXOPLANETS : PRESETS;
-    if (dataSource[presetKey]) {
-      setFormData({ ...EMPTY_FORM_STATE, ...dataSource[presetKey] });
-    }
-  };
+  // Validation state: track per-field errors and which fields the user has interacted with
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
 
-  const handleInputChange = (field, val) => {
+  // Derived: are there any active validation errors?
+  const hasErrors = useMemo(
+    () => Object.values(fieldErrors).some(Boolean),
+    [fieldErrors],
+  );
+
+  // ------ Validation helpers ------
+
+  const runFieldValidation = useCallback((field, value) => {
+    const err = validateField(field, value);
+    setFieldErrors((prev) => {
+      if (prev[field] === err) return prev;           // avoid pointless re-renders
+      const next = { ...prev };
+      if (err) next[field] = err; else delete next[field];
+      return next;
+    });
+    return err;
+  }, []);
+
+  const markTouched = useCallback((field) => {
+    setTouchedFields((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
+  }, []);
+
+  // ------ Form data handlers ------
+
+  const applyPreset = useCallback((presetKey, isFamous = false) => {
+    const dataSource = isFamous ? FAMOUS_EXOPLANETS : PRESETS;
+    if (!dataSource[presetKey]) return;
+
+    const clamped = clampPreset({ ...EMPTY_FORM_STATE, ...dataSource[presetKey] });
+    setFormData(clamped);
+
+    // Validate every field immediately and mark all as touched so errors
+    // (if any survive clamping) are surfaced right away.
+    const errors = validateAllFields(clamped);
+    setFieldErrors(errors);
+    const touched = {};
+    for (const f of Object.keys(FIELD_CONSTRAINTS)) touched[f] = true;
+    setTouchedFields(touched);
+  }, []);
+
+  const handleInputChange = useCallback((field, val) => {
     if (field === 'planet_name') {
       setFormData((prev) => ({ ...prev, [field]: val }));
       return;
@@ -232,7 +521,28 @@ export default function PredictPage() {
 
     const numVal = val === '' ? '' : parseFloat(val);
     setFormData((prev) => ({ ...prev, [field]: numVal }));
-  };
+
+    // Real-time validation while typing
+    runFieldValidation(field, val === '' ? '' : numVal);
+    markTouched(field);
+  }, [runFieldValidation, markTouched]);
+
+  const handleBlur = useCallback((field) => {
+    markTouched(field);
+    runFieldValidation(field, undefined);  // placeholder — we'll read current value below
+  }, [markTouched, runFieldValidation]);
+
+  // We need the actual current value in handleBlur, so wrap it:
+  const handleFieldBlur = useCallback((field) => {
+    markTouched(field);
+    // Use functional state to read current value
+    setFormData((prev) => {
+      runFieldValidation(field, prev[field]);
+      return prev;  // no mutation
+    });
+  }, [markTouched, runFieldValidation]);
+
+  // ------ Prediction / submit logic ------
 
   const executePrediction = async (strategy) => {
     setLoading(true);
@@ -289,7 +599,21 @@ export default function PredictPage() {
     setErrorState(null);
     setResult(null);
 
-    // Form validation check — ignore empty fields
+    // Run full validation & touch all fields so every error is visible
+    const allErrors = validateAllFields(formData);
+    setFieldErrors(allErrors);
+    const allTouched = {};
+    for (const f of Object.keys(FIELD_CONSTRAINTS)) allTouched[f] = true;
+    setTouchedFields(allTouched);
+
+    if (Object.keys(allErrors).length > 0) {
+      // Scroll the first invalid field into view
+      const firstBad = Object.keys(allErrors)[0];
+      document.getElementById(firstBad)?.focus({ preventScroll: false });
+      return;
+    }
+
+    // Legacy NaN guard (belt-and-suspenders)
     for (const key of Object.keys(formData)) {
       if (key !== 'planet_name' && formData[key] !== '' && isNaN(formData[key])) {
         setErrorState({
@@ -314,6 +638,9 @@ export default function PredictPage() {
     executePrediction(strategy);
   };
 
+  // Derive submit-disabled state
+  const submitDisabled = loading || hasErrors;
+
   return (
     <div className="site-container section-padding flex flex-col" style={{ gap: '56px' }}>
       {/* PAGE HEADER */}
@@ -333,16 +660,16 @@ export default function PredictPage() {
             Quick System Configurations
           </span>
           <div className="flex flex-wrap gap-3">
-            <button onClick={() => applyPreset('earth')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
+            <button type="button" onClick={() => applyPreset('earth')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
               🌍 Earth-like
             </button>
-            <button onClick={() => applyPreset('superEarth')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
+            <button type="button" onClick={() => applyPreset('superEarth')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
               🪐 Super-Earth
             </button>
-            <button onClick={() => applyPreset('gasGiant')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
+            <button type="button" onClick={() => applyPreset('gasGiant')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
               🌀 Gas Giant
             </button>
-            <button onClick={() => applyPreset('lavaWorld')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
+            <button type="button" onClick={() => applyPreset('lavaWorld')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
               🔥 Lava World
             </button>
           </div>
@@ -354,13 +681,13 @@ export default function PredictPage() {
             Sample Exoplanet Explorer
           </span>
           <div className="flex flex-wrap gap-3">
-            <button onClick={() => applyPreset('kepler442b', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
+            <button type="button" onClick={() => applyPreset('kepler442b', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
               🔭 Kepler-442b
             </button>
-            <button onClick={() => applyPreset('trappist1e', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
+            <button type="button" onClick={() => applyPreset('trappist1e', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
               ☄️ TRAPPIST-1e
             </button>
-            <button onClick={() => applyPreset('proximaCentaurib', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
+            <button type="button" onClick={() => applyPreset('proximaCentaurib', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
               📡 Proxima Centauri b
             </button>
           </div>
@@ -370,7 +697,7 @@ export default function PredictPage() {
       {/* CORE FORM & RESULTS LAYOUT */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Input Parameters Form */}
-        <form onSubmit={handleSubmit} className="lg:col-span-8 flex flex-col gap-6">
+        <form onSubmit={handleSubmit} noValidate className="lg:col-span-8 flex flex-col gap-6">
           <GlassCard glow={true} variant="raised" className="flex flex-col gap-8 p-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/5 pb-6 gap-3">
               <span className="font-mono text-sm font-bold text-text-primary tracking-wide uppercase">
@@ -407,195 +734,44 @@ export default function PredictPage() {
               />
             </div>
 
-            {/* THREE-COLUMN GRID FIELDS */}
+            {/* THREE-COLUMN GRID FIELDS — data-driven */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-              {/* Column 1: Planet Properties */}
-              <div className="flex flex-col gap-7">
-                <span className="form-section-label text-primary">
-                  Planet Dimensions
-                </span>
-
-                {/* Radius */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="P_RADIUS" className="m-0">Radius (R_Earth)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.P_RADIUS} />
-                  </div>
-                  <input type="number" id="P_RADIUS" step="0.01" min="0.01" max="100.0" value={formData.P_RADIUS} onChange={(e) => handleInputChange('P_RADIUS', e.target.value)} />
+              {COLUMN_DEFS.map((col) => (
+                <div key={col.label} className="flex flex-col gap-7">
+                  <span className={`form-section-label ${col.colorClass}`}>
+                    {col.label}
+                  </span>
+                  {col.fields.map((f) => (
+                    <ValidatedInput
+                      key={f.key}
+                      field={f.key}
+                      label={f.label}
+                      value={formData[f.key]}
+                      error={fieldErrors[f.key]}
+                      touched={!!touchedFields[f.key]}
+                      onChange={handleInputChange}
+                      onBlur={handleFieldBlur}
+                    />
+                  ))}
                 </div>
-
-                {/* Mass */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="P_MASS" className="m-0">Mass (M_Earth)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.P_MASS} />
-                  </div>
-                  <input type="number" id="P_MASS" step="0.01" min="0.01" max="10000.0" value={formData.P_MASS} onChange={(e) => handleInputChange('P_MASS', e.target.value)} />
-                </div>
-
-                {/* Density */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="P_DENSITY" className="m-0">Density (g/cm³)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.P_DENSITY} />
-                  </div>
-                  <input type="number" id="P_DENSITY" step="0.01" min="0.01" max="50.0" value={formData.P_DENSITY} onChange={(e) => handleInputChange('P_DENSITY', e.target.value)} />
-                </div>
-
-                {/* Surf Temp */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="P_TEMP_SURF" className="m-0">Surf Temp (K)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.P_TEMP_SURF} />
-                  </div>
-                  <input type="number" id="P_TEMP_SURF" step="1" min="1" max="5000" value={formData.P_TEMP_SURF} onChange={(e) => handleInputChange('P_TEMP_SURF', e.target.value)} />
-                </div>
-
-                {/* Hill Sphere */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="P_HILL_SPHERE" className="m-0">Hill Sphere (AU)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.P_HILL_SPHERE} />
-                  </div>
-                  <input type="number" id="P_HILL_SPHERE" step="0.0001" min="0.0001" value={formData.P_HILL_SPHERE} onChange={(e) => handleInputChange('P_HILL_SPHERE', e.target.value)} />
-                </div>
-              </div>
-
-              {/* Column 2: Orbit Properties */}
-              <div className="flex flex-col gap-7">
-                <span className="form-section-label text-accent">
-                  Orbital Mechanics
-                </span>
-
-                {/* Period */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="P_PERIOD" className="m-0">Period (Days)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.P_PERIOD} />
-                  </div>
-                  <input type="number" id="P_PERIOD" step="0.01" min="0.01" max="100000.0" value={formData.P_PERIOD} onChange={(e) => handleInputChange('P_PERIOD', e.target.value)} />
-                </div>
-
-                {/* Semi Major Axis */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="P_SEMI_MAJOR_AXIS" className="m-0">Semi-Major Axis (AU)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.P_SEMI_MAJOR_AXIS} />
-                  </div>
-                  <input type="number" id="P_SEMI_MAJOR_AXIS" step="0.001" min="0.001" max="500.0" value={formData.P_SEMI_MAJOR_AXIS} onChange={(e) => handleInputChange('P_SEMI_MAJOR_AXIS', e.target.value)} />
-                </div>
-
-                {/* Eccentricity */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="P_ECCENTRICITY" className="m-0">Eccentricity</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.P_ECCENTRICITY} />
-                  </div>
-                  <input type="number" id="P_ECCENTRICITY" step="0.001" min="0.0" max="1.0" value={formData.P_ECCENTRICITY} onChange={(e) => handleInputChange('P_ECCENTRICITY', e.target.value)} />
-                </div>
-
-                {/* Inclination */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="P_INCLINATION" className="m-0">Inclination (°)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.P_INCLINATION} />
-                  </div>
-                  <input type="number" id="P_INCLINATION" step="0.01" min="0.0" max="180.0" value={formData.P_INCLINATION} onChange={(e) => handleInputChange('P_INCLINATION', e.target.value)} />
-                </div>
-              </div>
-
-              {/* Column 3: Star Properties */}
-              <div className="flex flex-col gap-7">
-                <span className="form-section-label text-highlight">
-                  Stellar Attributes
-                </span>
-
-                {/* Temp */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="S_TEMPERATURE" className="m-0">Star Temp (K)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.S_TEMPERATURE} />
-                  </div>
-                  <input type="number" id="S_TEMPERATURE" step="1" min="500" max="50000" value={formData.S_TEMPERATURE} onChange={(e) => handleInputChange('S_TEMPERATURE', e.target.value)} />
-                </div>
-
-                {/* Luminosity */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="S_LUMINOSITY" className="m-0">Luminosity (L_Sun)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.S_LUMINOSITY} />
-                  </div>
-                  <input type="number" id="S_LUMINOSITY" step="0.00001" min="0.00001" max="1000000.0" value={formData.S_LUMINOSITY} onChange={(e) => handleInputChange('S_LUMINOSITY', e.target.value)} />
-                </div>
-
-                {/* Metallicity */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="S_METALLICITY" className="m-0">Metallicity ([Fe/H])</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.S_METALLICITY} />
-                  </div>
-                  <input type="number" id="S_METALLICITY" step="0.01" min="-10.0" max="10.0" value={formData.S_METALLICITY} onChange={(e) => handleInputChange('S_METALLICITY', e.target.value)} />
-                </div>
-
-                {/* Star Apparent Magnitude */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="S_MAG" className="m-0">Star Apparent Mag</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.S_MAG} />
-                  </div>
-                  <input type="number" id="S_MAG" step="0.01" value={formData.S_MAG} onChange={(e) => handleInputChange('S_MAG', e.target.value)} />
-                </div>
-
-                {/* Star Distance */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="S_DISTANCE" className="m-0">Distance (parsecs)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.S_DISTANCE} />
-                  </div>
-                  <input type="number" id="S_DISTANCE" step="0.01" min="0.01" value={formData.S_DISTANCE} onChange={(e) => handleInputChange('S_DISTANCE', e.target.value)} />
-                </div>
-
-                {/* Star Mass */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="S_MASS" className="m-0">Star Mass (M_Sun)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.S_MASS} />
-                  </div>
-                  <input type="number" id="S_MASS" step="0.01" min="0.01" value={formData.S_MASS} onChange={(e) => handleInputChange('S_MASS', e.target.value)} />
-                </div>
-
-                {/* Star Radius */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="S_RADIUS" className="m-0">Star Radius (R_Sun)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.S_RADIUS} />
-                  </div>
-                  <input type="number" id="S_RADIUS" step="0.01" min="0.01" value={formData.S_RADIUS} onChange={(e) => handleInputChange('S_RADIUS', e.target.value)} />
-                </div>
-
-                {/* Star Age */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="S_AGE" className="m-0">Star Age (Gyr)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.S_AGE} />
-                  </div>
-                  <input type="number" id="S_AGE" step="0.01" min="0.01" value={formData.S_AGE} onChange={(e) => handleInputChange('S_AGE', e.target.value)} />
-                </div>
-
-                {/* Star Surface Gravity */}
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="S_LOG_G" className="m-0">Star Gravity (log g)</label>
-                    <Tooltip content={FIELD_DESCRIPTIONS.S_LOG_G} />
-                  </div>
-                  <input type="number" id="S_LOG_G" step="0.01" value={formData.S_LOG_G} onChange={(e) => handleInputChange('S_LOG_G', e.target.value)} />
-                </div>
-              </div>
+              ))}
             </div>
+
+            {/* Inline validation summary when errors block submission */}
+            {hasErrors && Object.keys(touchedFields).length > 0 && (
+              <div className="validation-summary" role="alert">
+                <span className="validation-summary-icon">⚠</span>
+                <span>
+                  {Object.keys(fieldErrors).length === 1
+                    ? '1 field requires attention before submitting.'
+                    : `${Object.keys(fieldErrors).length} fields require attention before submitting.`}
+                </span>
+              </div>
+            )}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitDisabled}
               className="btn-primary w-full mt-6 font-mono shadow-[0_0_20px_rgba(79,140,255,0.2)]"
             >
               {loading ? (
@@ -605,6 +781,13 @@ export default function PredictPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Calculating Orbital Telemetry...
+                </span>
+              ) : hasErrors ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="h-5 w-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Fix Validation Errors to Predict
                 </span>
               ) : (
                 'Run Habitability Predictor'

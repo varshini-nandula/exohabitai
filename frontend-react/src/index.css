@@ -548,6 +548,96 @@ label {
 }
 
 /* ================================================================
+   Inline Field Validation Styles
+   ================================================================ */
+
+/* Error state — red border + subtle glow */
+input.field-error,
+input.field-error:focus {
+  border-color: var(--color-danger) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12),
+    0 0 10px rgba(239, 68, 68, 0.06) !important;
+  background: rgba(239, 68, 68, 0.04) !important;
+}
+
+/* Valid state — subtle green accent after user has touched the field */
+input.field-valid {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+input.field-valid:focus {
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12),
+    0 0 10px rgba(34, 197, 94, 0.06);
+}
+
+/* Error message text beneath the input */
+.field-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--color-danger);
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  animation: fieldErrorIn 0.2s ease-out;
+}
+
+.field-error-msg::before {
+  content: '●';
+  font-size: 0.5rem;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* Range hint text beneath the input */
+.field-hint {
+  display: block;
+  margin-top: 5px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+}
+
+/* Validation summary bar above the submit button */
+.validation-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-danger);
+  animation: fieldErrorIn 0.25s ease-out;
+}
+
+.validation-summary-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+@keyframes fieldErrorIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================================================
    Button Styles
    ================================================================ */
 
