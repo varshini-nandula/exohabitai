@@ -87,8 +87,10 @@ class TestBatchStorage:
         assert post_stats["total_planets"] == pre_total + 1
 
     def test_stored_planets_appear_in_rank(self, client, earth_like_payload):
-        """After batch storage, the planet should appear in rankings."""
+        """After batch storage and approval, the planet appears in rankings."""
+        from tests.conftest import approve_all_planets
         client.post("/predict_and_store_batch", json=[earth_like_payload])
+        approve_all_planets()
         resp = client.get("/rank")
         planets = resp.get_json()["data"]["planets"]
         names = [p["planet_name"] for p in planets]

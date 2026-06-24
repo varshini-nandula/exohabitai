@@ -17,6 +17,8 @@ WHAT FAILURES WOULD INDICATE:
 
 import pytest
 
+from tests.conftest import approve_all_planets
+
 
 # ===========================================================================
 # 1. BASIC RANKING FUNCTIONALITY
@@ -60,6 +62,7 @@ class TestRankingWithData:
         """Stored planets should appear in the ranking."""
         client.post("/predict_and_store_batch",
                      json=[earth_like_payload, gas_giant_payload])
+        approve_all_planets()
         resp = client.get("/rank")
         data = resp.get_json()["data"]
         assert data["returned_count"] == 2
@@ -70,6 +73,7 @@ class TestRankingWithData:
         """Planets must be ordered by habitability_probability descending."""
         client.post("/predict_and_store_batch",
                      json=[earth_like_payload, gas_giant_payload])
+        approve_all_planets()
         resp = client.get("/rank")
         planets = resp.get_json()["data"]["planets"]
         probs = [p["habitability_probability"] for p in planets]
@@ -82,6 +86,7 @@ class TestRankingWithData:
         """Rank numbers should be 1, 2, 3, ... (sequential)."""
         client.post("/predict_and_store_batch",
                      json=[earth_like_payload, gas_giant_payload])
+        approve_all_planets()
         resp = client.get("/rank")
         planets = resp.get_json()["data"]["planets"]
         ranks = [p["rank"] for p in planets]
@@ -90,6 +95,7 @@ class TestRankingWithData:
     def test_each_planet_has_required_fields(self, client, earth_like_payload):
         """Each planet in the ranking must have rank, name, and probability."""
         client.post("/predict_and_store_batch", json=[earth_like_payload])
+        approve_all_planets()
         resp = client.get("/rank")
         planet = resp.get_json()["data"]["planets"][0]
         assert "rank" in planet
@@ -114,6 +120,7 @@ class TestRankingPagination:
         """limit=1 should return exactly 1 planet."""
         client.post("/predict_and_store_batch",
                      json=[earth_like_payload, gas_giant_payload])
+        approve_all_planets()
         resp = client.get("/rank?limit=1")
         data = resp.get_json()["data"]
         assert len(data["planets"]) == 1
@@ -124,6 +131,7 @@ class TestRankingPagination:
         """limit=all returns all planets."""
         client.post("/predict_and_store_batch",
                      json=[earth_like_payload, gas_giant_payload])
+        approve_all_planets()
         resp = client.get("/rank?limit=all")
         data = resp.get_json()["data"]
         assert data["returned_count"] == 2
@@ -131,6 +139,7 @@ class TestRankingPagination:
     def test_default_limit_is_all(self, client, earth_like_payload):
         """No limit parameter → returns all planets."""
         client.post("/predict_and_store_batch", json=[earth_like_payload])
+        approve_all_planets()
         resp = client.get("/rank")
         assert resp.get_json()["data"]["returned_count"] >= 1
 

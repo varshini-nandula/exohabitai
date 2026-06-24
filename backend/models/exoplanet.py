@@ -12,6 +12,30 @@ from datetime import datetime, timezone
 from extensions import db
 
 
+class PlanetStatus:
+    """
+    Moderation status constants for a planet submission.
+
+    Workflow:
+        - User-submitted planets start as PENDING and are invisible in
+          public rankings until an admin approves them.
+        - Dataset-seeded planets are inserted directly as APPROVED.
+        - Admins can mark a submission REJECTED (kept for audit, hidden).
+
+    Stored as a plain string column (no enum table) to stay extensible —
+    mirrors the design rationale used for UserRole.
+    """
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+    ALL_STATUSES = [PENDING, APPROVED, REJECTED]
+
+    @classmethod
+    def is_valid(cls, status: str) -> bool:
+        return status in cls.ALL_STATUSES
+
+
 class Exoplanet(db.Model):
     """
     Stores planet data + prediction results.
@@ -43,6 +67,14 @@ class Exoplanet(db.Model):
     # Model version tracking — links each prediction to the exact pipeline
     # that produced it, enabling stale-data detection on model upgrades.
     model_version = db.Column(db.String(50))
+
+    # --- Moderation status ---
+    # User submissions default to "pending" and are hidden from public
+    # rankings until an admin approves them. Dataset-seeded planets are
+    # inserted as "approved". See PlanetStatus for the workflow.
+    status = db.Column(
+        db.String(20), nullable=False, default=PlanetStatus.PENDING, index=True,
+    )
 
     # Audit & continuous learning
     raw_input_json = db.Column(db.Text)       # full input payload

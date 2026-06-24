@@ -100,6 +100,28 @@ def migrate():
     else:
         logger.info("Column created_by_user_id already exists — skipping")
 
+    # ── status (moderation workflow) ─────────────────────────────────
+    # New column defaults to 'pending'. Existing rows pre-date moderation
+    # and must stay visible, so we backfill them to 'approved'.
+    if "status" not in existing:
+        logger.info("Adding column: status (VARCHAR(20) DEFAULT 'pending')")
+        cursor.execute(
+            "ALTER TABLE exoplanets ADD COLUMN status VARCHAR(20) "
+            "NOT NULL DEFAULT 'pending'"
+        )
+        # Back-fill all pre-existing rows to 'approved' so they remain
+        # visible in public rankings after the migration.
+        cursor.execute("UPDATE exoplanets SET status = 'approved'")
+        logger.info("Back-filled %d existing row(s) to status='approved'",
+                    cursor.rowcount)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_exoplanets_status "
+            "ON exoplanets(status)"
+        )
+        migrations_applied += 1
+    else:
+        logger.info("Column status already exists — skipping")
+
     # ── users table ──────────────────────────────────────────────────
     cursor.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"

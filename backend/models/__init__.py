@@ -12,7 +12,7 @@ Usage:
 """
 
 from models.user import User, UserRole
-from models.exoplanet import Exoplanet
+from models.exoplanet import Exoplanet, PlanetStatus
 from models.retraining_log import RetrainingLog
 
-__all__ = ["User", "UserRole", "Exoplanet", "RetrainingLog"]
+__all__ = ["User", "UserRole", "Exoplanet", "PlanetStatus", "RetrainingLog"]

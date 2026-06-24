@@ -53,6 +53,16 @@ def app():
     import app as app_module
     app_module._rate_limit_store.clear()
 
+    # Wait for any still-running background retraining thread from a previous
+    # test to finish.  Background threads are daemon threads, so they can
+    # outlive the test that spawned them.  Without this wait, a thread can
+    # write a RetrainingLog row into the *next* test's fresh in-memory DB,
+    # making "test_logs_empty_initially" see a non-empty list.
+    import time as _time
+    _deadline = _time.monotonic() + 10.0  # max 10 s wait
+    while app_module._retrain_status["is_running"] and _time.monotonic() < _deadline:
+        _time.sleep(0.1)
+
     # Reset retraining status so each test starts with clean state
     app_module._retrain_status.update({
         "is_running": False,
@@ -73,6 +83,7 @@ def app():
         yield flask_app
         _db.session.remove()
         _db.drop_all()
+
 
 
 @pytest.fixture(scope="function")
@@ -291,3 +302,19 @@ def create_admin(client):
     resp = login_user(client, username="admin", password="adminpass123")
     token = resp.get_json()["data"]["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+def approve_all_planets():
+    """
+    Mark every stored planet as APPROVED.
+
+    User-submitted planets are PENDING by default and hidden from public
+    rankings. Tests that exercise /rank content seed planets and then call
+    this helper to make them visible — mirroring an admin approval.
+    """
+    from extensions import db
+    from models.exoplanet import Exoplanet, PlanetStatus
+    Exoplanet.query.update(
+        {Exoplanet.status: PlanetStatus.APPROVED}, synchronize_session=False
+    )
+    db.session.commit()
