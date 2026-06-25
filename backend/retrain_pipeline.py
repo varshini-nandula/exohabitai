@@ -428,23 +428,212 @@ def retrain(dry_run: bool = False) -> dict:
         "pipeline_path": PIPELINE_PATH,
     }
 
+# ============================================================================
+# 7. DATASET-DRIVEN RETRAIN FUNCTION
+# ============================================================================
+
+def retrain_from_dataset(additional_csv_path: str = None,
+                         dry_run: bool = False) -> dict:
+    """
+    Dataset-driven retraining — trains on verified CSV files only.
+
+    Training data sources:
+        1. planetsdata.csv (original baseline — always included)
+        2. additional_csv_path (verified CSV uploaded by admin — optional)
+
+    Does NOT read from the Exoplanet prediction table.
+    This prevents the prediction feedback loop where model outputs
+    become training inputs.
+
+    Args:
+        additional_csv_path: Path to an admin-uploaded, validated CSV file
+            containing ground truth labels (P_HABITABLE_BINARY column).
+        dry_run: If True, evaluate only — don't save the pipeline.
+
+    Returns:
+        Summary dict with metrics and new model version.
+    """
+    # ── 1. Load & prepare original dataset ───────────────────────────
+    if not os.path.isfile(DATA_PATH):
+        raise FileNotFoundError(f"Original dataset not found: {DATA_PATH}")
+
+    original_df = prepare_dataframe(DATA_PATH)
+    logger.info("Original dataset: %d rows", len(original_df))
+
+    # ── 2. Load additional verified dataset (if provided) ────────────
+    additional_count = 0
+    if additional_csv_path and os.path.isfile(additional_csv_path):
+        logger.info("Loading additional dataset: %s", additional_csv_path)
+        additional_df = pd.read_csv(additional_csv_path)
+        additional_count = len(additional_df)
+
+        # The additional CSV should already have P_HABITABLE_BINARY
+        if TARGET not in additional_df.columns:
+            raise ValueError(
+                f"Additional dataset is missing required column: {TARGET}. "
+                f"Training datasets must contain ground truth labels."
+            )
+
+        # Apply same feature engineering as the original dataset
+        # Drop error/limit columns if present
+        drop_cols = _error_limit_cols(additional_df)
+        additional_df.drop(columns=drop_cols, inplace=True, errors="ignore")
+        additional_df.drop(columns=UNNECESSARY_COLUMNS, inplace=True, errors="ignore")
+        additional_df.drop(columns=LEAKAGE_COLUMNS, inplace=True, errors="ignore")
+        additional_df.drop(columns=REDUNDANT_COLUMNS, inplace=True, errors="ignore")
+
+        # Derive star type if S_TEMPERATURE is present
+        if "S_TEMPERATURE" in additional_df.columns:
+            additional_df["Derived_S_TYPE"] = (
+                additional_df["S_TEMPERATURE"].apply(derive_star_type)
+            )
+            additional_df.drop(columns=["S_TYPE"], inplace=True, errors="ignore")
+
+        # Drop P_HABITABLE if present (we use P_HABITABLE_BINARY)
+        additional_df.drop(columns=["P_HABITABLE"], inplace=True, errors="ignore")
+
+        # Ensure column alignment — missing ones → NaN
+        for col in original_df.columns:
+            if col not in additional_df.columns:
+                additional_df[col] = np.nan
+
+        # Deduplicate by P_NAME if present
+        if "P_NAME" in original_df.columns and "P_NAME" in additional_df.columns:
+            add_names = set(additional_df["P_NAME"].dropna().str.strip())
+            original_df = original_df[
+                ~original_df["P_NAME"].str.strip().isin(add_names)
+            ]
+
+        combined_df = pd.concat([original_df, additional_df], ignore_index=True)
+        logger.info(
+            "Merged dataset: %d rows (%d original + %d additional)",
+            len(combined_df), len(original_df), additional_count,
+        )
+    else:
+        combined_df = original_df
+        logger.info(
+            "No additional dataset — retraining on original only (%d rows)",
+            len(combined_df),
+        )
+
+    # ── 3. Prepare features and target ───────────────────────────────
+    X = combined_df.drop(columns=[TARGET, "P_NAME"], errors="ignore")
+    y = combined_df[TARGET]
+
+    numerical_cols = X.select_dtypes(include=["number"]).columns.tolist()
+    categorical_cols = X.select_dtypes(exclude=["number"]).columns.tolist()
+
+    logger.info("Numerical features (%d): %s", len(numerical_cols), numerical_cols)
+    logger.info("Categorical features (%d): %s", len(categorical_cols), categorical_cols)
+
+    # ── 4. Train / Test split ────────────────────────────────────────
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.20, random_state=RANDOM_STATE, stratify=y,
+    )
+    logger.info("Train: %d samples, Test: %d samples", len(X_train), len(X_test))
+
+    # ── 5. Build & train pipeline ────────────────────────────────────
+    new_pipeline = build_unified_pipeline(
+        numerical_cols, categorical_cols, use_smote=True,
+    )
+    new_pipeline.fit(X_train, y_train)
+    logger.info("Pipeline training complete")
+
+    # ── 6. Evaluate ──────────────────────────────────────────────────
+    y_prob_test = new_pipeline.predict_proba(X_test)[:, 1]
+    y_pred_test = (y_prob_test >= 0.5).astype(int)
+
+    metrics = {
+        "accuracy":  round(accuracy_score(y_test, y_pred_test), 4),
+        "precision": round(precision_score(y_test, y_pred_test, zero_division=0), 4),
+        "recall":    round(recall_score(y_test, y_pred_test, zero_division=0), 4),
+        "f1":        round(f1_score(y_test, y_pred_test, zero_division=0), 4),
+        "roc_auc":   round(roc_auc_score(y_test, y_prob_test), 4),
+        "pr_auc":    round(average_precision_score(y_test, y_prob_test), 4),
+    }
+
+    logger.info("Evaluation metrics: %s", metrics)
+    cm = confusion_matrix(y_test, y_pred_test)
+    logger.info("Confusion matrix:\n%s", cm)
+
+    # ── 7. Save (unless dry run) ─────────────────────────────────────
+    if dry_run:
+        logger.info("DRY RUN — pipeline NOT saved")
+        return {
+            "status": "dry_run",
+            "metrics": metrics,
+            "train_size": len(X_train),
+            "test_size": len(X_test),
+            "additional_data_count": additional_count,
+        }
+
+    os.makedirs(ARTIFACT_DIR, exist_ok=True)
+
+    # Back up the old pipeline
+    if os.path.isfile(PIPELINE_PATH):
+        backup_name = PIPELINE_PATH.replace(
+            ".pkl",
+            f"_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl",
+        )
+        os.rename(PIPELINE_PATH, backup_name)
+        logger.info("Backed up previous pipeline to: %s", backup_name)
+
+    joblib.dump(new_pipeline, PIPELINE_PATH)
+    logger.info("New pipeline saved to: %s", PIPELINE_PATH)
+
+    new_hash = compute_model_hash(PIPELINE_PATH)
+    new_version = f"v2_pipeline_{new_hash}"
+    logger.info("New model version: %s", new_version)
+
+    return {
+        "status": "success",
+        "new_model_version": new_version,
+        "metrics": metrics,
+        "train_size": len(X_train),
+        "test_size": len(X_test),
+        "total_dataset_size": len(combined_df),
+        "additional_data_count": additional_count,
+        "user_planets_included": 0,  # We no longer use prediction data
+        "pipeline_path": PIPELINE_PATH,
+    }
+
 
 # ============================================================================
-# 7. CLI ENTRY POINT
+# 8. CLI ENTRY POINT
 # ============================================================================
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Retrain the ExoHabitAI pipeline with user-generated data"
+        description="Retrain the ExoHabitAI pipeline"
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Train and evaluate but do not save the pipeline",
     )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default=None,
+        help="Path to an additional verified CSV dataset for training",
+    )
+    parser.add_argument(
+        "--legacy",
+        action="store_true",
+        help="Use legacy retrain() that reads from prediction DB (deprecated)",
+    )
     args = parser.parse_args()
 
-    result = retrain(dry_run=args.dry_run)
+    if args.legacy:
+        print("\n⚠  Using legacy retrain() — reads from prediction DB (deprecated)")
+        result = retrain(dry_run=args.dry_run)
+    else:
+        result = retrain_from_dataset(
+            additional_csv_path=args.dataset,
+            dry_run=args.dry_run,
+        )
+
     print("\n── Retraining Summary ──")
     for k, v in result.items():
         print(f"  {k}: {v}")
+
