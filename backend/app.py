@@ -75,11 +75,18 @@ jwt.init_app(app)
 from auth import auth_bp  # noqa: E402
 app.register_blueprint(auth_bp)
 
+# Register admin blueprint (control plane)
+from admin import admin_bp  # noqa: E402
+app.register_blueprint(admin_bp)
+
 from cli import register_cli_commands  # noqa: E402
 register_cli_commands(app)
 
 # Import models so SQLAlchemy registers them before create_all()
-from models import User, UserRole, Exoplanet, PlanetStatus, RetrainingLog  # noqa: E402
+from models import (  # noqa: E402
+    User, UserRole, Exoplanet, PlanetStatus, RetrainingLog,
+    TrainingDataset, DatasetStatus, ModelVersion,
+)
 from auth.decorators import admin_required, get_current_user  # noqa: E402
 
 # Log JWT config warnings
@@ -351,7 +358,12 @@ VALID_IMPUTATION_STRATEGIES = {"median", "earth", "zeros", "non_habitable"}
 
 with app.app_context():
     db.create_all()
-    logger.info("Database tables ready (exoplanets, retraining_logs, users)")
+    logger.info("Database tables ready (exoplanets, retraining_logs, users, "
+                "training_datasets, model_versions)")
+
+    # Seed v1.0 model version if the registry is empty
+    from admin.services import seed_initial_model_version
+    seed_initial_model_version(MODEL_VERSION, Config.MODEL_PATH)
 
     # ── Startup stale-data check ─────────────────────────────────────
     stale_count = (
@@ -1474,7 +1486,9 @@ def my_planets():
 
 # ---- TRIGGER RETRAINING (Tasks 1,2,3,4,6 — async, validated, audited) ----
 
-def _run_retraining_background(reason: str, requested_by: str):
+def _run_retraining_background(reason: str, requested_by: str,
+                               additional_csv_path: str = None,
+                               dataset_id: int = None):
     """
     Background worker that performs the actual retraining.
 
@@ -1482,10 +1496,12 @@ def _run_retraining_background(reason: str, requested_by: str):
     Uses _retrain_lock to prevent concurrent runs and updates
     _retrain_status so /retraining_status can report progress.
 
-    Task 2: Compares new-model F1/ROC-AUC against the current model.
-             Only replaces the .pkl if the new model meets the tolerance.
-    Task 3: Logs every run (success / rejected / failed) to RetrainingLog.
-    Task 4: Records the dataset version hash for traceability.
+    Supports dataset-driven retraining:
+        - If additional_csv_path is provided, trains on planetsdata.csv + CSV.
+        - If omitted, trains on planetsdata.csv only (baseline retrain).
+        - Does NOT read from the Exoplanet prediction table.
+
+    After each run, creates a ModelVersion record in the registry.
     """
     global pipeline, PIPELINE_INPUT_COLUMNS, MODEL_VERSION
 
@@ -1494,10 +1510,9 @@ def _run_retraining_background(reason: str, requested_by: str):
     previous_version = MODEL_VERSION
 
     try:
-        from retrain_pipeline import retrain
+        from retrain_pipeline import retrain, retrain_from_dataset
 
-        # --- Capture current model's F1 for comparison (Task 2) ---
-        # We read the last *successful* retraining log to get old F1.
+        # --- Capture current model's F1 for comparison ---
         old_f1 = None
         old_roc = None
         with app.app_context():
@@ -1511,8 +1526,13 @@ def _run_retraining_background(reason: str, requested_by: str):
                 old_f1 = last_success.f1_score
                 old_roc = last_success.roc_auc
 
-        # --- Run the actual retraining ---
-        result = retrain(dry_run=False)
+        # --- Run dataset-driven retraining ---
+        if additional_csv_path:
+            result = retrain_from_dataset(
+                additional_csv_path=additional_csv_path, dry_run=False,
+            )
+        else:
+            result = retrain(dry_run=False)
 
         new_metrics = result.get("metrics", {})
         new_f1 = new_metrics.get("f1")
@@ -1561,6 +1581,30 @@ def _run_retraining_background(reason: str, requested_by: str):
                     db.session.add(log_entry)
                     db.session.commit()
 
+                    # Create a rejected ModelVersion entry for audit trail
+                    from admin.services import get_next_model_version
+                    rejected_version = get_next_model_version()
+                    mv = ModelVersion(
+                        version=rejected_version,
+                        accuracy=new_metrics.get("accuracy"),
+                        precision=new_metrics.get("precision"),
+                        recall=new_metrics.get("recall"),
+                        f1_score=new_f1,
+                        roc_auc=new_roc,
+                        pr_auc=new_metrics.get("pr_auc"),
+                        dataset_version=DATASET_VERSION,
+                        training_dataset_id=dataset_id,
+                        retraining_log_id=log_entry.id,
+                        is_active=False,
+                        created_by=requested_by,
+                        notes=(
+                            f"Rejected — F1 {new_f1:.4f} below threshold "
+                            f"(current: {old_f1:.4f}, tolerance: {tolerance})"
+                        ),
+                    )
+                    db.session.add(mv)
+                    db.session.commit()
+
                     _retrain_status["last_result"] = {
                         "status": "rejected",
                         "message": "New model did not meet performance threshold. Old model retained.",
@@ -1578,7 +1622,7 @@ def _run_retraining_background(reason: str, requested_by: str):
 
             logger.info("Pipeline hot-reloaded — new version: %s", MODEL_VERSION)
 
-            # --- Task 3: Log the successful run ---
+            # --- Log the successful run ---
             log_entry = RetrainingLog(
                 status="success",
                 model_version=new_version,
@@ -1597,9 +1641,34 @@ def _run_retraining_background(reason: str, requested_by: str):
             db.session.add(log_entry)
             db.session.commit()
 
+            # --- Create ModelVersion in registry ---
+            from admin.services import get_next_model_version
+            next_ver = get_next_model_version()
+            # Deactivate previous active version
+            ModelVersion.query.filter_by(is_active=True).update(
+                {"is_active": False}
+            )
+            mv = ModelVersion(
+                version=next_ver,
+                artifact_path=Config.MODEL_PATH,
+                accuracy=new_metrics.get("accuracy"),
+                precision=new_metrics.get("precision"),
+                recall=new_metrics.get("recall"),
+                f1_score=new_f1,
+                roc_auc=new_roc,
+                pr_auc=new_metrics.get("pr_auc"),
+                dataset_version=DATASET_VERSION,
+                training_dataset_id=dataset_id,
+                retraining_log_id=log_entry.id,
+                is_active=True,
+                created_by=requested_by,
+            )
+            db.session.add(mv)
+            db.session.commit()
+
             _retrain_status["last_result"] = {
                 "status": "success",
-                "new_model_version": new_version,
+                "new_model_version": next_ver,
                 "metrics": new_metrics,
             }
 
