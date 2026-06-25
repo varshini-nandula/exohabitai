@@ -95,9 +95,14 @@ export default function MainLayout({ children }) {
             >
               CONTRIBUTE DATA
             </button>
+            {user?.role === 'admin' && (
+              <NavLink to="/admin" className={activeClassName}>
+                ADMIN
+              </NavLink>
+            )}
 
             {/* User area */}
-            {isAuthenticated && (
+            {isAuthenticated ? (
               <div className="relative border-l border-white/10 pl-6 ml-2" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -156,6 +161,18 @@ export default function MainLayout({ children }) {
                       </svg>
                       History
                     </Link>
+                    {user?.role === 'admin' && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-accent hover:text-text-primary hover:bg-white/5 transition-colors font-mono"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        Admin Panel
+                      </Link>
+                    )}
 
                     <div className="border-t border-white/5 mt-1 pt-1">
                       <button
@@ -170,6 +187,21 @@ export default function MainLayout({ children }) {
                     </div>
                   </div>
                 )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 border-l border-white/10 pl-6 ml-2 font-mono text-xs">
+                <Link
+                  to="/login"
+                  className="font-semibold transition-colors py-2 px-3 text-text-secondary hover:text-text-primary rounded-lg hover:bg-white/5"
+                >
+                  LOGIN
+                </Link>
+                <Link
+                  to="/register"
+                  className="font-semibold py-2 px-3 text-space-900 bg-primary hover:bg-primary-light transition-colors rounded-lg shadow-[0_0_15px_rgba(79,140,255,0.3)]"
+                >
+                  REGISTER
+                </Link>
               </div>
             )}
           </nav>
@@ -246,6 +278,11 @@ export default function MainLayout({ children }) {
                   <NavLink to="/history" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
                     HISTORY
                   </NavLink>
+                  {user?.role === 'admin' && (
+                    <NavLink to="/admin" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
+                      ADMIN PANEL
+                    </NavLink>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="w-full btn-secondary text-danger hover:bg-danger/10 border-danger/20 justify-start mt-4"
