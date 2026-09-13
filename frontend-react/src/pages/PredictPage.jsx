@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { predictionAPI } from '../api/prediction';
 import { extractError } from '../api/client';
@@ -7,6 +8,28 @@ import HabitabilityGauge from '../components/HabitabilityGauge';
 import Tooltip from '../components/Tooltip';
 import ErrorState from '../components/ErrorState';
 import ImputationModal, { computeMissingFeatures } from '../components/ImputationModal';
+
+export const FIELD_HUMAN_NAMES = {
+  P_RADIUS: 'Planet Radius',
+  P_MASS: 'Planet Mass',
+  P_DENSITY: 'Planet Density',
+  P_TEMP_SURF: 'Surface Temperature',
+  P_PERIOD: 'Orbital Period',
+  P_SEMI_MAJOR_AXIS: 'Semi-Major Axis',
+  P_ECCENTRICITY: 'Eccentricity',
+  P_INCLINATION: 'Inclination',
+  P_HILL_SPHERE: 'Hill Sphere',
+  S_TEMPERATURE: 'Host Star Temperature',
+  S_LUMINOSITY: 'Host Star Luminosity',
+  S_METALLICITY: 'Host Star Metallicity',
+  S_MAG: 'Host Star Apparent Magnitude',
+  S_DISTANCE: 'Distance to Star',
+  S_MASS: 'Host Star Mass',
+  S_RADIUS: 'Host Star Radius',
+  S_AGE: 'Host Star Age',
+  S_LOG_G: 'Host Star Surface Gravity',
+};
+
 
 const EMPTY_FORM_STATE = {
   planet_name: '',
@@ -370,39 +393,39 @@ function rangeHint(field) {
 
 const COLUMN_DEFS = [
   {
-    label: 'Planet Dimensions',
+    label: 'Planetary Dimensions & Orbit',
     colorClass: 'text-primary',
     fields: [
-      { key: 'P_RADIUS',     label: 'Radius (R_Earth)' },
-      { key: 'P_MASS',       label: 'Mass (M_Earth)' },
-      { key: 'P_DENSITY',    label: 'Density (g/cm³)' },
-      { key: 'P_TEMP_SURF',  label: 'Surf Temp (K)' },
-      { key: 'P_HILL_SPHERE', label: 'Hill Sphere (AU)' },
-    ],
-  },
-  {
-    label: 'Orbital Mechanics',
-    colorClass: 'text-accent',
-    fields: [
+      { key: 'P_RADIUS',          label: 'Radius (R_Earth)' },
+      { key: 'P_MASS',            label: 'Mass (M_Earth)' },
+      { key: 'P_DENSITY',         label: 'Density (g/cm³)' },
+      { key: 'P_TEMP_SURF',       label: 'Surf Temp (K)' },
       { key: 'P_PERIOD',          label: 'Period (Days)' },
       { key: 'P_SEMI_MAJOR_AXIS', label: 'Semi-Major Axis (AU)' },
-      { key: 'P_ECCENTRICITY',    label: 'Eccentricity' },
-      { key: 'P_INCLINATION',     label: 'Inclination (°)' },
     ],
   },
   {
-    label: 'Stellar Attributes',
+    label: 'Orbital & System Dynamics',
+    colorClass: 'text-accent',
+    fields: [
+      { key: 'P_ECCENTRICITY',    label: 'Eccentricity' },
+      { key: 'P_INCLINATION',     label: 'Inclination (°)' },
+      { key: 'P_HILL_SPHERE',     label: 'Hill Sphere (AU)' },
+      { key: 'S_MAG',             label: 'Star Apparent Mag' },
+      { key: 'S_DISTANCE',        label: 'Distance (parsecs)' },
+      { key: 'S_AGE',             label: 'Star Age (Gyr)' },
+    ],
+  },
+  {
+    label: 'Host Star Physics',
     colorClass: 'text-highlight',
     fields: [
-      { key: 'S_TEMPERATURE', label: 'Star Temp (K)' },
-      { key: 'S_LUMINOSITY',  label: 'Luminosity (L_Sun)' },
-      { key: 'S_METALLICITY', label: 'Metallicity ([Fe/H])' },
-      { key: 'S_MAG',         label: 'Star Apparent Mag' },
-      { key: 'S_DISTANCE',    label: 'Distance (parsecs)' },
-      { key: 'S_MASS',        label: 'Star Mass (M_Sun)' },
-      { key: 'S_RADIUS',      label: 'Star Radius (R_Sun)' },
-      { key: 'S_AGE',         label: 'Star Age (Gyr)' },
-      { key: 'S_LOG_G',       label: 'Star Gravity (log g)' },
+      { key: 'S_TEMPERATURE',     label: 'Star Temp (K)' },
+      { key: 'S_LUMINOSITY',      label: 'Luminosity (L_Sun)' },
+      { key: 'S_METALLICITY',     label: 'Metallicity ([Fe/H])' },
+      { key: 'S_MASS',            label: 'Star Mass (M_Sun)' },
+      { key: 'S_RADIUS',          label: 'Star Radius (R_Sun)' },
+      { key: 'S_LOG_G',           label: 'Star Gravity (log g)' },
     ],
   },
 ];
@@ -618,7 +641,7 @@ export default function PredictPage() {
       if (key !== 'planet_name' && formData[key] !== '' && isNaN(formData[key])) {
         setErrorState({
           variant: 'validation',
-          message: `Parameter "${key}" has an invalid numeric entry. Please verify.`,
+          message: `Parameter "${FIELD_HUMAN_NAMES[key] || key}" has an invalid numeric entry. Please verify.`,
         });
         return;
       }
@@ -796,8 +819,8 @@ export default function PredictPage() {
           </GlassCard>
         </form>
 
-        {/* Prediction Results Board */}
-        <div className="lg:col-span-4 flex flex-col gap-6 w-full">
+        {/* Prediction Results Board — Sticky layout */}
+        <div className="lg:col-span-4 flex flex-col gap-6 w-full lg:sticky lg:top-24 self-start">
           {/* Active Error Displays */}
           {errorState && (
             <ErrorState
@@ -901,8 +924,39 @@ export default function PredictPage() {
                 </div>
               )}
 
+              {/* Next-Step Journey CTAs */}
+              <div className="flex flex-col gap-2.5 pt-4 border-t border-white/5">
+                <div className="flex gap-2">
+                  <Link
+                    to="/rankings"
+                    className="btn-secondary flex-1 text-center text-xs py-2.5 px-3 border-white/10 bg-white/5 hover:bg-white/10 justify-center"
+                  >
+                    📊 Rankings
+                  </Link>
+                  {isAuthenticated && (
+                    <Link
+                      to="/history"
+                      className="btn-secondary flex-1 text-center text-xs py-2.5 px-3 border-white/10 bg-white/5 hover:bg-white/10 justify-center"
+                    >
+                      📁 My Predictions
+                    </Link>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResult(null);
+                    setErrorState(null);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="text-xs text-text-muted hover:text-text-primary py-1.5 transition-colors text-center cursor-pointer"
+                >
+                  Evaluate Another Candidate ↺
+                </button>
+              </div>
+
               {/* Academic Disclaimer */}
-              <div className="text-[10px] text-text-muted leading-relaxed border-t border-white/5 pt-6 text-justify select-none" style={{ lineHeight: '1.7' }}>
+              <div className="text-[10px] text-text-muted leading-relaxed border-t border-white/5 pt-4 text-justify select-none" style={{ lineHeight: '1.7' }}>
                 <strong>Science Disclaimer:</strong> Predictions are generated by a machine learning model trained on historical exoplanet datasets and should be interpreted as exploratory estimates rather than scientific confirmation of habitability.
               </div>
             </GlassCard>
