@@ -1,12 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 /* ================================================================
-   ExoHabitAI — Deep Space Observatory Design System
+   ExoHabitAI — Deep Space Observatory Design System v2.0
+   ================================================================
+   Redesigned for clarity, consistency, and accessibility.
+   Visual space theme preserved. Language layer replaced.
    ================================================================ */
 
 @theme {
   /* Background Palette */
+  --color-space-950: #030610;
   --color-space-900: #050816;
   --color-space-800: #0B1026;
   --color-space-700: #101935;
@@ -37,36 +41,49 @@
   --color-glass-border: rgba(255, 255, 255, 0.08);
   --color-glass-hover: rgba(255, 255, 255, 0.06);
 
-  /* Text */
+  /* Text — Improved contrast for accessibility */
   --color-text-primary: #E2E8F0;
   --color-text-secondary: #94A3B8;
-  --color-text-muted: #64748B;
+  --color-text-muted: #7C8BA5;
 }
 
 /* ================================================================
-   Spacing Scale
+   Design Tokens — Spacing (8px grid)
    ================================================================ */
 
 :root {
-  --space-xs: 8px;
-  --space-sm: 16px;
-  --space-md: 24px;
-  --space-lg: 32px;
-  --space-xl: 48px;
-  --space-2xl: 64px;
-  --space-3xl: 96px;
-  --space-4xl: 128px;
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
 
-  /* Card Composition Tokens */
-  --card-padding: 32px;
-  --card-padding-lg: 40px;
-  --card-padding-xl: 48px;
-  --card-gap-section: 28px;
-  --card-gap-title: 16px;
-  --card-gap-desc: 24px;
-  --card-gap-content: 20px;
-  --card-gap-actions: 28px;
-  --card-content-inset: 4px;
+  /* Card padding tokens (constrained to 3 sizes) */
+  --card-pad-sm: 16px;
+  --card-pad-md: 24px;
+  --card-pad-lg: 32px;
+
+  /* Border radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-glow-primary: 0 0 20px rgba(79, 140, 255, 0.15);
+  --shadow-glow-accent: 0 0 20px rgba(94, 234, 212, 0.12);
 }
 
 /* ================================================================
@@ -78,18 +95,18 @@
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
-  padding-inline: var(--space-md);
+  padding-inline: var(--space-6);
 }
 
 @media (min-width: 640px) {
   .site-container {
-    padding-inline: var(--space-lg);
+    padding-inline: var(--space-8);
   }
 }
 
 @media (min-width: 1024px) {
   .site-container {
-    padding-inline: var(--space-xl);
+    padding-inline: var(--space-12);
   }
 }
 
@@ -104,14 +121,13 @@
 
 @media (max-width: 768px) {
   .section-padding {
-    padding-top: 56px;
-    padding-bottom: 56px;
+    padding-top: 48px;
+    padding-bottom: 48px;
   }
 }
 
 /* ================================================================
    Section Header — Consistent typography hierarchy
-   Eyebrow (12px) → Heading (20px) → Description (40px) → Content
    ================================================================ */
 
 .section-header {
@@ -124,11 +140,11 @@
 
 .section-header .section-eyebrow {
   display: block;
-  font-family: 'Courier New', monospace;
-  font-size: 0.65rem;
-  letter-spacing: 0.2em;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--color-text-muted);
   margin-bottom: 12px;
 }
@@ -136,10 +152,10 @@
 .section-header h2 {
   font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   color: var(--color-text-primary);
   line-height: 1.2;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .section-header p {
@@ -152,8 +168,7 @@
 }
 
 /* ================================================================
-   Page Header — For non-homepage pages (Predict, Rankings, etc.)
-   Centered eyebrow → heading → description with consistent rhythm
+   Page Header — For non-homepage pages
    ================================================================ */
 
 .page-header {
@@ -166,9 +181,9 @@
 
 .page-header .page-eyebrow {
   display: block;
-  font-family: 'Courier New', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 600;
   margin-bottom: 12px;
@@ -184,7 +199,7 @@
 }
 
 .page-header p {
-  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
   color: var(--color-text-secondary);
   line-height: 1.7;
   max-width: 50ch;
@@ -218,55 +233,34 @@
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .form-section-label {
-  font-family: 'Courier New', monospace;
-  font-size: 0.7rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  padding-bottom: 14px;
-  margin-bottom: 24px;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 /* ================================================================
    Card Composition Utilities
    ================================================================ */
 
-.card-body {
-  padding: var(--card-padding);
-}
+.card-body { padding: var(--card-pad-md); }
+.card-body-sm { padding: var(--card-pad-sm); }
+.card-body-lg { padding: var(--card-pad-lg); }
 
-.card-body-lg {
-  padding: var(--card-padding-lg);
-}
-
-.card-body-xl {
-  padding: var(--card-padding-xl);
-}
-
-/* Internal spacing rhythm for card content */
 .card-eyebrow {
-  font-family: 'Courier New', monospace;
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
-}
-
-.card-eyebrow+.card-title {
-  margin-top: var(--card-gap-title);
-}
-
-.card-title+.card-desc {
-  margin-top: var(--card-gap-content);
-}
-
-.card-desc+.card-metrics {
-  margin-top: var(--card-gap-actions);
+  letter-spacing: 0.12em;
 }
 
 /* ================================================================
@@ -323,13 +317,6 @@
    Base Styles
    ================================================================ */
 
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-display: swap;
-  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-}
-
 * {
   margin: 0;
   padding: 0;
@@ -347,6 +334,8 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 #root {
@@ -385,7 +374,7 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--color-glass-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
 }
 
 .glass-strong {
@@ -393,7 +382,7 @@ body {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
 }
 
 .glass-hover:hover {
@@ -439,63 +428,34 @@ body {
    ================================================================ */
 
 @keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-
-  33% {
-    transform: translateY(-10px) rotate(1deg);
-  }
-
-  66% {
-    transform: translateY(5px) rotate(-1deg);
-  }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(1deg); }
+  66% { transform: translateY(5px) rotate(-1deg); }
 }
 
 @keyframes pulse-glow {
-
-  0%,
-  100% {
-    opacity: 0.4;
-  }
-
-  50% {
-    opacity: 1;
-  }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -200% center;
-  }
-
-  100% {
-    background-position: 200% center;
-  }
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 
 @keyframes orbit {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 /* ================================================================
@@ -509,14 +469,14 @@ input[type="password"],
 select,
 textarea {
   width: 100%;
-  padding: 14px 18px;
+  padding: 12px 16px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   color: var(--color-text-primary);
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   outline: none;
 }
 
@@ -543,15 +503,14 @@ label {
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--color-text-secondary);
-  margin-bottom: 10px;
-  letter-spacing: 0.025em;
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
 }
 
 /* ================================================================
    Inline Field Validation Styles
    ================================================================ */
 
-/* Error state — red border + subtle glow */
 input.field-error,
 input.field-error:focus {
   border-color: var(--color-danger) !important;
@@ -560,7 +519,6 @@ input.field-error:focus {
   background: rgba(239, 68, 68, 0.04) !important;
 }
 
-/* Valid state — subtle green accent after user has touched the field */
 input.field-valid {
   border-color: rgba(34, 197, 94, 0.3);
 }
@@ -571,14 +529,13 @@ input.field-valid:focus {
     0 0 10px rgba(34, 197, 94, 0.06);
 }
 
-/* Error message text beneath the input */
 .field-error-msg {
   display: flex;
   align-items: center;
   gap: 4px;
   margin-top: 6px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-danger);
   letter-spacing: 0.01em;
@@ -588,23 +545,21 @@ input.field-valid:focus {
 
 .field-error-msg::before {
   content: '●';
-  font-size: 0.5rem;
+  font-size: 0.45rem;
   flex-shrink: 0;
   opacity: 0.8;
 }
 
-/* Range hint text beneath the input */
 .field-hint {
   display: block;
   margin-top: 5px;
-  font-family: 'Courier New', monospace;
-  font-size: 0.6rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
   color: var(--color-text-muted);
-  letter-spacing: 0.03em;
-  opacity: 0.7;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
 }
 
-/* Validation summary bar above the submit button */
 .validation-summary {
   display: flex;
   align-items: center;
@@ -612,9 +567,8 @@ input.field-valid:focus {
   padding: 12px 16px;
   background: rgba(239, 68, 68, 0.06);
   border: 1px solid rgba(239, 68, 68, 0.15);
-  border-radius: 10px;
-  font-family: 'Courier New', monospace;
-  font-size: 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--color-danger);
   animation: fieldErrorIn 0.25s ease-out;
@@ -627,14 +581,8 @@ input.field-valid:focus {
 }
 
 @keyframes fieldErrorIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ================================================================
@@ -646,22 +594,22 @@ input.field-valid:focus {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 28px;
+  padding: 12px 24px;
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   letter-spacing: 0.01em;
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(79, 140, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(79, 140, 255, 0.3);
 }
 
 .btn-primary:active {
@@ -680,40 +628,348 @@ input.field-valid:focus {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 28px;
+  padding: 12px 24px;
   background: transparent;
   color: var(--color-text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
   font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: var(--color-primary);
-  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 8px 14px;
   background: transparent;
   color: var(--color-text-secondary);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .btn-ghost:hover {
   color: var(--color-text-primary);
   background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-lg);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.btn-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: var(--radius-lg);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-success:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+/* ================================================================
+   Badge Styles
+   ================================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.badge-success { background: rgba(34, 197, 94, 0.12); color: var(--color-success); border: 1px solid rgba(34, 197, 94, 0.2); }
+.badge-warning { background: rgba(245, 158, 11, 0.12); color: var(--color-warning); border: 1px solid rgba(245, 158, 11, 0.2); }
+.badge-danger { background: rgba(239, 68, 68, 0.12); color: var(--color-danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+.badge-info { background: rgba(79, 140, 255, 0.12); color: var(--color-primary); border: 1px solid rgba(79, 140, 255, 0.2); }
+.badge-neutral { background: rgba(255, 255, 255, 0.06); color: var(--color-text-secondary); border: 1px solid rgba(255, 255, 255, 0.08); }
+.badge-highlight { background: rgba(167, 139, 250, 0.12); color: var(--color-highlight); border: 1px solid rgba(167, 139, 250, 0.2); }
+
+/* ================================================================
+   Data Table Styles
+   ================================================================ */
+
+.data-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.data-table thead tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.data-table th {
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.data-table th.sortable {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.data-table th.sortable:hover {
+  color: var(--color-text-primary);
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.data-table td {
+  padding: 14px 16px;
+  color: var(--color-text-secondary);
+}
+
+.data-table td.primary-cell {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+/* ================================================================
+   Toast Notification Styles
+   ================================================================ */
+
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  font-size: 0.85rem;
+  font-weight: 500;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  animation: toastSlideIn 0.3s ease-out;
+  max-width: 420px;
+}
+
+.toast-success { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.2); color: var(--color-success); }
+.toast-error { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.2); color: var(--color-danger); }
+.toast-warning { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.2); color: var(--color-warning); }
+.toast-info { background: rgba(79, 140, 255, 0.12); border-color: rgba(79, 140, 255, 0.2); color: var(--color-primary); }
+
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ================================================================
+   Skeleton Loading
+   ================================================================ */
+
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+/* ================================================================
+   Skip Navigation (Accessibility)
+   ================================================================ */
+
+.skip-nav {
+  position: absolute;
+  top: -40px;
+  left: 16px;
+  z-index: 100;
+  padding: 8px 16px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-nav:focus {
+  top: 8px;
+}
+
+/* ================================================================
+   Form Field Validation States (PredictPage)
+   ================================================================ */
+
+input.field-error,
+select.field-error {
+  border-color: var(--color-danger) !important;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.3);
+}
+
+input.field-valid,
+select.field-valid {
+  border-color: var(--color-success) !important;
+}
+
+.field-error-msg {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: var(--color-danger);
+  line-height: 1.4;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.validation-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  font-size: 0.8rem;
+  color: var(--color-danger);
+}
+
+.validation-summary-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   Inline Badge Variants (Admin Tables)
+   ================================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-success {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.badge-info {
+  background: rgba(79, 140, 255, 0.1);
+  color: var(--color-primary);
+  border: 1px solid rgba(79, 140, 255, 0.2);
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* ================================================================
+   Focus Visible (Accessibility)
+   ================================================================ */
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
