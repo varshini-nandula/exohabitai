@@ -107,15 +107,15 @@ export default function Modal({
           >
             {/* Header */}
             {(title || showClose) && (
-              <div className="flex items-start justify-between p-6 pb-0">
+              <div className="flex items-start justify-between p-7 sm:p-8 pb-2">
                 <div className="flex-1 min-w-0">
                   {title && (
-                    <h3 id="modal-title" className="text-lg font-bold text-text-primary tracking-tight">
+                    <h3 id="modal-title" className="text-xl font-bold text-text-primary tracking-tight">
                       {title}
                     </h3>
                   )}
                   {description && (
-                    <p id="modal-desc" className="text-sm text-text-secondary mt-1.5 leading-relaxed">
+                    <p id="modal-desc" className="text-sm text-text-secondary mt-2 leading-relaxed">
                       {description}
                     </p>
                   )}
@@ -123,7 +123,7 @@ export default function Modal({
                 {showClose && (
                   <button
                     onClick={onClose}
-                    className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors ml-4 flex-shrink-0"
+                    className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors ml-4 flex-shrink-0 cursor-pointer"
                     aria-label="Close dialog"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -135,7 +135,7 @@ export default function Modal({
             )}
 
             {/* Body */}
-            <div className="p-6">
+            <div className="p-7 sm:p-8 pt-4">
               {children}
             </div>
           </motion.div>

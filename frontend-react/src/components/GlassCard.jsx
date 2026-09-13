@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion';
 
 const paddingSizes = {
-  sm: 'p-4',
-  md: 'p-6',
-  lg: 'p-8',
+  none: 'card-pad-none',
+  xs: 'card-pad-xs',
+  sm: 'card-pad-sm',
+  md: 'card-pad-md',
+  lg: 'card-pad-lg',
+  xl: 'card-pad-xl',
 };
 
 export default function GlassCard({
@@ -14,7 +17,7 @@ export default function GlassCard({
   animate = false,
   delay = 0,
   variant = 'default', // 'default' | 'raised' | 'inset'
-  padding = 'md', // 'sm' | 'md' | 'lg' | 'none'
+  padding = 'md', // 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'none'
   as: Tag,
 }) {
   const CardComponent = animate ? motion.div : (Tag || 'div');
@@ -28,11 +31,7 @@ export default function GlassCard({
     }
     : {};
 
-  // Use custom padding if className includes p- classes, otherwise use padding prop
-  const hasPadding = className.split(' ').some(c =>
-    c.startsWith('p-') || c.startsWith('px-') || c.startsWith('py-')
-  );
-  const paddingClass = hasPadding ? '' : (padding === 'none' ? '' : (paddingSizes[padding] || paddingSizes.md));
+  const paddingClass = padding === 'none' ? 'card-pad-none' : (paddingSizes[padding] || 'card-pad-md');
 
   const variantClass = variant === 'raised'
     ? 'surface-raised'

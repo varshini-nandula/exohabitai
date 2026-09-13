@@ -665,7 +665,7 @@ export default function PredictPage() {
   const submitDisabled = loading || hasErrors;
 
   return (
-    <div className="site-container section-padding flex flex-col" style={{ gap: '56px' }}>
+    <div className="site-container section-padding flex flex-col gap-10 sm:gap-12">
       {/* PAGE HEADER */}
       <div className="page-header">
         <span className="page-eyebrow text-primary">Habitability Prediction</span>
@@ -676,59 +676,102 @@ export default function PredictPage() {
       </div>
 
       {/* QUICK PRESETS & FAMOUS EXPLORER */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
         {/* Presets */}
-        <GlassCard variant="raised" className="flex flex-col gap-6 p-9">
-          <span className="form-section-label text-accent" style={{ marginBottom: '0' }}>
-            Quick Presets
-          </span>
-          <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => applyPreset('earth')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
-              🌍 Earth-like
+        <GlassCard variant="raised" padding="lg" className="flex flex-col gap-6">
+          <div className="text-center pb-2 border-b border-white/5">
+            <h3 className="text-sm sm:text-base font-bold text-accent uppercase tracking-wider">
+              Quick Presets
+            </h3>
+            <p className="text-xs text-text-muted mt-1">
+              Select a planetary archetype to auto-fill parameters
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => applyPreset('earth')}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🌍</span> Earth-like
             </button>
-            <button type="button" onClick={() => applyPreset('superEarth')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
-              🪐 Super-Earth
+            <button
+              type="button"
+              onClick={() => applyPreset('superEarth')}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🪐</span> Super-Earth
             </button>
-            <button type="button" onClick={() => applyPreset('gasGiant')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
-              🌀 Gas Giant
+            <button
+              type="button"
+              onClick={() => applyPreset('gasGiant')}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🌀</span> Gas Giant
             </button>
-            <button type="button" onClick={() => applyPreset('lavaWorld')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
-              🔥 Lava World
+            <button
+              type="button"
+              onClick={() => applyPreset('lavaWorld')}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🔥</span> Lava World
             </button>
           </div>
         </GlassCard>
 
         {/* Famous explorer */}
-        <GlassCard variant="raised" className="flex flex-col gap-6 p-9">
-          <span className="form-section-label text-highlight" style={{ marginBottom: '0' }}>
-            Famous Exoplanets
-          </span>
-          <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => applyPreset('kepler442b', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
-              🔭 Kepler-442b
+        <GlassCard variant="raised" padding="lg" className="flex flex-col gap-6">
+          <div className="text-center pb-2 border-b border-white/5">
+            <h3 className="text-sm sm:text-base font-bold text-highlight uppercase tracking-wider">
+              Famous Exoplanets
+            </h3>
+            <p className="text-xs text-text-muted mt-1">
+              Real observational benchmarks from space missions
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => applyPreset('kepler442b', true)}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🔭</span> Kepler-442b
             </button>
-            <button type="button" onClick={() => applyPreset('trappist1e', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
-              ☄️ TRAPPIST-1e
+            <button
+              type="button"
+              onClick={() => applyPreset('trappist1e', true)}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>☄️</span> TRAPPIST-1e
             </button>
-            <button type="button" onClick={() => applyPreset('proximaCentaurib', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
-              📡 Proxima Centauri b
+            <button
+              type="button"
+              onClick={() => applyPreset('proximaCentaurib', true)}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>📡</span> Proxima b
             </button>
           </div>
         </GlassCard>
       </section>
 
       {/* CORE FORM & RESULTS LAYOUT */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
         {/* Input Parameters Form */}
         <form onSubmit={handleSubmit} noValidate className="lg:col-span-8 flex flex-col gap-6">
-          <GlassCard glow={true} variant="raised" className="flex flex-col gap-8 p-10">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/5 pb-6 gap-3">
-              <span className="text-sm font-bold text-text-primary tracking-wide uppercase">
-                Planet Parameters
-              </span>
+          <GlassCard glow={true} variant="raised" padding="lg" className="flex flex-col gap-8 sm:gap-9">
+            <div className="flex flex-col sm:flex-row items-center justify-between border-b border-white/5 pb-6 gap-4 text-center sm:text-left">
+              <div>
+                <h2 className="text-base sm:text-lg md:text-xl font-bold text-text-primary tracking-wide uppercase">
+                  Planet Parameters
+                </h2>
+                <p className="text-xs text-text-muted mt-1">
+                  Enter physical, orbital, and stellar measurements to evaluate
+                </p>
+              </div>
               {/* Optional Archiving */}
               {isAuthenticated ? (
-                <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-text-secondary select-none m-0">
+                <label className="inline-flex items-center gap-2.5 cursor-pointer text-xs text-text-secondary select-none m-0">
                   <input
                     type="checkbox"
                     checked={shouldStore}
@@ -738,15 +781,17 @@ export default function PredictPage() {
                   Save prediction to rankings
                 </label>
               ) : (
-                <span className="text-[10px] text-text-muted">
+                <span className="text-xs text-text-muted">
                   Guest mode — sign in to save predictions.
                 </span>
               )}
             </div>
 
             {/* Candidate name */}
-            <div className="flex flex-col">
-              <label htmlFor="planet_name">Planet Name</label>
+            <div className="form-group">
+              <label htmlFor="planet_name" className="text-center sm:text-left font-semibold">
+                Planet Name
+              </label>
               <input
                 type="text"
                 id="planet_name"
@@ -758,12 +803,14 @@ export default function PredictPage() {
             </div>
 
             {/* THREE-COLUMN GRID FIELDS — data-driven */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-9 lg:gap-10 pt-2">
               {COLUMN_DEFS.map((col) => (
-                <div key={col.label} className="flex flex-col gap-7">
-                  <span className={`form-section-label ${col.colorClass}`}>
-                    {col.label}
-                  </span>
+                <div key={col.label} className="flex flex-col gap-6 sm:gap-7">
+                  <div className="text-center pb-3 border-b border-white/10 mb-1">
+                    <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider block ${col.colorClass}`}>
+                      {col.label}
+                    </span>
+                  </div>
                   {col.fields.map((f) => (
                     <ValidatedInput
                       key={f.key}
@@ -795,7 +842,7 @@ export default function PredictPage() {
             <button
               type="submit"
               disabled={submitDisabled}
-              className="btn-primary w-full mt-6 shadow-[0_0_20px_rgba(79,140,255,0.2)]"
+              className="btn-primary w-full mt-4 shadow-[0_0_20px_rgba(79,140,255,0.25)]"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -837,7 +884,7 @@ export default function PredictPage() {
               hoverable={false}
               animate={true}
               variant="raised"
-              className={`flex flex-col gap-7 relative border-t-4 overflow-hidden p-10 ${result.habitability
+              className={`flex flex-col gap-7 relative border-t-4 overflow-hidden p-7 sm:p-9 md:p-10 ${result.habitability
                 ? 'border-t-success border-success/15'
                 : 'border-t-danger border-danger/15'
                 }`}
@@ -852,7 +899,7 @@ export default function PredictPage() {
                 <span className="text-[10px] tracking-[0.25em] text-text-secondary uppercase font-bold">
                   Prediction Result
                 </span>
-                <h3 className="text-lg font-bold text-text-primary mt-3 truncate">
+                <h3 className="text-xl font-bold text-text-primary mt-3 truncate">
                   {result.planet_name || formData.planet_name}
                 </h3>
               </div>

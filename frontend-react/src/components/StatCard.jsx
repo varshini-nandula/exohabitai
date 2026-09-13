@@ -60,16 +60,16 @@ export default function StatCard({
       animate={true}
       delay={delay}
       padding="md"
-      className={`flex flex-col gap-4 min-w-[140px] flex-1 ${highlight ? 'border-warning/20' : ''}`}
+      className={`flex flex-col justify-between gap-5 min-w-[150px] flex-1 ${highlight ? 'border-warning/25 bg-warning/[0.03]' : ''}`}
     >
       <div className="flex items-center justify-between gap-3 text-text-secondary">
-        <span className="text-xs uppercase tracking-wider font-semibold leading-tight">
+        <span className="text-xs uppercase tracking-wider font-semibold leading-tight text-text-muted">
           {displayLabel}
         </span>
-        {icon && <div className="text-primary text-lg">{icon}</div>}
+        {icon && <div className="text-primary text-xl flex-shrink-0">{icon}</div>}
       </div>
-      <div className="flex items-baseline gap-1.5 mt-auto">
-        <span className="text-2xl font-bold font-mono text-text-primary tracking-tight">
+      <div className="flex items-baseline gap-2 my-1">
+        <span className="text-2xl sm:text-3xl font-bold font-mono text-text-primary tracking-tight">
           {formattedValue}
         </span>
         {suffix && (
@@ -79,10 +79,10 @@ export default function StatCard({
         )}
       </div>
       {(description || trend) && (
-        <div className="flex items-center justify-between text-xs text-text-muted">
-          {description && <span>{description}</span>}
+        <div className="flex items-center justify-between text-xs text-text-muted pt-2 border-t border-white/5">
+          {description && <span className="truncate">{description}</span>}
           {trend && (
-            <span className={`font-semibold ${trend > 0 ? 'text-success' : trend < 0 ? 'text-danger' : 'text-text-muted'}`}>
+            <span className={`font-semibold flex-shrink-0 ml-2 ${trend > 0 ? 'text-success' : trend < 0 ? 'text-danger' : 'text-text-muted'}`}>
               {trend > 0 ? '↑' : trend < 0 ? '↓' : '→'} {Math.abs(trend)}%
             </span>
           )}

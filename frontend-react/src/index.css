@@ -66,10 +66,11 @@
   --space-20: 80px;
   --space-24: 96px;
 
-  /* Card padding tokens (constrained to 3 sizes) */
-  --card-pad-sm: 16px;
-  --card-pad-md: 24px;
-  --card-pad-lg: 32px;
+  /* Card padding tokens */
+  --card-pad-sm: 20px;
+  --card-pad-md: 32px;
+  --card-pad-lg: 40px;
+  --card-pad-xl: 48px;
 
   /* Border radius */
   --radius-sm: 6px;
@@ -92,21 +93,21 @@
 
 .site-container {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1360px;
   margin-left: auto;
   margin-right: auto;
-  padding-inline: var(--space-6);
+  padding-inline: 24px;
 }
 
 @media (min-width: 640px) {
   .site-container {
-    padding-inline: var(--space-8);
+    padding-inline: 36px;
   }
 }
 
 @media (min-width: 1024px) {
   .site-container {
-    padding-inline: var(--space-12);
+    padding-inline: 48px;
   }
 }
 
@@ -115,8 +116,8 @@
    ================================================================ */
 
 .section-padding {
-  padding-top: 80px;
-  padding-bottom: 80px;
+  padding-top: 72px;
+  padding-bottom: 72px;
 }
 
 @media (max-width: 768px) {
@@ -135,13 +136,13 @@
   max-width: 65ch;
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: 56px;
+  margin-bottom: 48px;
 }
 
 .section-header .section-eyebrow {
   display: block;
   font-family: 'Inter', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   font-weight: 600;
@@ -154,14 +155,14 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--color-text-primary);
-  line-height: 1.2;
+  line-height: 1.25;
   margin-bottom: 16px;
 }
 
 .section-header p {
   font-size: clamp(0.875rem, 1.5vw, 1rem);
   color: var(--color-text-secondary);
-  line-height: 1.7;
+  line-height: 1.75;
   max-width: 55ch;
   margin-left: auto;
   margin-right: auto;
@@ -173,10 +174,10 @@
 
 .page-header {
   text-align: center;
-  max-width: 55ch;
+  max-width: 58ch;
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: 48px;
+  margin-bottom: 44px;
 }
 
 .page-header .page-eyebrow {
@@ -186,7 +187,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .page-header h1 {
@@ -194,15 +195,15 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--color-text-primary);
-  line-height: 1.15;
+  line-height: 1.2;
   margin-bottom: 16px;
 }
 
 .page-header p {
   font-size: clamp(0.875rem, 1.5vw, 1rem);
   color: var(--color-text-secondary);
-  line-height: 1.7;
-  max-width: 50ch;
+  line-height: 1.75;
+  max-width: 52ch;
   margin-left: auto;
   margin-right: auto;
 }
@@ -234,6 +235,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 4px;
 }
 
 .form-section-label {
@@ -242,9 +244,17 @@
   font-weight: 600;
   text-transform: uppercase;
   padding-bottom: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  margin-top: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+}
+
+.input-with-icon,
+input[type="text"].pl-11,
+input[type="text"].pl-12,
+input.input-with-icon {
+  padding-left: 44px !important;
 }
 
 /* ================================================================
@@ -375,6 +385,25 @@ body {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--color-glass-border);
   border-radius: var(--radius-xl);
+  padding: var(--card-pad-md);
+}
+
+/* Explicit card padding scale */
+.card-pad-none { padding: 0 !important; }
+.card-pad-xs { padding: 12px 16px !important; }
+.card-pad-sm { padding: 20px 24px !important; }
+.card-pad-md { padding: 28px 32px !important; }
+.card-pad-lg { padding: 36px 40px !important; }
+.card-pad-xl { padding: 44px 48px !important; }
+
+@media (max-width: 640px) {
+  .glass {
+    padding: var(--card-pad-sm);
+  }
+  .card-pad-sm { padding: 16px 16px !important; }
+  .card-pad-md { padding: 20px 20px !important; }
+  .card-pad-lg { padding: 24px 20px !important; }
+  .card-pad-xl { padding: 28px 24px !important; }
 }
 
 .glass-strong {
@@ -469,13 +498,14 @@ input[type="password"],
 select,
 textarea {
   width: 100%;
-  padding: 12px 16px;
+  padding: 13px 18px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
+  line-height: 1.5;
   transition: all 0.2s ease;
   outline: none;
 }
@@ -484,8 +514,8 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.12),
-    0 0 12px rgba(79, 140, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.15),
+    0 0 12px rgba(79, 140, 255, 0.08);
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -500,11 +530,12 @@ input[type="number"]::-webkit-outer-spin-button {
 
 label {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: var(--color-text-secondary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   letter-spacing: 0.01em;
+  line-height: 1.4;
 }
 
 /* ================================================================
@@ -512,27 +543,31 @@ label {
    ================================================================ */
 
 input.field-error,
-input.field-error:focus {
+select.field-error,
+input.field-error:focus,
+select.field-error:focus {
   border-color: var(--color-danger) !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12),
-    0 0 10px rgba(239, 68, 68, 0.06) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15),
+    0 0 10px rgba(239, 68, 68, 0.08) !important;
   background: rgba(239, 68, 68, 0.04) !important;
 }
 
-input.field-valid {
-  border-color: rgba(34, 197, 94, 0.3);
+input.field-valid,
+select.field-valid {
+  border-color: rgba(34, 197, 94, 0.35);
 }
 
-input.field-valid:focus {
+input.field-valid:focus,
+select.field-valid:focus {
   border-color: var(--color-success);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12),
-    0 0 10px rgba(34, 197, 94, 0.06);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15),
+    0 0 10px rgba(34, 197, 94, 0.08);
 }
 
 .field-error-msg {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   margin-top: 6px;
   font-family: 'Inter', sans-serif;
   font-size: 0.75rem;
@@ -545,37 +580,37 @@ input.field-valid:focus {
 
 .field-error-msg::before {
   content: '●';
-  font-size: 0.45rem;
+  font-size: 0.5rem;
   flex-shrink: 0;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .field-hint {
   display: block;
-  margin-top: 5px;
+  margin-top: 6px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--color-text-muted);
   letter-spacing: 0.02em;
-  opacity: 0.8;
+  line-height: 1.4;
 }
 
 .validation-summary {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 14px 18px;
   background: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.15);
-  border-radius: var(--radius-md);
-  font-size: 0.8rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-lg);
+  font-size: 0.825rem;
   font-weight: 500;
   color: var(--color-danger);
   animation: fieldErrorIn 0.25s ease-out;
 }
 
 .validation-summary-icon {
-  font-size: 1rem;
+  font-size: 1.1rem;
   flex-shrink: 0;
   opacity: 0.9;
 }
@@ -593,18 +628,19 @@ input.field-valid:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: 10px;
+  padding: 13px 26px;
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   color: white;
   border: none;
   border-radius: var(--radius-lg);
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: 0.01em;
+  line-height: 1.4;
 }
 
 .btn-primary:hover {
@@ -627,30 +663,31 @@ input.field-valid:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: 10px;
+  padding: 13px 26px;
   background: transparent;
   color: var(--color-text-primary);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-lg);
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  line-height: 1.4;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }
 
 .btn-ghost {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 9px 16px;
   background: transparent;
   color: var(--color-text-secondary);
   border: none;
@@ -659,11 +696,12 @@ input.field-valid:focus {
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.15s ease;
+  line-height: 1.4;
 }
 
 .btn-ghost:hover {
   color: var(--color-text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .btn-danger {
@@ -671,21 +709,22 @@ input.field-valid:focus {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 11px 22px;
   background: rgba(239, 68, 68, 0.1);
   color: var(--color-danger);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: var(--radius-lg);
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  line-height: 1.4;
 }
 
 .btn-danger:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 .btn-success {
@@ -693,21 +732,22 @@ input.field-valid:focus {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 11px 22px;
   background: rgba(34, 197, 94, 0.1);
   color: var(--color-success);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.25);
   border-radius: var(--radius-lg);
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  line-height: 1.4;
 }
 
 .btn-success:hover {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.4);
 }
 
 /* ================================================================
@@ -717,24 +757,24 @@ input.field-valid:focus {
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
+  gap: 6px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
   font-family: 'Inter', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  line-height: 1;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
-.badge-success { background: rgba(34, 197, 94, 0.12); color: var(--color-success); border: 1px solid rgba(34, 197, 94, 0.2); }
-.badge-warning { background: rgba(245, 158, 11, 0.12); color: var(--color-warning); border: 1px solid rgba(245, 158, 11, 0.2); }
-.badge-danger { background: rgba(239, 68, 68, 0.12); color: var(--color-danger); border: 1px solid rgba(239, 68, 68, 0.2); }
-.badge-info { background: rgba(79, 140, 255, 0.12); color: var(--color-primary); border: 1px solid rgba(79, 140, 255, 0.2); }
-.badge-neutral { background: rgba(255, 255, 255, 0.06); color: var(--color-text-secondary); border: 1px solid rgba(255, 255, 255, 0.08); }
-.badge-highlight { background: rgba(167, 139, 250, 0.12); color: var(--color-highlight); border: 1px solid rgba(167, 139, 250, 0.2); }
+.badge-success { background: rgba(34, 197, 94, 0.12); color: var(--color-success); border: 1px solid rgba(34, 197, 94, 0.25); }
+.badge-warning { background: rgba(245, 158, 11, 0.12); color: var(--color-warning); border: 1px solid rgba(245, 158, 11, 0.25); }
+.badge-danger { background: rgba(239, 68, 68, 0.12); color: var(--color-danger); border: 1px solid rgba(239, 68, 68, 0.25); }
+.badge-info { background: rgba(79, 140, 255, 0.12); color: var(--color-primary); border: 1px solid rgba(79, 140, 255, 0.25); }
+.badge-neutral { background: rgba(255, 255, 255, 0.06); color: var(--color-text-secondary); border: 1px solid rgba(255, 255, 255, 0.1); }
+.badge-highlight { background: rgba(167, 139, 250, 0.12); color: var(--color-highlight); border: 1px solid rgba(167, 139, 250, 0.25); }
 
 /* ================================================================
    Data Table Styles
@@ -752,12 +792,12 @@ input.field-valid:focus {
 }
 
 .data-table th {
-  padding: 12px 16px;
+  padding: 14px 20px;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
   user-select: none;
 }
@@ -781,8 +821,9 @@ input.field-valid:focus {
 }
 
 .data-table td {
-  padding: 14px 16px;
+  padding: 16px 20px;
   color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
 .data-table td.primary-cell {
@@ -801,15 +842,15 @@ input.field-valid:focus {
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   pointer-events: none;
 }
 
 .toast {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 14px 20px;
   border-radius: var(--radius-lg);
   font-size: 0.85rem;
   font-weight: 500;
@@ -867,93 +908,6 @@ input.field-valid:focus {
 
 .skip-nav:focus {
   top: 8px;
-}
-
-/* ================================================================
-   Form Field Validation States (PredictPage)
-   ================================================================ */
-
-input.field-error,
-select.field-error {
-  border-color: var(--color-danger) !important;
-  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.3);
-}
-
-input.field-valid,
-select.field-valid {
-  border-color: var(--color-success) !important;
-}
-
-.field-error-msg {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.7rem;
-  color: var(--color-danger);
-  line-height: 1.4;
-}
-
-.field-hint {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.65rem;
-  color: var(--color-text-muted);
-  line-height: 1.4;
-}
-
-.validation-summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-radius: var(--radius-lg);
-  background: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.15);
-  font-size: 0.8rem;
-  color: var(--color-danger);
-}
-
-.validation-summary-icon {
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-/* ================================================================
-   Inline Badge Variants (Admin Tables)
-   ================================================================ */
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.badge-success {
-  background: rgba(34, 197, 94, 0.1);
-  color: var(--color-success);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-}
-
-.badge-info {
-  background: rgba(79, 140, 255, 0.1);
-  color: var(--color-primary);
-  border: 1px solid rgba(79, 140, 255, 0.2);
-}
-
-.badge-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--color-danger);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.badge-warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--color-warning);
-  border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 /* ================================================================

@@ -197,17 +197,18 @@ export default function RankingsPage() {
 
       {/* FILTER & EXPLORER CONTROLS */}
       <section>
-        <GlassCard variant="raised" className="flex flex-col md:flex-row gap-6 items-center justify-between p-8">
+        <GlassCard variant="raised" className="flex flex-col md:flex-row gap-6 items-center justify-between p-7 sm:p-8">
           {/* Search */}
-          <div className="relative w-full md:max-w-md">
-            <span className="absolute inset-y-0 left-3 flex items-center text-text-muted">
+          <div className="relative w-full md:max-w-md flex items-center">
+            <span className="absolute left-4 flex items-center text-text-muted pointer-events-none z-10">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </span>
             <input
               type="text"
-              className="pl-9 w-full text-xs py-2.5"
+              style={{ paddingLeft: '44px' }}
+              className="input-with-icon pl-11 w-full text-sm"
               placeholder="Search planets..."
               value={searchQuery}
               onChange={(e) => {
@@ -218,39 +219,43 @@ export default function RankingsPage() {
           </div>
 
           {/* Show Top-N + Sorting selection */}
-          <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap">
-            <span className="text-xs text-text-secondary select-none uppercase font-semibold whitespace-nowrap">
-              Show:
-            </span>
-            <select
-              className="text-xs max-w-[160px] py-2.5 px-4 rounded-lg"
-              value={limit}
-              onChange={(e) => {
-                setLimit(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="10">Top 10</option>
-              <option value="20">Top 20</option>
-              <option value="30">Top 30</option>
-              <option value="50">Top 50</option>
-              <option value="all">All Planets</option>
-            </select>
+          <div className="flex items-center gap-4 w-full md:w-auto justify-end flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs text-text-muted select-none uppercase font-semibold whitespace-nowrap tracking-wider">
+                Show:
+              </span>
+              <select
+                className="text-sm max-w-[160px] rounded-lg"
+                value={limit}
+                onChange={(e) => {
+                  setLimit(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="10">Top 10</option>
+                <option value="20">Top 20</option>
+                <option value="30">Top 30</option>
+                <option value="50">Top 50</option>
+                <option value="all">All Planets</option>
+              </select>
+            </div>
 
-            <span className="text-xs text-text-secondary select-none uppercase font-semibold whitespace-nowrap">
-              Sort:
-            </span>
-            <select
-              className="text-xs max-w-[200px] py-2.5 px-4 rounded-lg"
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="rank">Rank (Ascending)</option>
-              <option value="probability">Habitability (Descending)</option>
-            </select>
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs text-text-muted select-none uppercase font-semibold whitespace-nowrap tracking-wider">
+                Sort:
+              </span>
+              <select
+                className="text-sm max-w-[220px] rounded-lg"
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="rank">Rank (Ascending)</option>
+                <option value="probability">Habitability (Descending)</option>
+              </select>
+            </div>
           </div>
         </GlassCard>
       </section>
