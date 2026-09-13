@@ -58,7 +58,7 @@ export default function HistoryPage() {
     : planets.filter(p => p.status === statusFilter);
 
   if (loading) {
-    return <div className="site-container py-16"><LoadingSpinner message="Loading your submissions..." /></div>;
+    return <div className="site-container py-16"><LoadingSpinner message="Loading your predictions..." /></div>;
   }
 
   if (errorState) {
@@ -78,8 +78,8 @@ export default function HistoryPage() {
       <PageHeader
         eyebrow="Your Account"
         eyebrowColor="text-accent"
-        title="My Submissions"
-        description="Track your contributed planets and their review status. Approved planets appear in the public rankings."
+        title="My Predictions"
+        description="Track your saved habitability predictions and submitted exoplanets. Approved planets appear in the public rankings."
       />
 
       {planets.length > 0 && (
@@ -102,10 +102,10 @@ export default function HistoryPage() {
 
       {planets.length === 0 ? (
         <EmptyState
-          title="No Submissions Yet"
-          description="You haven't submitted any planets. Add one to see it tracked here."
-          actionLabel="Add a Planet"
-          onAction={() => navigate('/add-planet')}
+          title="No Predictions Saved Yet"
+          description="You haven't saved any exoplanet predictions yet. Run a prediction to see it tracked here."
+          actionLabel="Predict a Planet"
+          onAction={() => navigate('/predict')}
         />
       ) : filteredPlanets.length === 0 ? (
         <EmptyState

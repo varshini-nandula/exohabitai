@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -16,6 +17,7 @@ import ErrorState from '../components/ErrorState';
 import EmptyState from '../components/EmptyState';
 
 export default function RankingsPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [planets, setPlanets] = useState([]);
   const [errorState, setErrorState] = useState(null);
@@ -342,14 +344,44 @@ export default function RankingsPage() {
             </div>
           )}
         </section>
+      ) : planets.length === 0 ? (
+        <EmptyState
+          title="No Exoplanets Ranked Yet"
+          description="The observatory catalog is currently empty or updating. Run a habitability prediction to evaluate and catalog candidate worlds."
+          actionLabel="Predict Habitability"
+          onAction={() => navigate('/predict')}
+        />
       ) : (
         <EmptyState
-          title="No Results"
+          title="No Matching Exoplanets"
           description={`No planets found matching "${searchQuery}". Try a different search term.`}
           actionLabel="Clear Search"
           onAction={() => setSearchQuery('')}
         />
       )}
+
+      {/* Discovery CTA Banner */}
+      <GlassCard className="p-8 flex flex-col sm:flex-row items-center justify-between gap-6 border-primary/20 bg-gradient-to-r from-space-800/80 via-space-800/50 to-primary/10 mt-4">
+        <div className="flex items-center gap-5">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-2xl shrink-0">
+            🔭
+          </div>
+          <div>
+            <h4 className="font-bold text-sm text-text-primary mb-1">
+              Have an uncataloged exoplanet candidate?
+            </h4>
+            <p className="text-xs text-text-secondary">
+              Input orbital and stellar parameters into our ML model to calculate its habitability index.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/predict"
+          className="btn-primary shrink-0 text-xs px-6 py-3 font-semibold shadow-[0_0_15px_rgba(79,140,255,0.2)]"
+        >
+          Evaluate Candidate →
+        </Link>
+      </GlassCard>
     </div>
   );
 }
