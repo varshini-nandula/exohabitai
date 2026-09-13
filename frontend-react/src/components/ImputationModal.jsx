@@ -161,15 +161,15 @@ export default function ImputationModal({
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold font-mono text-text-primary tracking-tight">
-                    Incomplete Telemetry Data
+                  <h3 className="text-lg font-bold text-text-primary tracking-tight">
+                    Missing Data
                   </h3>
                   <p className="text-sm text-text-secondary mt-2 leading-relaxed">
                     You left{' '}
                     <span className="text-primary font-semibold">
                       {needsStrategy.length}
                     </span>{' '}
-                    telemetry features unfilled. Choose a strategy to fill these missing parameters.
+                    fields unfilled. Choose how to fill these missing values.
                   </p>
                 </div>
               </div>
@@ -193,7 +193,7 @@ export default function ImputationModal({
                           d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                      <span className="text-xs font-mono font-bold text-success uppercase tracking-wider">
+                      <span className="text-xs font-bold text-success uppercase tracking-wider">
                         {derivable.length} Features Auto-Calculated
                       </span>
                     </div>
@@ -226,7 +226,7 @@ export default function ImputationModal({
                           d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                         />
                       </svg>
-                      <span className="text-xs font-mono font-bold text-warning uppercase tracking-wider">
+                      <span className="text-xs font-bold text-warning uppercase tracking-wider">
                         {needsStrategy.length} Features Need Filling
                       </span>
                     </div>
@@ -244,8 +244,8 @@ export default function ImputationModal({
 
               {/* Strategy Selection */}
               <div className="p-8 pt-4">
-                <span className="block text-xs font-mono font-bold text-text-secondary uppercase tracking-wider mb-4">
-                  Choose Fill Strategy
+                <span className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-4">
+                  Choose a method
                 </span>
 
                 <div className="space-y-3">
@@ -263,7 +263,7 @@ export default function ImputationModal({
                         </span>
                         <div className="flex-1 min-w-0">
                           <span
-                            className={`text-sm font-bold font-mono block ${strategy.colorClass}`}
+                            className={`text-sm font-bold block ${strategy.colorClass}`}
                           >
                             {strategy.label}
                           </span>
@@ -294,12 +294,12 @@ export default function ImputationModal({
               <div className="px-8 pb-8 pt-0 flex items-center justify-between border-t border-white/5 mt-2 pt-5">
                 <button
                   onClick={onClose}
-                  className="btn-ghost text-text-muted hover:text-text-primary text-xs font-mono"
+                  className="btn-ghost text-text-muted hover:text-text-primary text-xs"
                 >
                   ← Cancel & Edit Parameters
                 </button>
-                <span className="text-[10px] text-text-muted font-mono">
-                  Strategy affects unfilled features only
+                <span className="text-[10px] text-text-muted">
+                  Only affects unfilled fields
                 </span>
               </div>
             </GlassCard>
