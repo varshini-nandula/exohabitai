@@ -79,7 +79,7 @@ export default function HomePage() {
         >
           <motion.div variants={itemVariants} className="flex flex-col items-center" style={{ maxWidth: '700px' }}>
             {/* Badge */}
-            <span className="font-mono text-[11px] md:text-xs font-semibold tracking-[0.25em] uppercase text-accent border border-accent/20 bg-accent/5 px-5 py-1.5 rounded-full">
+            <span className="text-[11px] md:text-xs font-semibold tracking-[0.25em] uppercase text-accent border border-accent/20 bg-accent/5 px-5 py-1.5 rounded-full">
               Exoplanet Habitability Platform
             </span>
 
@@ -127,15 +127,15 @@ export default function HomePage() {
           >
             <div className="glass rounded-xl py-6 px-5 flex flex-col items-center gap-3 text-center">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-accent leading-none">6,000+</span>
-              <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider leading-tight">Planet Records</span>
+              <span className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Planet Records</span>
             </div>
             <div className="glass rounded-xl py-6 px-5 flex flex-col items-center gap-3 text-center">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-primary leading-none">9</span>
-              <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider leading-tight">Planetary Features</span>
+              <span className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Planetary Features</span>
             </div>
             <div className="glass rounded-xl py-6 px-5 flex flex-col items-center gap-3 text-center">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-success leading-none">96%</span>
-              <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider leading-tight">Model Accuracy</span>
+              <span className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Model Accuracy</span>
             </div>
           </motion.div>
         </div>
@@ -151,9 +151,9 @@ export default function HomePage() {
         <div className="site-container flex flex-col items-center">
           {/* Section header — uses consistent hierarchy */}
           <div className="section-header">
-            <h2 className="font-mono">How ExoHabitAI Works</h2>
+            <h2>How ExoHabitAI Works</h2>
             <p>
-              A four-stage machine learning pipeline that evaluates planetary habitability from raw telemetry to classification.
+              A four-stage machine learning pipeline that evaluates planetary habitability from input data to classification.
             </p>
           </div>
 
@@ -165,26 +165,26 @@ export default function HomePage() {
             {[
               {
                 step: '01',
-                title: 'Enter Telemetry',
-                desc: 'Supply planet properties, orbital mechanics, and host star attributes into our telemetry modules.',
+                title: 'Input Planet Data',
+                desc: 'Enter physical properties, orbital parameters, and host star attributes — or pick from presets like Earth or Super-Earth.',
                 color: 'primary',
               },
               {
                 step: '02',
-                title: 'ML Evaluation',
-                desc: 'Random Forest classifier parses stellar temperatures, planet masses, density ratios, and radiation indices.',
+                title: 'AI Analysis',
+                desc: 'Our Random Forest classifier analyzes stellar temperatures, planet masses, density ratios, and orbital mechanics.',
                 color: 'accent',
               },
               {
                 step: '03',
                 title: 'Habitability Score',
-                desc: 'Receive a calculated probability score verified against a classification boundary threshold of 50%.',
+                desc: 'Receive a probability score indicating how likely the planet is to support life, with a classification threshold of 50%.',
                 color: 'highlight',
               },
               {
                 step: '04',
-                title: 'Observatory Logs',
-                desc: 'Registered users can store confirmed candidates inside the rankings and system archives.',
+                title: 'Save & Compare',
+                desc: 'Signed-in users can save predictions to their account and see how planets rank against others.',
                 color: 'success',
               },
             ].map((card) => (
@@ -202,7 +202,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Title — 28px from number */}
-                <h3 className="font-bold text-base font-mono text-text-primary" style={{ marginTop: '28px' }}>
+                <h3 className="font-bold text-base text-text-primary" style={{ marginTop: '28px' }}>
                   {card.title}
                 </h3>
 
@@ -227,7 +227,7 @@ export default function HomePage() {
             <div className="site-container flex flex-col items-center">
               {/* Section header */}
               <div className="section-header">
-                <h2 className="font-mono">Top Habitability Candidates</h2>
+                <h2>Top Habitability Candidates</h2>
                 <p>
                   The highest-ranked exoplanets from our classification model, sorted by habitability probability.
                 </p>
@@ -259,7 +259,7 @@ export default function HomePage() {
 
                           {/* Planet info */}
                           <div className="flex-grow min-w-0">
-                            <h4 className="font-bold text-sm font-mono text-text-primary truncate mb-3">
+                            <h4 className="font-bold text-sm text-text-primary truncate mb-3">
                               {planet.planet_name}
                             </h4>
                             <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
@@ -275,7 +275,7 @@ export default function HomePage() {
                             <span className="font-bold font-mono text-sm" style={{ color }}>
                               {probPercent}%
                             </span>
-                            <div className="text-[9px] font-mono uppercase text-text-muted mt-1">
+                            <div className="text-[10px] uppercase text-text-muted mt-1">
                               Habitability
                             </div>
                           </div>
@@ -315,7 +315,7 @@ export default function HomePage() {
           {/* Section header */}
           <div className="section-header">
             <span className="section-eyebrow">Scientific Validation</span>
-            <h2 className="font-mono">Model Trust &amp; Dataset</h2>
+            <h2>Model Trust &amp; Dataset</h2>
             <p>
               Trained on the PHL Exoplanet Catalog with rigorous cross-validation and performance benchmarking.
             </p>
@@ -328,12 +328,12 @@ export default function HomePage() {
               <GlassCard glow={true} className="h-full flex flex-col justify-between p-10">
                 <div>
                   {/* Eyebrow */}
-                  <span className="font-mono text-[11px] font-semibold text-primary tracking-wider uppercase">
+                  <span className="text-[11px] font-semibold text-primary tracking-wider uppercase">
                     Data Source
                   </span>
 
                   {/* Title — 20px from eyebrow */}
-                  <h3 className="text-lg font-bold font-mono text-text-primary" style={{ marginTop: '20px' }}>
+                  <h3 className="text-lg font-bold text-text-primary" style={{ marginTop: '20px' }}>
                     PHL Exoplanet Catalog
                   </h3>
 
@@ -345,11 +345,11 @@ export default function HomePage() {
                   {/* Metric mini-cards — 32px from description */}
                   <div className="grid grid-cols-2 gap-5" style={{ marginTop: '32px' }}>
                     <div className="p-5 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
-                      <span className="text-[10px] text-text-muted font-mono uppercase font-semibold">Dataset Size</span>
+                      <span className="text-[10px] text-text-muted uppercase font-semibold">Dataset Size</span>
                       <span className="text-lg font-bold font-mono text-accent">6,000+</span>
                     </div>
                     <div className="p-5 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
-                      <span className="text-[10px] text-text-muted font-mono uppercase font-semibold">Features</span>
+                      <span className="text-[10px] text-text-muted uppercase font-semibold">Features</span>
                       <span className="text-lg font-bold font-mono text-accent">9 Dimensions</span>
                     </div>
                   </div>
@@ -366,12 +366,12 @@ export default function HomePage() {
             <motion.div variants={itemVariants}>
               <GlassCard glow={true} className="h-full flex flex-col p-10">
                 {/* Eyebrow */}
-                <span className="font-mono text-[11px] font-semibold text-accent tracking-wider uppercase">
+                <span className="text-[11px] font-semibold text-accent tracking-wider uppercase">
                   Performance Metrics
                 </span>
 
                 {/* Title — 20px from eyebrow */}
-                <h3 className="text-lg font-bold font-mono text-text-primary" style={{ marginTop: '20px' }}>
+                <h3 className="text-lg font-bold text-text-primary" style={{ marginTop: '20px' }}>
                   Random Forest Classifier
                 </h3>
 

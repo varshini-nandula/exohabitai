@@ -6,11 +6,13 @@ import GlassCard from '../components/GlassCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorState from '../components/ErrorState';
 import EmptyState from '../components/EmptyState';
+import Badge from '../components/ui/Badge';
+import PageHeader from '../components/ui/PageHeader';
 
-const STATUS_STYLES = {
-  approved: { label: 'Approved', cls: 'text-success border-success/40 bg-success/10' },
-  pending: { label: 'Pending Review', cls: 'text-highlight border-highlight/40 bg-highlight/10' },
-  rejected: { label: 'Rejected', cls: 'text-danger border-danger/40 bg-danger/10' },
+const STATUS_MAP = {
+  approved: { label: 'Approved', variant: 'success' },
+  pending: { label: 'Pending', variant: 'warning' },
+  rejected: { label: 'Rejected', variant: 'danger' },
 };
 
 export default function HistoryPage() {
@@ -19,6 +21,7 @@ export default function HistoryPage() {
   const [planets, setPlanets] = useState([]);
   const [errorState, setErrorState] = useState(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     let active = true;
@@ -50,8 +53,12 @@ export default function HistoryPage() {
     return () => { active = false; };
   }, [reloadToken]);
 
+  const filteredPlanets = statusFilter === 'all'
+    ? planets
+    : planets.filter(p => p.status === statusFilter);
+
   if (loading) {
-    return <div className="site-container py-16"><LoadingSpinner message="Retrieving your submission history..." /></div>;
+    return <div className="site-container py-16"><LoadingSpinner message="Loading your submissions..." /></div>;
   }
 
   if (errorState) {
@@ -67,43 +74,64 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="site-container section-padding flex flex-col" style={{ gap: '48px' }}>
-      <div className="page-header">
-        <span className="page-eyebrow text-accent">Navigator Logbook</span>
-        <h1 className="font-mono">My Submissions</h1>
-        <p>
-          Track the candidates you have charted and their moderation status. Approved
-          candidates appear in the public rankings.
-        </p>
-      </div>
+    <div className="site-container section-padding flex flex-col" style={{ gap: '40px' }}>
+      <PageHeader
+        eyebrow="Your Account"
+        eyebrowColor="text-accent"
+        title="My Submissions"
+        description="Track your contributed planets and their review status. Approved planets appear in the public rankings."
+      />
+
+      {planets.length > 0 && (
+        <div className="flex justify-center gap-2">
+          {['all', 'pending', 'approved', 'rejected'].map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-4 py-1.5 text-sm font-medium rounded-lg capitalize transition-all ${
+                statusFilter === s
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
 
       {planets.length === 0 ? (
         <EmptyState
           title="No Submissions Yet"
-          description="You haven't charted any exoplanet candidates. Submit one to see it tracked here."
-          actionLabel="Add a Candidate"
+          description="You haven't submitted any planets. Add one to see it tracked here."
+          actionLabel="Add a Planet"
           onAction={() => navigate('/add-planet')}
         />
+      ) : filteredPlanets.length === 0 ? (
+        <EmptyState
+          title="No Matches"
+          description={`No submissions with status "${statusFilter}".`}
+          actionLabel="Show All"
+          onAction={() => setStatusFilter('all')}
+        />
       ) : (
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {planets.map((p) => {
-            const status = STATUS_STYLES[p.status] || STATUS_STYLES.pending;
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto w-full">
+          {filteredPlanets.map((p) => {
+            const status = STATUS_MAP[p.status] || STATUS_MAP.pending;
             const prob = p.habitability_probability != null
               ? (p.habitability_probability * 100).toFixed(1)
               : '—';
             return (
-              <GlassCard key={p.id} hoverable={true} className="flex items-center gap-5 py-6 px-8">
+              <GlassCard key={p.id} hoverable={true} padding="md" className="flex items-center gap-4">
                 <div className="flex-grow min-w-0">
-                  <h4 className="font-bold text-sm font-mono text-text-primary truncate mb-2">
+                  <h4 className="font-bold text-sm text-text-primary truncate mb-2">
                     {p.planet_name}
                   </h4>
-                  <span className={`font-mono text-[10px] tracking-wider uppercase px-2 py-0.5 rounded border ${status.cls}`}>
-                    {status.label}
-                  </span>
+                  <Badge variant={status.variant}>{status.label}</Badge>
                 </div>
                 <div className="text-right shrink-0 pl-4">
                   <span className="font-bold font-mono text-sm text-primary">{prob}{prob !== '—' ? '%' : ''}</span>
-                  <div className="text-[9px] font-mono uppercase text-text-muted mt-1">Habitability</div>
+                  <div className="text-xs text-text-muted mt-1">Habitability</div>
                 </div>
               </GlassCard>
             );

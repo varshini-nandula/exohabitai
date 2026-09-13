@@ -569,11 +569,11 @@ export default function PredictPage() {
       } else {
         setErrorState({
           variant: 'generic',
-          message: res.data?.message || 'The telescope returned a telemetry error.',
+          message: res.data?.message || 'Prediction failed. Please try again.',
         });
       }
     } catch (err) {
-      console.error('Telemetry prediction error:', err);
+      console.error('Prediction error:', err);
       const extracted = extractError(err);
 
       let errorVariant = 'generic';
@@ -645,10 +645,10 @@ export default function PredictPage() {
     <div className="site-container section-padding flex flex-col" style={{ gap: '56px' }}>
       {/* PAGE HEADER */}
       <div className="page-header">
-        <span className="page-eyebrow text-primary">Observatory Telemetry Terminal</span>
-        <h1 className="font-mono">Habitability Classification</h1>
+        <span className="page-eyebrow text-primary">Habitability Prediction</span>
+        <h1>Predict Habitability</h1>
         <p>
-          Input your charted astronomical properties or deploy pre-loaded planetary configurations to predict core biological suitability scores.
+          Enter planet parameters or choose a preset to predict habitability. Leave fields blank for values you don't know.
         </p>
       </div>
 
@@ -657,7 +657,7 @@ export default function PredictPage() {
         {/* Presets */}
         <GlassCard variant="raised" className="flex flex-col gap-6 p-9">
           <span className="form-section-label text-accent" style={{ marginBottom: '0' }}>
-            Quick System Configurations
+            Quick Presets
           </span>
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={() => applyPreset('earth')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
@@ -678,7 +678,7 @@ export default function PredictPage() {
         {/* Famous explorer */}
         <GlassCard variant="raised" className="flex flex-col gap-6 p-9">
           <span className="form-section-label text-highlight" style={{ marginBottom: '0' }}>
-            Sample Exoplanet Explorer
+            Famous Exoplanets
           </span>
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={() => applyPreset('kepler442b', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
@@ -700,30 +700,30 @@ export default function PredictPage() {
         <form onSubmit={handleSubmit} noValidate className="lg:col-span-8 flex flex-col gap-6">
           <GlassCard glow={true} variant="raised" className="flex flex-col gap-8 p-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/5 pb-6 gap-3">
-              <span className="font-mono text-sm font-bold text-text-primary tracking-wide uppercase">
-                Telemetry Inputs
+              <span className="text-sm font-bold text-text-primary tracking-wide uppercase">
+                Planet Parameters
               </span>
               {/* Optional Archiving */}
               {isAuthenticated ? (
-                <label className="inline-flex items-center gap-2 cursor-pointer font-mono text-xs text-text-secondary select-none m-0">
+                <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-text-secondary select-none m-0">
                   <input
                     type="checkbox"
                     checked={shouldStore}
                     onChange={(e) => setShouldStore(e.target.checked)}
                     className="w-4 h-4 rounded border-white/10 bg-white/5 focus:ring-primary accent-primary cursor-pointer outline-none"
                   />
-                  Log in rankings database archives
+                  Save prediction to rankings
                 </label>
               ) : (
-                <span className="font-mono text-[10px] text-text-muted">
-                  Guest mode. Login to save candidates.
+                <span className="text-[10px] text-text-muted">
+                  Guest mode — sign in to save predictions.
                 </span>
               )}
             </div>
 
             {/* Candidate name */}
             <div className="flex flex-col">
-              <label htmlFor="planet_name">Planetary Candidate Name</label>
+              <label htmlFor="planet_name">Planet Name</label>
               <input
                 type="text"
                 id="planet_name"
@@ -772,7 +772,7 @@ export default function PredictPage() {
             <button
               type="submit"
               disabled={submitDisabled}
-              className="btn-primary w-full mt-6 font-mono shadow-[0_0_20px_rgba(79,140,255,0.2)]"
+              className="btn-primary w-full mt-6 shadow-[0_0_20px_rgba(79,140,255,0.2)]"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -780,7 +780,7 @@ export default function PredictPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Calculating Orbital Telemetry...
+                  Analyzing planet...
                 </span>
               ) : hasErrors ? (
                 <span className="flex items-center justify-center gap-2">
@@ -790,7 +790,7 @@ export default function PredictPage() {
                   Fix Validation Errors to Predict
                 </span>
               ) : (
-                'Run Habitability Predictor'
+                'Predict Habitability'
               )}
             </button>
           </GlassCard>
@@ -825,9 +825,9 @@ export default function PredictPage() {
                   }`}
               />
 
-              <div className="text-center font-mono border-b border-white/5 pb-6">
+              <div className="text-center border-b border-white/5 pb-6">
                 <span className="text-[10px] tracking-[0.25em] text-text-secondary uppercase font-bold">
-                  Telemetry Evaluation Result
+                  Prediction Result
                 </span>
                 <h3 className="text-lg font-bold text-text-primary mt-3 truncate">
                   {result.planet_name || formData.planet_name}
@@ -840,20 +840,20 @@ export default function PredictPage() {
               {/* Classification label */}
               <div className="text-center mt-3 flex flex-col gap-3">
                 <span
-                  className={`text-xl font-bold font-mono uppercase tracking-wide ${result.habitability ? 'text-success' : 'text-danger'
+                  className={`text-xl font-bold uppercase tracking-wide ${result.habitability ? 'text-success' : 'text-danger'
                     }`}
                 >
                   {result.habitability ? 'Potentially Habitable' : 'Non-Habitable'}
                 </span>
-                <span className="text-xs text-text-secondary font-mono">
+                <span className="text-xs text-text-secondary">
                   Probability: {(result.habitability_probability * 100).toFixed(1)}% — Threshold: 50%
                 </span>
               </div>
 
               {/* Warnings (if any) */}
               {result.warnings && result.warnings.length > 0 && (
-                <div className="text-[10px] text-warning bg-warning/5 border border-warning/10 p-4 rounded-lg font-mono leading-relaxed mt-3">
-                  <div className="font-semibold uppercase tracking-wider mb-1.5">⚠️ Classifier Telemetry Warnings:</div>
+                <div className="text-[10px] text-warning bg-warning/5 border border-warning/10 p-4 rounded-lg leading-relaxed mt-3">
+                  <div className="font-semibold uppercase tracking-wider mb-1.5">⚠️ Notes:</div>
                   <ul className="list-disc pl-4 space-y-0.5">
                     {result.warnings.map((warn, i) => (
                       <li key={i}>{warn}</li>
@@ -866,7 +866,7 @@ export default function PredictPage() {
               {result.fill_info && (
                 <div className="text-[11px] text-text-secondary bg-white/5 border border-white/5 p-4 rounded-lg font-mono leading-relaxed mt-2 space-y-2">
                   <div className="flex justify-between border-b border-white/5 pb-1.5">
-                    <span className="text-text-muted">Imputation Strategy:</span>
+                    <span className="text-text-muted">Missing Data Method:</span>
                     <span className="font-bold text-text-primary capitalize">
                       {result.fill_info.strategy_used === 'earth' && '🌍 Earth-like Defaults'}
                       {result.fill_info.strategy_used === 'non_habitable' && '📊 Dataset Averages'}
@@ -877,7 +877,7 @@ export default function PredictPage() {
                   {result.fill_info.auto_derived && result.fill_info.auto_derived.length > 0 && (
                     <div>
                       <div className="text-text-muted mb-1.5 font-semibold">
-                        ⚙️ Calculated Features ({result.fill_info.auto_derived.length}):
+                        ⚙️ Auto-Calculated Features ({result.fill_info.auto_derived.length}):
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {result.fill_info.auto_derived.map((feat) => (
@@ -896,13 +896,13 @@ export default function PredictPage() {
 
               {/* Storage confirmation (if saved) */}
               {result.stored && (
-                <div className="text-[10px] text-success bg-success/5 border border-success/10 p-4 rounded-lg font-mono text-center">
-                  ✅ Telemetry logged successfully inside exoplanet archives rankings.
+                <div className="text-[10px] text-success bg-success/5 border border-success/10 p-4 rounded-lg text-center">
+                  ✅ Prediction saved to your rankings.
                 </div>
               )}
 
               {/* Academic Disclaimer */}
-              <div className="text-[9px] text-text-muted font-mono leading-relaxed border-t border-white/5 pt-6 text-justify select-none" style={{ lineHeight: '1.7' }}>
+              <div className="text-[10px] text-text-muted leading-relaxed border-t border-white/5 pt-6 text-justify select-none" style={{ lineHeight: '1.7' }}>
                 <strong>Science Disclaimer:</strong> Predictions are generated by a machine learning model trained on historical exoplanet datasets and should be interpreted as exploratory estimates rather than scientific confirmation of habitability.
               </div>
             </GlassCard>
@@ -918,11 +918,11 @@ export default function PredictPage() {
               <svg className="w-12 h-12 opacity-30 animate-pulse mb-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
               </svg>
-              <h4 className="font-mono text-sm font-bold text-text-primary tracking-wide uppercase mb-4">
-                Awaiting Telemetry
+              <h4 className="text-sm font-bold text-text-primary tracking-wide uppercase mb-4">
+                Ready for Analysis
               </h4>
-              <p className="text-xs text-text-secondary max-w-[220px]" style={{ lineHeight: '1.7' }}>
-                Configure planetary properties and initiate the classifier to compile scientific evaluations.
+              <p className="text-xs text-text-secondary max-w-[240px]" style={{ lineHeight: '1.7' }}>
+                Enter planet parameters or choose a preset, then click "Predict Habitability" to see results.
               </p>
             </GlassCard>
           )}

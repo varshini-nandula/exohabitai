@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import GlassCard from '../components/GlassCard';
+import Button from '../components/ui/Button';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -30,28 +31,20 @@ export default function RegisterPage() {
   }, []);
 
   const validateForm = () => {
-    // 1. Username constraints: 3-80 chars, alphanumeric + _ or -
     const usernameRegex = /^[a-zA-Z0-9_-]{3,80}$/;
     if (!usernameRegex.test(username.trim())) {
-      return 'Username must be between 3 and 80 characters and can only contain letters, numbers, underscores (_), or hyphens (-).';
+      return 'Username must be 3-80 characters and can only contain letters, numbers, underscores, or hyphens.';
     }
-
-    // 2. Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      return 'Please enter a valid astrophysical contact email.';
+      return 'Please enter a valid email address.';
     }
-
-    // 3. Password length >= 8
     if (password.length < 8) {
-      return 'Security cipher must contain at least 8 characters.';
+      return 'Password must be at least 8 characters.';
     }
-
-    // 4. Match check
     if (password !== confirmPassword) {
-      return 'Confirm cipher does not match. Please verify passwords.';
+      return 'Passwords do not match.';
     }
-
     return null;
   };
 
@@ -70,7 +63,7 @@ export default function RegisterPage() {
     try {
       await register(username.trim(), email.trim(), password);
     } catch (err) {
-      console.error('Registration action error:', err);
+      console.error('Registration error:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -85,32 +78,30 @@ export default function RegisterPage() {
         hoverable={false}
         animate={true}
         variant="raised"
-        className="w-full max-w-md border-primary/20 relative overflow-hidden p-12"
+        padding="lg"
+        className="w-full max-w-md relative overflow-hidden"
       >
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-accent/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="text-center mb-12">
-          <span className="font-mono text-[10px] tracking-[0.25em] text-accent uppercase font-bold">
-            OBSERVATORY REGISTRY
-          </span>
-          <h2 className="text-2xl font-bold font-mono text-text-primary tracking-tight mt-3">
-            Navigator Registration
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-bold text-text-primary tracking-tight">
+            Create Account
           </h2>
-          <p className="text-xs text-text-secondary mt-3" style={{ lineHeight: '1.7' }}>
-            Sign up to save customized planetary systems and predictions.
+          <p className="text-sm text-text-secondary mt-2" style={{ lineHeight: '1.7' }}>
+            Sign up to save predictions and contribute planet data.
           </p>
         </div>
 
         {activeError && (
-          <div className="mb-10 text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-5 rounded-lg leading-relaxed">
-            <div className="font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <span>⚠️</span> Registration Alert
-            </div>
-            {activeError}
+          <div className="mb-8 text-sm text-danger bg-danger/8 border border-danger/20 p-4 rounded-lg leading-relaxed flex items-start gap-2">
+            <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>{activeError}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-7">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col">
             <label htmlFor="username">Username</label>
             <input
@@ -118,7 +109,7 @@ export default function RegisterPage() {
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. AstroExplorer_99"
+              placeholder="Choose a username"
               required
               disabled={isSubmitting}
               autoComplete="username"
@@ -132,7 +123,7 @@ export default function RegisterPage() {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. navigator@deepspace.org"
+              placeholder="you@example.com"
               required
               disabled={isSubmitting}
               autoComplete="email"
@@ -140,7 +131,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="flex flex-col">
-            <label htmlFor="password">Security Cipher (Password)</label>
+            <label htmlFor="password">Password</label>
             <input
               type="password"
               id="password"
@@ -154,45 +145,36 @@ export default function RegisterPage() {
           </div>
 
           <div className="flex flex-col">
-            <label htmlFor="confirmPassword">Confirm Security Cipher</label>
+            <label htmlFor="confirmPassword">Confirm Password</label>
             <input
               type="password"
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Re-enter cipher"
+              placeholder="Re-enter your password"
               required
               disabled={isSubmitting}
               autoComplete="new-password"
             />
           </div>
 
-          <button
+          <Button
             type="submit"
-            className="btn-primary mt-6 w-full shadow-[0_0_20px_rgba(94,234,212,0.2)]"
-            disabled={isSubmitting}
+            variant="primary"
+            loading={isSubmitting}
+            className="mt-4 w-full"
           >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Encrypting & Submitting...
-              </span>
-            ) : (
-              'Create Navigator Cipher'
-            )}
-          </button>
+            {isSubmitting ? 'Creating account...' : 'Create Account'}
+          </Button>
         </form>
 
-        <div className="text-center mt-10 pt-10 border-t border-white/5 text-xs text-text-secondary">
-          Already a registered navigator?{' '}
+        <div className="text-center mt-8 pt-8 border-t border-white/5 text-sm text-text-secondary">
+          Already have an account?{' '}
           <Link
             to={`/login${location.search}`}
-            className="text-primary hover:text-primary-light underline font-mono ml-1 font-semibold"
+            className="text-primary hover:text-primary-light font-medium ml-1"
           >
-            Login Credentials
+            Sign In
           </Link>
         </div>
       </GlassCard>

@@ -47,13 +47,13 @@ export default function RankingsPage() {
           } else {
             setErrorState({
               variant: 'generic',
-              message: res.data?.message || 'Telescope catalog failed to compile.',
+              message: res.data?.message || 'Failed to load rankings.',
             });
           }
           setLoading(false);
         }
       } catch (err) {
-        console.error('Telemetry rankings compile failure:', err);
+        console.error('Rankings fetch error:', err);
         const extracted = extractError(err);
         if (active) {
           setErrorState({
@@ -72,7 +72,7 @@ export default function RankingsPage() {
   }, [limit, reloadToken]);
 
   if (loading) {
-    return <div className="site-container py-16"><LoadingSpinner message="Querying exoplanet rankings database..." /></div>;
+    return <div className="site-container py-16"><LoadingSpinner message="Loading rankings..." /></div>;
   }
 
   if (errorState) {
@@ -135,7 +135,7 @@ export default function RankingsPage() {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="p-3 border border-white/10 rounded-lg backdrop-blur-md bg-space-800 text-xs font-mono">
+        <div className="p-3 border border-white/10 rounded-lg backdrop-blur-md bg-space-800 text-xs">
           <p className="font-bold text-text-primary mb-1">{data.name}</p>
           <p className="text-accent">Probability: {data.probability}%</p>
         </div>
@@ -148,10 +148,10 @@ export default function RankingsPage() {
     <div className="site-container section-padding flex flex-col" style={{ gap: '56px' }}>
       {/* PAGE HEADER */}
       <div className="page-header">
-        <span className="page-eyebrow text-primary">Observatory Archives Catalog</span>
-        <h1 className="font-mono">Exoplanet Habitability Rankings</h1>
+        <span className="page-eyebrow text-primary">Exoplanet Rankings</span>
+        <h1>Habitability Rankings</h1>
         <p>
-          Examine the compiled registry of exoplanets classified by their computed habitability indexes.
+          Browse all analyzed exoplanets, ranked by their predicted habitability score.
         </p>
       </div>
 
@@ -159,15 +159,15 @@ export default function RankingsPage() {
       {top10.length > 0 && (
         <section className="w-full">
           <GlassCard glow={true} variant="raised" className="flex flex-col gap-7 w-full p-10">
-            <span className="font-mono text-xs font-semibold text-accent uppercase tracking-wider">
-              Telemetry Chart: Top 10 Habitable Candidates
+            <span className="text-xs font-semibold text-accent uppercase tracking-wider">
+              Top 10 Habitability Scores
             </span>
             <div className="h-64 sm:h-80 w-full mt-1">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={top10} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
                   <XAxis
                     dataKey="name"
-                    tick={{ fill: '#94A3B8', fontSize: 10, fontFamily: 'monospace' }}
+                    tick={{ fill: '#94A3B8', fontSize: 10 }}
                     axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                     tickLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                     interval={0}
@@ -176,7 +176,7 @@ export default function RankingsPage() {
                   />
                   <YAxis
                     domain={[0, 100]}
-                    tick={{ fill: '#94A3B8', fontSize: 10, fontFamily: 'monospace' }}
+                    tick={{ fill: '#94A3B8', fontSize: 10 }}
                     axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                     tickLine={{ stroke: 'rgba(255,255,255,0.08)' }}
                   />
@@ -205,8 +205,8 @@ export default function RankingsPage() {
             </span>
             <input
               type="text"
-              className="pl-9 w-full font-mono text-xs py-2.5"
-              placeholder="Search candidate name..."
+              className="pl-9 w-full text-xs py-2.5"
+              placeholder="Search planets..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -217,11 +217,11 @@ export default function RankingsPage() {
 
           {/* Show Top-N + Sorting selection */}
           <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap">
-            <span className="font-mono text-xs text-text-secondary select-none uppercase font-semibold whitespace-nowrap">
+            <span className="text-xs text-text-secondary select-none uppercase font-semibold whitespace-nowrap">
               Show:
             </span>
             <select
-              className="font-mono text-xs max-w-[160px] py-2.5 px-4 rounded-lg"
+              className="text-xs max-w-[160px] py-2.5 px-4 rounded-lg"
               value={limit}
               onChange={(e) => {
                 setLimit(e.target.value);
@@ -232,22 +232,22 @@ export default function RankingsPage() {
               <option value="20">Top 20</option>
               <option value="30">Top 30</option>
               <option value="50">Top 50</option>
-              <option value="all">All Candidates</option>
+              <option value="all">All Planets</option>
             </select>
 
-            <span className="font-mono text-xs text-text-secondary select-none uppercase font-semibold whitespace-nowrap">
+            <span className="text-xs text-text-secondary select-none uppercase font-semibold whitespace-nowrap">
               Sort:
             </span>
             <select
-              className="font-mono text-xs max-w-[200px] py-2.5 px-4 rounded-lg"
+              className="text-xs max-w-[200px] py-2.5 px-4 rounded-lg"
               value={sortBy}
               onChange={(e) => {
                 setSortBy(e.target.value);
                 setCurrentPage(1);
               }}
             >
-              <option value="rank">Database Rank (Asc)</option>
-              <option value="probability">Habitability Prob. (Desc)</option>
+              <option value="rank">Rank (Ascending)</option>
+              <option value="probability">Habitability (Descending)</option>
             </select>
           </div>
         </GlassCard>
@@ -287,7 +287,7 @@ export default function RankingsPage() {
 
                   {/* Planet Details */}
                   <div className="flex-grow min-w-0">
-                    <h4 className="font-bold text-sm font-mono text-text-primary truncate mb-3">
+                    <h4 className="font-bold text-sm text-text-primary truncate mb-3">
                       {planet.planet_name}
                     </h4>
                     {/* Compact probability progress line */}
@@ -307,8 +307,8 @@ export default function RankingsPage() {
                     >
                       {probPercent}%
                     </span>
-                    <div className="text-[9px] font-mono uppercase text-text-muted mt-1">
-                      Prob
+                    <div className="text-[10px] uppercase text-text-muted mt-1">
+                      Score
                     </div>
                   </div>
                 </GlassCard>
@@ -318,7 +318,7 @@ export default function RankingsPage() {
 
           {/* PAGINATION NAVIGATION CONTROLS */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-4 mt-4 font-mono text-xs">
+            <div className="flex items-center justify-center gap-4 mt-4 text-xs">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
@@ -328,7 +328,7 @@ export default function RankingsPage() {
               </button>
 
               <span className="text-text-secondary select-none px-3 py-2 rounded-xl bg-white/5 border border-white/5">
-                Sector <strong className="text-text-primary">{currentPage}</strong> of{' '}
+                Page <strong className="text-text-primary">{currentPage}</strong> of{' '}
                 <strong className="text-text-primary">{totalPages}</strong>
               </span>
 
@@ -344,9 +344,9 @@ export default function RankingsPage() {
         </section>
       ) : (
         <EmptyState
-          title="Telemetry Archive Sector Empty"
-          description={`No recorded exoplanets found in search registry for "${searchQuery}". Try updating queries.`}
-          actionLabel="Clear Search Filter"
+          title="No Results"
+          description={`No planets found matching "${searchQuery}". Try a different search term.`}
+          actionLabel="Clear Search"
           onAction={() => setSearchQuery('')}
         />
       )}
