@@ -19,6 +19,9 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import ModerationPage from '../pages/admin/ModerationPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import ModelsPage from '../pages/admin/ModelsPage';
+import DatasetsPage from '../pages/admin/DatasetsPage';
+import TrainingPage from '../pages/admin/TrainingPage';
+import AuditLogsPage from '../pages/admin/AuditLogsPage';
 
 export default function AppRoutes() {
   return (
@@ -45,6 +48,9 @@ export default function AppRoutes() {
           <Route path="/admin/moderation" element={<ModerationPage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/models" element={<ModelsPage />} />
+          <Route path="/admin/datasets" element={<DatasetsPage />} />
+          <Route path="/admin/training" element={<TrainingPage />} />
+          <Route path="/admin/logs" element={<AuditLogsPage />} />
         </Route>
       </Route>
 

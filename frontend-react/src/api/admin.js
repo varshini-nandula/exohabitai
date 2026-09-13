@@ -49,6 +49,11 @@ export const adminAPI = {
   demoteUser: (id) =>
     client.post(`/admin/users/${id}/demote`),
 
+  updateUserRole: (id, role) =>
+    role === 'admin'
+      ? client.post(`/admin/users/${id}/promote`)
+      : client.post(`/admin/users/${id}/demote`),
+
   // ─── Datasets ───────────────────────────────────────────────────
   uploadDataset: (formData) =>
     client.post('/admin/datasets/upload', formData, {
@@ -79,6 +84,9 @@ export const adminAPI = {
 
   getModelDetail: (id) =>
     client.get(`/admin/models/${id}`),
+
+  getModelInfo: () =>
+    client.get('/admin/models'),
 
   // ─── Retraining ─────────────────────────────────────────────────
   startRetraining: (datasetId = null, reason = '') =>
