@@ -169,7 +169,7 @@ export default function MainLayout({ children }) {
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          My Submissions
+                          My Predictions
                         </Link>
                       </div>
 
@@ -308,7 +308,7 @@ export default function MainLayout({ children }) {
                     Profile
                   </NavLink>
                   <NavLink to="/history" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
-                    My Submissions
+                    My Predictions
                   </NavLink>
                   {user?.role === 'admin' && (
                     <NavLink to="/admin" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>

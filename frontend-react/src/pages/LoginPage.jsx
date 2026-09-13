@@ -68,7 +68,7 @@ export default function LoginPage() {
             Sign In
           </h2>
           <p className="text-sm text-text-secondary mt-2" style={{ lineHeight: '1.7' }}>
-            Sign in to save predictions and manage your planet submissions.
+            Sign in to save predictions and manage your saved exoplanets.
           </p>
         </div>
 

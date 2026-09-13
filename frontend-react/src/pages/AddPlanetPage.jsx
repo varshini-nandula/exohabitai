@@ -7,6 +7,7 @@ import Tooltip from '../components/Tooltip';
 import ErrorState from '../components/ErrorState';
 import Button from '../components/ui/Button';
 import PageHeader from '../components/ui/PageHeader';
+import { FIELD_HUMAN_NAMES } from './PredictPage';
 
 const EARTH_DEFAULTS = {
   planet_name: '',
@@ -70,7 +71,8 @@ export default function AddPlanetPage() {
 
     for (const key of Object.keys(formData)) {
       if (key !== 'planet_name' && (formData[key] === '' || isNaN(formData[key]))) {
-        setErrorState({ variant: 'validation', message: `"${key}" has an invalid value. Please enter a number.` });
+        const fieldName = FIELD_HUMAN_NAMES[key] || key;
+        setErrorState({ variant: 'validation', message: `"${fieldName}" has an invalid value. Please enter a number.` });
         setLoading(false);
         return;
       }
@@ -139,7 +141,7 @@ export default function AddPlanetPage() {
           <div className="flex flex-col gap-3 w-full mt-2">
             <Button onClick={handleReset} className="w-full">Submit Another Planet</Button>
             <Link to="/history" className="btn-secondary w-full text-sm py-3 border-white/5 justify-center">
-              View My Submissions
+              View My Predictions
             </Link>
           </div>
         </GlassCard>
