@@ -966,8 +966,31 @@ export default function PredictPage() {
 
               {/* Storage confirmation (if saved) */}
               {result.stored && (
-                <div className="text-[10px] text-success bg-success/5 border border-success/10 p-4 rounded-lg text-center">
-                  ✅ Prediction saved to your rankings.
+                <div className="text-[10px] text-success bg-success/5 border border-success/10 p-4 rounded-lg text-center font-medium">
+                  ✅ Prediction saved to your account and observatory database.
+                </div>
+              )}
+
+              {/* Guest CTA — Sign in to add planet to database */}
+              {!isAuthenticated && (
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-space-800/80 to-accent/10 border border-primary/25 flex flex-col items-center gap-3 text-center mt-2 shadow-lg">
+                  <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-base">
+                    🪐
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-text-primary">
+                      Save to Observatory Database
+                    </h4>
+                    <p className="text-xs text-text-secondary mt-1 leading-relaxed max-w-xs">
+                      Sign in to permanently catalog <strong>{result.planet_name || formData.planet_name}</strong> in the database and submit it for public rankings.
+                    </p>
+                  </div>
+                  <Link
+                    to="/login?redirect=/predict"
+                    className="btn-primary w-full text-xs py-2.5 px-4 shadow-[0_0_20px_rgba(79,140,255,0.3)] font-semibold justify-center mt-1"
+                  >
+                    Sign In to Add Planet
+                  </Link>
                 </div>
               )}
 

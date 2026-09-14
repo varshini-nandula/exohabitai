@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../../api/admin';
-import GlassCard from '../../components/GlassCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorState from '../../components/ErrorState';
 import Button from '../../components/ui/Button';
@@ -23,7 +22,7 @@ export default function TrainingPage() {
       setError(null);
       const resDS = await adminAPI.getDatasets();
       if (resDS.data?.status === 'success') {
-        setReadyDatasets((resDS.data.data.datasets || []).filter(d => d.status === 'ready'));
+        setReadyDatasets((resDS.data.data.datasets || []).filter((d) => d.status === 'ready'));
       }
       const resStatus = await adminAPI.getRetrainingStatus();
       if (resStatus.data?.status === 'success') {
@@ -32,15 +31,17 @@ export default function TrainingPage() {
       }
     } catch (err) {
       console.error(err);
-      setError('Failed to load training configuration.');
+      setError('Failed to load training configuration telemetry.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  // Polling
+  // Polling during training run
   useEffect(() => {
     let poller;
     if (pollingActive) {
@@ -53,11 +54,16 @@ export default function TrainingPage() {
             if (!status.is_running) {
               setPollingActive(false);
               clearInterval(poller);
-              showToast(`Training completed: ${status.last_result}`, status.last_result === 'success' ? 'success' : 'warning');
+              showToast(
+                `Model training job finished: ${status.last_result}`,
+                status.last_result === 'success' ? 'success' : 'warning'
+              );
             }
           }
-        } catch (err) { console.error(err); }
-      }, 5000);
+        } catch (err) {
+          console.error(err);
+        }
+      }, 4000);
     }
     return () => clearInterval(poller);
   }, [pollingActive, showToast]);
@@ -69,85 +75,156 @@ export default function TrainingPage() {
       const dsId = selectedDatasetId ? parseInt(selectedDatasetId) : null;
       const res = await adminAPI.startRetraining(dsId, retrainReason);
       if (res.data?.status === 'accepted') {
-        setRetrainReason(''); setSelectedDatasetId('');
+        setRetrainReason('');
+        setSelectedDatasetId('');
         setPollingActive(true);
-        showToast('Training job started.', 'info');
+        showToast('Model retraining job dispatched to background worker.', 'info');
         fetchData();
       } else {
-        showToast(res.data?.message || 'Failed to start training.', 'error');
+        showToast(res.data?.message || 'Failed to start retraining job.', 'error');
       }
     } catch (err) {
-      showToast(err.response?.data?.message || 'Error starting training.', 'error');
+      showToast(err.response?.data?.message || 'Error triggering retraining job.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && !retrainStatus) return <LoadingSpinner message="Loading training status..." />;
+  if (loading && !retrainStatus) {
+    return (
+      <div className="py-20 flex justify-center">
+        <LoadingSpinner message="Checking ML training worker state..." />
+      </div>
+    );
+  }
+
   if (error) return <ErrorState message={error} onRetry={fetchData} />;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary">Model Training</h1>
-        <p className="text-text-secondary text-sm mt-1">Configure and trigger model retraining jobs.</p>
+    <div className="space-y-10">
+      {/* ── Page Header ────────────────────────────────────────── */}
+      <div className="border-b border-white/10 pb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text-primary">
+            Model Retraining Pipeline
+          </h1>
+          <p className="text-text-secondary text-sm sm:text-base leading-relaxed max-w-2xl">
+            Trigger asynchronous machine learning training runs on verified exoplanet catalogs.
+          </p>
+        </div>
       </div>
 
-      {/* Status */}
+      {/* ── Worker Status Card ─────────────────────────────────── */}
       {retrainStatus && (
-        <GlassCard padding="md">
-          <h3 className="font-semibold text-sm uppercase tracking-wider text-text-muted mb-4">Current Status</h3>
-          <div className="flex items-center gap-6 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-text-secondary">Status:</span>
-              {retrainStatus.is_running ? (
-                <Badge variant="warning" dot>Training in Progress</Badge>
-              ) : (
-                <Badge variant="success" dot>Idle</Badge>
-              )}
+        <div className="p-6 rounded-2xl bg-space-900/60 border border-white/10 backdrop-blur-md">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/5">
+            <div>
+              <h3 className="font-bold text-base text-text-primary">Training Worker Engine</h3>
+              <p className="text-xs text-text-muted mt-0.5">Background scikit-learn training process telemetry</p>
             </div>
-            {retrainStatus.last_result && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-text-secondary">Last Result:</span>
-                <Badge variant={retrainStatus.last_result === 'success' ? 'success' : 'danger'}>
-                  {retrainStatus.last_result}
-                </Badge>
-              </div>
-            )}
-            {retrainStatus.last_completed_at && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-text-secondary">Last Completed:</span>
-                <span className="text-sm text-text-primary">{new Date(retrainStatus.last_completed_at).toLocaleString()}</span>
-              </div>
-            )}
+            <Badge
+              variant={retrainStatus.is_running ? 'warning' : 'success'}
+              dot
+            >
+              {retrainStatus.is_running ? 'Training in Progress' : 'Worker Standby'}
+            </Badge>
           </div>
-        </GlassCard>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Current State</span>
+              <p className="text-base font-bold text-text-primary mt-1">
+                {retrainStatus.is_running ? (
+                  <span className="text-warning flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
+                    Executing Job...
+                  </span>
+                ) : (
+                  <span className="text-success">Idle / Ready</span>
+                )}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Last Job Outcome</span>
+              <div className="mt-1">
+                {retrainStatus.last_result ? (
+                  <Badge variant={retrainStatus.last_result === 'success' ? 'success' : 'danger'}>
+                    {retrainStatus.last_result.toUpperCase()}
+                  </Badge>
+                ) : (
+                  <span className="text-text-muted text-sm">—</span>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Last Completed</span>
+              <p className="text-sm font-semibold text-text-primary mt-1">
+                {retrainStatus.last_completed_at
+                  ? new Date(retrainStatus.last_completed_at).toLocaleString()
+                  : 'No prior runs'}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Trigger Form */}
-      <GlassCard padding="md">
-        <h3 className="font-semibold text-sm uppercase tracking-wider text-text-muted mb-4">Start New Training</h3>
-        <form onSubmit={handleStartRetraining} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col">
-              <label htmlFor="training-dataset">Dataset (optional)</label>
-              <select id="training-dataset" value={selectedDatasetId} onChange={(e) => setSelectedDatasetId(e.target.value)}>
-                <option value="">Use default dataset</option>
-                {readyDatasets.map(ds => (
-                  <option key={ds.id} value={ds.id}>{ds.name}</option>
+      {/* ── Retraining Configuration Form ──────────────────────── */}
+      <div className="p-6 rounded-2xl bg-space-900/60 border border-white/10 backdrop-blur-md">
+        <div className="pb-4 mb-5 border-b border-white/5">
+          <h3 className="font-bold text-base text-text-primary">Dispatch New Training Job</h3>
+          <p className="text-xs text-text-muted mt-0.5">Select an ingested training dataset and trigger model retraining</p>
+        </div>
+
+        <form onSubmit={handleStartRetraining} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-2">
+              <label htmlFor="training-dataset" className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                Training Dataset Selection
+              </label>
+              <select
+                id="training-dataset"
+                value={selectedDatasetId}
+                onChange={(e) => setSelectedDatasetId(e.target.value)}
+                className="w-full text-sm py-3 px-4 rounded-xl bg-space-900/80 border border-white/10 focus:border-primary/50 text-text-primary"
+              >
+                <option value="">Default Baseline Dataset (5,569 rows)</option>
+                {readyDatasets.map((ds) => (
+                  <option key={ds.id} value={ds.id}>
+                    {ds.name} ({ds.row_count || 'N/A'} rows)
+                  </option>
                 ))}
               </select>
             </div>
-            <div className="flex flex-col">
-              <label htmlFor="training-reason">Reason (optional)</label>
-              <input type="text" id="training-reason" value={retrainReason} onChange={(e) => setRetrainReason(e.target.value)} placeholder="e.g. New data added" />
+
+            <div className="space-y-2">
+              <label htmlFor="training-reason" className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                Trigger Reason / Changelog Note
+              </label>
+              <input
+                type="text"
+                id="training-reason"
+                value={retrainReason}
+                onChange={(e) => setRetrainReason(e.target.value)}
+                placeholder="e.g. Ingested Kepler DR25 validated exoplanets"
+                className="w-full text-sm py-3 px-4 rounded-xl bg-space-900/80 border border-white/10 focus:border-primary/50 text-text-primary placeholder:text-text-muted"
+              />
             </div>
           </div>
-          <Button type="submit" loading={loading || retrainStatus?.is_running} disabled={retrainStatus?.is_running} className="self-start">
-            {retrainStatus?.is_running ? 'Training in Progress...' : 'Start Training'}
-          </Button>
+
+          <div className="pt-2">
+            <Button
+              type="submit"
+              loading={loading || retrainStatus?.is_running}
+              disabled={retrainStatus?.is_running}
+              className="px-6 py-3"
+            >
+              {retrainStatus?.is_running ? 'Training in Progress...' : 'Start Model Retraining'}
+            </Button>
+          </div>
         </form>
-      </GlassCard>
+      </div>
     </div>
   );
 }

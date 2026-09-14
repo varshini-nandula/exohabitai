@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../auth/ProtectedRoute';
 import AdminRoute from '../auth/AdminRoute';
+import MainLayout from '../layouts/MainLayout';
 import AdminLayout from '../layouts/AdminLayout';
 
 // Pages
@@ -26,22 +27,24 @@ import AuditLogsPage from '../pages/admin/AuditLogsPage';
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/predict" element={<PredictPage />} />
-      <Route path="/rankings" element={<RankingsPage />} />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      {/* Public & Regular User Routes (Main App Shell) */}
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/predict" element={<PredictPage />} />
+        <Route path="/rankings" element={<RankingsPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      {/* Protected Routes */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/add-planet" element={<AddPlanetPage />} />
-        <Route path="/history" element={<HistoryPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        {/* Protected User Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/add-planet" element={<AddPlanetPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Route>
       </Route>
 
-      {/* Admin Protected Routes */}
+      {/* Admin Protected Routes (Dedicated Operations Console Shell) */}
       <Route element={<AdminRoute />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboardPage />} />
@@ -59,3 +62,4 @@ export default function AppRoutes() {
     </Routes>
   );
 }
+

@@ -258,6 +258,31 @@ input.input-with-icon {
 }
 
 /* ================================================================
+   Select & Dropdown Option Styling (Dark Mode Popups)
+   ================================================================ */
+
+select {
+  background-color: #0B1120 !important;
+  color: #F8FAFC !important;
+  color-scheme: dark;
+}
+
+select option {
+  background-color: #0B1120 !important;
+  color: #F8FAFC !important;
+  padding: 8px 12px;
+}
+
+select option:checked {
+  background-color: #1E293B !important;
+  color: #4F8CFF !important;
+}
+
+select option:disabled {
+  color: #64748B !important;
+}
+
+/* ================================================================
    Card Composition Utilities
    ================================================================ */
 
