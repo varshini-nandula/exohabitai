@@ -315,28 +315,45 @@ export default function UserDashboardPage() {
           </p>
         </div>
 
-        {/* Header Actions: Separate Sign Out and Predict New Planet */}
-        <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-danger/90 hover:text-danger bg-danger/10 hover:bg-danger/15 border border-danger/20 hover:border-danger/30 transition-all cursor-pointer shadow-sm"
-            aria-label="Sign out of your account"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Sign Out
-          </button>
-
+        {/* Header Actions: Predict New Planet and Sign Out */}
+        <div className="flex items-center gap-3.5 shrink-0 flex-wrap sm:flex-nowrap">
           <Button
             onClick={handleOpenPredictModal}
-            className="shadow-[0_0_20px_rgba(79,140,255,0.25)] flex items-center gap-2"
+            className="shadow-[0_0_20px_rgba(79,140,255,0.25)] flex items-center gap-2 py-3 px-6 text-xs sm:text-sm font-semibold"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Predict New Planet
           </Button>
+
+          <button
+            onClick={handleLogout}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              padding: '12px 24px',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              color: '#EF4444',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 0 16px rgba(239, 68, 68, 0.18)',
+              boxSizing: 'border-box',
+            }}
+            className="hover:bg-danger/25 hover:border-danger/50 hover:shadow-[0_0_22px_rgba(239,68,68,0.35)] hover:-translate-y-0.5"
+            aria-label="Sign out of your account"
+          >
+            <svg className="w-4 h-4 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span>Sign Out</span>
+          </button>
         </div>
       </div>
 
@@ -355,7 +372,7 @@ export default function UserDashboardPage() {
       ) : (
         <>
           {/* 2. Top Section: Account Overview & Live Stats */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
             {/* Account Card (4 Cols on desktop) */}
             <div className="lg:col-span-4 flex">
               <GlassCard
@@ -363,63 +380,136 @@ export default function UserDashboardPage() {
                 hoverable={false}
                 variant="raised"
                 padding="lg"
-                className="w-full flex flex-col justify-between relative overflow-hidden"
+                className="w-full flex flex-col justify-between gap-6"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full filter blur-2xl pointer-events-none" />
-
-                <div>
-                  {/* User Profile Header */}
-                  <div className="flex items-center gap-4 mb-6 pb-5 border-b border-white/5">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-space-900 font-extrabold text-lg tracking-wider shadow-lg shrink-0">
+                {/* 1. User Profile Cosmic Header */}
+                <div className="flex items-center gap-4 pb-6 border-b border-white/10">
+                  <div className="relative shrink-0">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-space-900 font-extrabold text-xl tracking-wider shadow-lg">
                       {getInitials(user?.username)}
                     </div>
-                    <div className="min-w-0 flex-grow">
-                      <h3 className="text-lg font-bold text-text-primary truncate">
-                        {user?.username || 'Astronomer'}
-                      </h3>
-                      <p className="text-xs text-text-muted truncate mt-0.5">
-                        {user?.email || 'No email provided'}
-                      </p>
-                    </div>
+                    <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                      <span className="relative inline-flex rounded-full h-4 w-4 bg-success border-2 border-space-900" />
+                    </span>
                   </div>
 
-                  {/* Account Information Boxes (Enlarged with increased spacing) */}
-                  <div className="flex flex-col gap-4">
-                    {/* Role Box */}
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.04] border border-white/10 shadow-sm">
-                      <span className="text-xs text-text-muted uppercase font-bold tracking-wider">Role</span>
-                      <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20 text-accent capitalize">
-                        {user?.role || 'User'}
-                      </span>
+                  <div className="min-w-0 flex-grow">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl font-bold text-text-primary truncate">
+                        {user?.username || 'Astronomer'}
+                      </h3>
+                      {user?.role === 'admin' && (
+                        <span className="px-3 py-1 text-[11px] font-bold rounded-full bg-accent/20 text-accent border border-accent/35 uppercase tracking-wider shrink-0">
+                          Admin
+                        </span>
+                      )}
                     </div>
-
-                    {/* Status Box */}
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.04] border border-white/10 shadow-sm">
-                      <span className="text-xs text-text-muted uppercase font-bold tracking-wider">Status</span>
-                      <span className="text-success text-xs font-semibold flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-success animate-pulse" aria-hidden="true" />
-                        Active
-                      </span>
-                    </div>
-
-                    {/* User ID Box */}
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.04] border border-white/10 shadow-sm">
-                      <span className="text-xs text-text-muted uppercase font-bold tracking-wider">User ID</span>
-                      <span className="text-text-secondary text-xs font-mono font-medium">
-                        #{user?.id ? user.id.toString().slice(0, 8) : '00000000'}
-                      </span>
-                    </div>
+                    <p className="text-xs sm:text-sm text-text-muted truncate mt-0.5">
+                      {user?.email || 'No email provided'}
+                    </p>
                   </div>
                 </div>
 
-                {/* Edit Profile Details Action Box */}
-                <div className="pt-6 mt-6 border-t border-white/5">
+                {/* 2. Telemetry / Discovery Rate Section (Translucent glass sub-card matching design system) */}
+                <div
+                  style={{
+                    padding: '24px 24px',
+                    borderRadius: '18px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                  className="shadow-inner"
+                >
+                  {/* Top row: Label + Percentage */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-2">
+                      <svg className="w-4 h-4 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Discovery Rate
+                    </span>
+                    <span className="text-sm font-mono font-bold text-text-primary">
+                      {totalPredictions > 0 ? ((habitableCount / totalPredictions) * 100).toFixed(0) : 0}%
+                    </span>
+                  </div>
+
+                  {/* Progress Bar Track */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '12px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '9999px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      overflow: 'hidden',
+                      padding: '2px',
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div
+                      className="bg-gradient-to-r from-primary to-accent transition-all duration-500 shadow-[0_0_14px_rgba(94,234,212,0.45)]"
+                      style={{
+                        height: '100%',
+                        borderRadius: '9999px',
+                        width: `${totalPredictions > 0 ? Math.min(100, Math.max(5, (habitableCount / totalPredictions) * 100)) : 0}%`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Habitable / Evaluated counts row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} className="text-xs text-text-muted">
+                    <span>Habitable: <strong className="text-text-primary font-mono ml-1">{habitableCount}</strong></span>
+                    <span>Evaluated: <strong className="text-text-primary font-mono ml-1">{totalPredictions}</strong></span>
+                  </div>
+                </div>
+
+                {/* 3. Open Account Specification Rows */}
+                <div className="flex flex-col gap-4 text-xs">
+                  {/* Role */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-text-muted uppercase font-bold tracking-wider">Role</span>
+                    <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-semibold bg-accent/15 border border-accent/30 text-accent capitalize tracking-wide shadow-sm min-w-[64px]">
+                      {user?.role || 'User'}
+                    </span>
+                  </div>
+
+                  {/* Status */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-text-muted uppercase font-bold tracking-wider">Status</span>
+                    <span className="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-success/15 border border-success/30 text-success tracking-wide shadow-sm min-w-[76px]">
+                      <span className="h-2 w-2 rounded-full bg-success animate-pulse shrink-0" aria-hidden="true" />
+                      Active
+                    </span>
+                  </div>
+
+                  {/* User ID */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-text-muted uppercase font-bold tracking-wider">User ID</span>
+                    <span className="text-xs font-mono font-medium text-text-secondary">
+                      #{user?.id ? user.id.toString().slice(0, 8) : '00000000'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 4. Edit Profile Details Action Box */}
+                <div>
                   <button
                     onClick={handleOpenEditProfile}
-                    className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 hover:bg-primary/20 border border-primary/25 hover:border-primary/40 transition-all cursor-pointer shadow-sm group"
+                    className="w-full flex items-center justify-center gap-2.5 py-3.5 px-5 rounded-xl text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_20px_rgba(79,140,255,0.25)] group"
                   >
-                    <svg className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    {/* Pencil Edit Icon */}
+                    <svg className="w-4 h-4 text-primary shrink-0 transition-transform group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                     Edit Profile Details
                   </button>
@@ -689,18 +779,18 @@ export default function UserDashboardPage() {
           </div>
 
           {/* Inner Card Details with generous spacing and matching surface-inset / card styling */}
-          <div className="p-5 sm:p-6 rounded-xl bg-white/[0.03] border border-white/5 flex flex-col gap-4 text-xs text-text-muted">
-            <div className="flex items-center justify-between">
-              <span className="text-text-secondary font-medium">Account Role</span>
-              <span className="font-semibold text-accent text-xs px-3 py-1 rounded-lg bg-accent/10 border border-accent/20 capitalize">
+          <div className="p-5 sm:p-6 rounded-xl bg-white/[0.03] border border-white/10 flex flex-col divide-y divide-white/10 text-xs text-text-muted">
+            <div className="flex items-center justify-between pb-3.5">
+              <span className="text-xs text-text-muted uppercase font-bold tracking-wider">Account Role</span>
+              <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent capitalize">
                 {user?.role || 'User'}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-text-secondary font-medium">User ID</span>
-              <span className="font-mono font-semibold text-text-primary text-sm">#{user?.id}</span>
+            <div className="flex items-center justify-between py-3.5">
+              <span className="text-xs text-text-muted uppercase font-bold tracking-wider">User ID</span>
+              <span className="text-xs font-mono font-medium text-text-secondary">#{user?.id}</span>
             </div>
-            <p className="text-xs text-text-muted leading-relaxed border-t border-white/5 pt-3.5">
+            <p className="text-xs text-text-muted leading-relaxed pt-3.5">
               * Sensitive credentials such as authentication passwords and administrative roles remain protected.
             </p>
           </div>

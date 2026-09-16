@@ -127,26 +127,26 @@ export default function MainLayout({ children }) {
                 <AnimatePresence>
                   {userMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                      initial={{ opacity: 0, y: -6, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-3 w-64 glass-strong rounded-2xl border border-white/15 p-2 shadow-2xl shadow-black/60 z-50 backdrop-blur-xl bg-space-900/95"
+                      exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                      className="absolute right-0 top-full mt-3.5 w-72 glass-strong rounded-2xl border border-white/15 p-4 shadow-2xl shadow-black/80 z-50 backdrop-blur-2xl bg-space-900/95 flex flex-col gap-3"
                     >
                       {/* User info header card */}
-                      <div className="p-3.5 rounded-xl bg-white/[0.04] border border-white/5 mb-1.5 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-bold text-space-900 uppercase text-sm shrink-0 shadow-md">
+                      <div className="p-3.5 sm:p-4 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-3.5 shadow-sm">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-extrabold text-space-900 uppercase text-base shrink-0 shadow-md">
                           {user?.username?.[0] || 'U'}
                         </div>
                         <div className="min-w-0 flex-grow">
-                          <p className="text-sm font-bold text-text-primary truncate">{user?.username}</p>
-                          <p className="text-xs text-text-muted truncate mt-0.5">{user?.email}</p>
+                          <p className="text-sm font-bold text-text-primary truncate">{user?.username || 'Astronomer'}</p>
+                          <p className="text-xs text-text-muted truncate mt-0.5">{user?.email || 'No email provided'}</p>
                         </div>
                       </div>
 
                       {/* Account section */}
-                      <div className="flex flex-col gap-1 py-1">
-                        <span className="px-3 pt-2 pb-1 text-[10px] font-bold text-text-muted uppercase tracking-wider block">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="px-3 pt-1 pb-0.5 text-[10px] font-bold text-text-muted uppercase tracking-wider block">
                           Account
                         </span>
                         <Link
@@ -163,8 +163,8 @@ export default function MainLayout({ children }) {
 
                       {/* Admin section */}
                       {user?.role === 'admin' && (
-                        <div className="flex flex-col gap-1 py-1 border-t border-white/5 mt-1">
-                          <span className="px-3 pt-2 pb-1 text-[10px] font-bold text-accent uppercase tracking-wider block">
+                        <div className="flex flex-col gap-1.5 border-t border-white/10 pt-2.5">
+                          <span className="px-3 pt-1 pb-0.5 text-[10px] font-bold text-accent uppercase tracking-wider block">
                             Administration
                           </span>
                           <Link
@@ -181,10 +181,10 @@ export default function MainLayout({ children }) {
                       )}
 
                       {/* Logout */}
-                      <div className="border-t border-white/5 mt-1 pt-1">
+                      <div className="border-t border-white/10 pt-2.5">
                         <button
                           onClick={handleLogout}
-                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-danger/90 hover:text-danger hover:bg-danger/10 transition-all w-full text-left rounded-xl cursor-pointer"
+                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-danger/90 hover:text-danger hover:bg-danger/10 border border-transparent hover:border-danger/20 transition-all w-full text-left rounded-xl cursor-pointer"
                         >
                           <svg className="w-4 h-4 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -266,14 +266,14 @@ export default function MainLayout({ children }) {
               ))}
 
               {isAuthenticated ? (
-                <div className="mt-8 pt-6 border-t border-white/5">
-                  <div className="flex items-center gap-3 px-4 mb-4">
-                    <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary uppercase text-sm">
+                <div className="mt-8 pt-6 border-t border-white/10 flex flex-col gap-3">
+                  <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white/[0.04] border border-white/10 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-bold text-space-900 uppercase text-sm shrink-0 shadow-md">
                       {user?.username?.[0] || 'U'}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-semibold text-text-primary truncate">{user?.username}</span>
-                      <span className="text-xs text-text-muted truncate">{user?.email}</span>
+                      <span className="text-sm font-bold text-text-primary truncate">{user?.username}</span>
+                      <span className="text-xs text-text-muted truncate mt-0.5">{user?.email}</span>
                     </div>
                   </div>
                   <NavLink to="/dashboard" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
@@ -292,12 +292,29 @@ export default function MainLayout({ children }) {
                   )}
                   <button
                     onClick={handleLogout}
-                    className="w-full btn-danger justify-start mt-4"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                      padding: '13px 24px',
+                      borderRadius: '9999px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      color: '#EF4444',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      width: '100%',
+                      marginTop: '8px',
+                      boxSizing: 'border-box',
+                    }}
+                    className="hover:bg-danger/25 hover:border-danger/50 transition-all"
                   >
-                    <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    <svg className="w-4 h-4 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    Sign Out
+                    <span>Sign Out</span>
                   </button>
                 </div>
               ) : (
