@@ -105,18 +105,18 @@ export default function MainLayout({ children }) {
               <div className="relative border-l border-white/10 pl-4 ml-3" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2.5 group py-1.5 px-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
+                  className="flex items-center gap-2.5 group py-1.5 px-3 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 transition-all cursor-pointer shadow-sm"
                   aria-label="User menu"
                   aria-expanded={userMenuOpen}
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-bold text-primary uppercase text-xs group-hover:bg-primary/30 transition-colors">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-extrabold text-space-900 uppercase text-xs shadow-sm shrink-0">
                     {user?.username?.[0] || 'U'}
                   </div>
-                  <span className="text-sm text-text-secondary font-medium hidden lg:block">
+                  <span className="text-sm text-text-primary font-medium hidden lg:block">
                     {user?.username}
                   </span>
                   <svg
-                    className={`w-3.5 h-3.5 text-text-muted transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
+                    className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${userMenuOpen ? 'rotate-180 text-primary' : ''}`}
                     fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -127,69 +127,94 @@ export default function MainLayout({ children }) {
                 <AnimatePresence>
                   {userMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                      initial={{ opacity: 0, y: -10, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.96 }}
-                      transition={{ duration: 0.18, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-3.5 w-72 glass-strong rounded-2xl border border-white/15 p-4 shadow-2xl shadow-black/80 z-50 backdrop-blur-2xl bg-space-900/95 flex flex-col gap-3"
+                      exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute right-0 top-full mt-3 w-80 rounded-3xl border border-white/15 shadow-2xl z-50 flex flex-col"
+                      style={{
+                        padding: '22px 20px 18px 20px',
+                        background: 'linear-gradient(145deg, rgba(16, 22, 40, 0.96) 0%, rgba(5, 8, 22, 0.98) 100%)',
+                        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(249, 115, 22, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(28px)',
+                        WebkitBackdropFilter: 'blur(28px)',
+                      }}
                     >
-                      {/* User info header card */}
-                      <div className="p-3.5 sm:p-4 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-3.5 shadow-sm">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-extrabold text-space-900 uppercase text-base shrink-0 shadow-md">
+                      {/* Ambient glowing radial flare contained inside rounded mask */}
+                      <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+                        <div
+                          className="absolute -top-12 -left-12 w-40 h-40 rounded-full opacity-40 blur-2xl"
+                          style={{
+                            background: 'radial-gradient(circle, rgba(249, 115, 22, 0.6) 0%, rgba(79, 140, 255, 0.3) 60%, transparent 100%)',
+                          }}
+                        />
+                      </div>
+
+                      {/* Integrated User Header with generous inset */}
+                      <div
+                        className="relative z-10 flex items-center gap-3.5"
+                        style={{
+                          padding: '0 8px 16px 8px',
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                          marginBottom: '16px',
+                        }}
+                      >
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-extrabold text-space-900 uppercase text-sm shrink-0 shadow-md">
                           {user?.username?.[0] || 'U'}
                         </div>
                         <div className="min-w-0 flex-grow">
-                          <p className="text-sm font-bold text-text-primary truncate">{user?.username || 'Astronomer'}</p>
-                          <p className="text-xs text-text-muted truncate mt-0.5">{user?.email || 'No email provided'}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white tracking-tight truncate">{user?.username || 'Astronomer'}</span>
+                            {user?.role === 'admin' && (
+                              <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-accent/20 text-accent border border-accent/35 uppercase tracking-wider shrink-0">
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-text-muted truncate" style={{ marginTop: '4px' }}>{user?.email || 'No email provided'}</p>
                         </div>
                       </div>
 
-                      {/* Account section */}
-                      <div className="flex flex-col gap-1.5">
-                        <span className="px-3 pt-1 pb-0.5 text-[10px] font-bold text-text-muted uppercase tracking-wider block">
-                          Account
-                        </span>
-                        <Link
+                      {/* Navigation Items (Profile & Sign Out) - Clean list, no permanent pill */}
+                      <div className="relative z-10 flex flex-col" style={{ gap: '6px' }}>
+                        {/* 1. Profile */}
+                        <NavLink
                           to="/dashboard"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-white/10 rounded-xl transition-all"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                          }}
+                          className="text-[15px] font-medium text-text-secondary hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer"
                         >
-                          <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
-                          Dashboard
-                        </Link>
-                      </div>
+                          <span>Profile</span>
+                        </NavLink>
 
-                      {/* Admin section */}
-                      {user?.role === 'admin' && (
-                        <div className="flex flex-col gap-1.5 border-t border-white/10 pt-2.5">
-                          <span className="px-3 pt-1 pb-0.5 text-[10px] font-bold text-accent uppercase tracking-wider block">
-                            Administration
-                          </span>
-                          <Link
-                            to="/admin"
-                            onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-accent hover:text-white hover:bg-accent/15 rounded-xl transition-all"
-                          >
-                            <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                            Admin Panel
-                          </Link>
-                        </div>
-                      )}
-
-                      {/* Logout */}
-                      <div className="border-t border-white/10 pt-2.5">
+                        {/* 2. Sign Out */}
                         <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-danger/90 hover:text-danger hover:bg-danger/10 border border-transparent hover:border-danger/20 transition-all w-full text-left rounded-xl cursor-pointer"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            handleLogout();
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                          }}
+                          className="text-[15px] font-medium text-danger hover:text-danger-light hover:bg-danger/10 transition-all w-full text-left cursor-pointer group"
                         >
-                          <svg className="w-4 h-4 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          <svg className="w-5 h-5 text-danger shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                           </svg>
-                          Sign Out
+                          <span>Sign Out</span>
                         </button>
                       </div>
                     </motion.div>
@@ -266,53 +291,55 @@ export default function MainLayout({ children }) {
               ))}
 
               {isAuthenticated ? (
-                <div className="mt-8 pt-6 border-t border-white/10 flex flex-col gap-3">
-                  <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white/[0.04] border border-white/10 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-bold text-space-900 uppercase text-sm shrink-0 shadow-md">
+                <div className="mt-8 pt-6 border-t border-white/10 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-white/[0.04] border border-white/10 mb-2">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-bold text-space-900 uppercase text-sm shrink-0 shadow-md">
                       {user?.username?.[0] || 'U'}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold text-text-primary truncate">{user?.username}</span>
-                      <span className="text-xs text-text-muted truncate mt-0.5">{user?.email}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-text-primary truncate">{user?.username || 'Astronomer'}</span>
+                        {user?.role === 'admin' && (
+                          <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-accent/20 text-accent border border-accent/35 uppercase tracking-wider shrink-0">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-text-muted truncate mt-1">{user?.email || 'No email provided'}</span>
                     </div>
                   </div>
                   <NavLink to="/dashboard" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    Dashboard
+                    Profile
                   </NavLink>
-                  {user?.role === 'admin' && (
-                    <NavLink to="/admin" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
-                      <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                      Admin Panel
-                    </NavLink>
-                  )}
                   <button
-                    onClick={handleLogout}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogout();
+                    }}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '10px',
-                      padding: '13px 24px',
-                      borderRadius: '9999px',
-                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      padding: '14px 24px',
+                      borderRadius: '16px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
                       color: '#EF4444',
                       fontWeight: 600,
-                      fontSize: '0.875rem',
+                      fontSize: '0.9375rem',
                       cursor: 'pointer',
                       width: '100%',
-                      marginTop: '8px',
+                      marginTop: '4px',
                       boxSizing: 'border-box',
                     }}
-                    className="hover:bg-danger/25 hover:border-danger/50 transition-all"
+                    className="hover:bg-danger/20 hover:border-danger/40 transition-all"
                   >
-                    <svg className="w-4 h-4 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    <svg className="w-4 h-4 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     <span>Sign Out</span>
                   </button>
