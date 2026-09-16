@@ -85,9 +85,6 @@ export const adminAPI = {
   getModelDetail: (id) =>
     client.get(`/admin/models/${id}`),
 
-  getModelInfo: () =>
-    client.get('/admin/models'),
-
   // ─── Retraining ─────────────────────────────────────────────────
   startRetraining: (datasetId = null, reason = '') =>
     client.post('/admin/retraining/start', {

@@ -161,8 +161,8 @@ export default function TrainingPage() {
             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
               <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Last Completed</span>
               <p className="text-sm font-semibold text-text-primary mt-1">
-                {retrainStatus.last_completed_at
-                  ? new Date(retrainStatus.last_completed_at).toLocaleString()
+                {retrainStatus.last_completed || retrainStatus.last_completed_at
+                  ? new Date(retrainStatus.last_completed || retrainStatus.last_completed_at).toLocaleString()
                   : 'No prior runs'}
               </p>
             </div>

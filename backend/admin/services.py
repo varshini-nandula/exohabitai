@@ -168,6 +168,7 @@ def get_planets_by_status(status=None, search=None, page=1, per_page=20):
             ),
             "habitability": p.habitability,
             "status": p.status,
+            "rejection_reason": getattr(p, "rejection_reason", None),
             "is_user_generated": p.is_user_generated,
             "model_version": p.model_version,
             "created_at": p.created_at.isoformat() if p.created_at else None,
@@ -223,6 +224,7 @@ def get_planet_detail(planet_id: int) -> dict | None:
         "habitability": planet.habitability,
         "model_version": planet.model_version,
         "status": planet.status,
+        "rejection_reason": getattr(planet, "rejection_reason", None),
         "is_user_generated": planet.is_user_generated,
         "raw_input": raw_input,
         "submitter": submitter,
@@ -231,7 +233,7 @@ def get_planet_detail(planet_id: int) -> dict | None:
     }
 
 
-def moderate_planet(planet_id: int, new_status: str) -> tuple[dict | None, str]:
+def moderate_planet(planet_id: int, new_status: str, rejection_reason: str | None = None) -> tuple[dict | None, str]:
     """
     Change a planet's moderation status.
 
@@ -246,17 +248,22 @@ def moderate_planet(planet_id: int, new_status: str) -> tuple[dict | None, str]:
 
     old_status = planet.status
     planet.status = new_status
+    if new_status == PlanetStatus.REJECTED:
+        planet.rejection_reason = rejection_reason
+    elif new_status == PlanetStatus.APPROVED:
+        planet.rejection_reason = None
 
     try:
         db.session.commit()
         logger.info(
-            "Planet moderated: id=%d, name=%s, %s → %s",
-            planet.id, planet.planet_name, old_status, new_status,
+            "Planet moderated: id=%d, name=%s, %s → %s (reason: %s)",
+            planet.id, planet.planet_name, old_status, new_status, rejection_reason,
         )
         return {
             "id": planet.id,
             "planet_name": planet.planet_name,
             "status": planet.status,
+            "rejection_reason": planet.rejection_reason,
             "previous_status": old_status,
         }, f"Planet '{planet.planet_name}' {new_status}"
     except Exception as exc:

@@ -932,38 +932,6 @@ export default function PredictPage() {
                 </div>
               )}
 
-              {/* Imputation & Calculation Details */}
-              {result.fill_info && (
-                <div className="text-[11px] text-text-secondary bg-white/5 border border-white/5 p-4 rounded-lg font-mono leading-relaxed mt-2 space-y-2">
-                  <div className="flex justify-between border-b border-white/5 pb-1.5">
-                    <span className="text-text-muted">Missing Data Method:</span>
-                    <span className="font-bold text-text-primary capitalize">
-                      {result.fill_info.strategy_used === 'earth' && '🌍 Earth-like Defaults'}
-                      {result.fill_info.strategy_used === 'non_habitable' && '📊 Dataset Averages'}
-                      {result.fill_info.strategy_used === 'zeros' && '0️⃣ Zeros'}
-                      {result.fill_info.strategy_used === 'median' && '📊 Dataset Averages'}
-                    </span>
-                  </div>
-                  {result.fill_info.auto_derived && result.fill_info.auto_derived.length > 0 && (
-                    <div>
-                      <div className="text-text-muted mb-1.5 font-semibold">
-                        ⚙️ Auto-Calculated Features ({result.fill_info.auto_derived.length}):
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {result.fill_info.auto_derived.map((feat) => (
-                          <span
-                            key={feat}
-                            className="px-1.5 py-0.5 rounded bg-success/10 border border-success/20 text-success text-[10px]"
-                          >
-                            {feat}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* Storage confirmation (if saved) */}
               {result.stored && (
                 <div className="text-[10px] text-success bg-success/5 border border-success/10 p-4 rounded-lg text-center font-medium">

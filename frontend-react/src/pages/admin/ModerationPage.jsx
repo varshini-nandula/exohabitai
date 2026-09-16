@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../../api/admin';
 import GlassCard from '../../components/GlassCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -27,7 +27,7 @@ export default function ModerationPage() {
   const [confirmPlanetId, setConfirmPlanetId] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
-  const fetchPlanets = async () => {
+  const fetchPlanets = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -50,19 +50,18 @@ export default function ModerationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, page, search]);
 
   useEffect(() => {
     setPage(1);
-    fetchPlanets();
   }, [activeTab]);
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      if (activeTab !== 'pending') fetchPlanets();
-    }, 400);
+      fetchPlanets();
+    }, 300);
     return () => clearTimeout(delay);
-  }, [search, page]);
+  }, [fetchPlanets]);
 
   const handleToggleExpand = async (planetId) => {
     if (expandedPlanetId === planetId) {
@@ -219,7 +218,7 @@ export default function ModerationPage() {
                   {planets.map((p) => {
                     const isExpanded = expandedPlanetId === p.id;
                     return (
-                      <tbody key={p.id} className="contents">
+                      <React.Fragment key={p.id}>
                         <tr
                           onClick={() => handleToggleExpand(p.id)}
                           className={`cursor-pointer transition-colors ${isExpanded ? 'bg-primary/[0.04]' : 'hover:bg-white/[0.02]'
@@ -268,7 +267,7 @@ export default function ModerationPage() {
                               {p.status !== 'approved' && (
                                 <button
                                   onClick={(e) => handleApprove(e, p.id)}
-                                  className="px-3 py-1.5 rounded-lg bg-success/15 hover:bg-success/25 border border-success/30 text-xs font-semibold text-success transition-colors"
+                                  className="px-3 py-1.5 rounded-lg bg-success/15 hover:bg-success/25 border border-success/30 text-xs font-semibold text-success transition-colors cursor-pointer"
                                 >
                                   Approve
                                 </button>
@@ -276,7 +275,7 @@ export default function ModerationPage() {
                               {p.status !== 'rejected' && (
                                 <button
                                   onClick={(e) => handleReject(e, p.id)}
-                                  className="px-3 py-1.5 rounded-lg bg-danger/15 hover:bg-danger/25 border border-danger/30 text-xs font-semibold text-danger transition-colors"
+                                  className="px-3 py-1.5 rounded-lg bg-danger/15 hover:bg-danger/25 border border-danger/30 text-xs font-semibold text-danger transition-colors cursor-pointer"
                                 >
                                   Reject
                                 </button>
@@ -308,6 +307,15 @@ export default function ModerationPage() {
                                         </div>
                                       ))}
                                     </div>
+
+                                    {planetDetail.rejection_reason && (
+                                      <div className="mt-4 p-3.5 rounded-xl bg-danger/10 border border-danger/25 text-xs">
+                                        <span className="font-bold text-danger block uppercase tracking-wider text-[10px] mb-1">
+                                          Rejection Rationale:
+                                        </span>
+                                        <p className="text-text-primary font-mono">{planetDetail.rejection_reason}</p>
+                                      </div>
+                                    )}
                                   </div>
 
                                   <div className="space-y-4">
@@ -338,7 +346,7 @@ export default function ModerationPage() {
                             </td>
                           </tr>
                         )}
-                      </tbody>
+                      </React.Fragment>
                     );
                   })}
                 </tbody>

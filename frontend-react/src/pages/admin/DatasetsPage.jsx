@@ -248,7 +248,7 @@ export default function DatasetsPage() {
                     </td>
                     <td className="py-4 px-4 font-mono text-sm text-text-secondary">{ds.row_count ?? '—'}</td>
                     <td className="py-4 px-4 text-text-muted text-xs">
-                      {ds.created_at ? new Date(ds.created_at).toLocaleDateString() : '—'}
+                      {ds.uploaded_at || ds.created_at ? new Date(ds.uploaded_at || ds.created_at).toLocaleDateString() : '—'}
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex justify-end gap-2">

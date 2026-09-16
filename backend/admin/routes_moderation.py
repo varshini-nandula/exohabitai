@@ -99,7 +99,9 @@ def approve_planet(planet_id):
 @admin_required()
 def reject_planet(planet_id):
     """Reject a planet submission — hides it from public rankings."""
-    result, message = moderate_planet(planet_id, PlanetStatus.REJECTED)
+    data = request.get_json(silent=True) or {}
+    reason = data.get("reason", "").strip() or None
+    result, message = moderate_planet(planet_id, PlanetStatus.REJECTED, rejection_reason=reason)
     if result is None:
         return _admin_response("error", message, code=404)
 

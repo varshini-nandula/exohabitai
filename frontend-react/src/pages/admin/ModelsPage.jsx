@@ -22,10 +22,11 @@ export default function ModelsPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await adminAPI.getModelInfo();
+      const res = await adminAPI.getModels();
       if (res.data?.status === 'success') {
-        setCurrentModel(res.data.data.current_model);
-        setVersionHistory(res.data.data.version_history || []);
+        const data = res.data.data;
+        setCurrentModel(data.current_model || (data.models && data.models.length > 0 ? data.models[0] : null));
+        setVersionHistory(data.version_history || data.models || []);
       } else {
         setError(res.data?.message || 'Failed to load model data.');
       }
@@ -57,7 +58,7 @@ export default function ModelsPage() {
       { metric: 'F1 Score', value: (currentModel.f1_score || 0) * 100 },
       { metric: 'Precision', value: (currentModel.precision || 0) * 100 },
       { metric: 'Recall', value: (currentModel.recall || 0) * 100 },
-      { metric: 'AUC-ROC', value: (currentModel.auc_roc || 0.92) * 100 },
+      { metric: 'AUC-ROC', value: (currentModel.roc_auc != null ? currentModel.roc_auc : (currentModel.auc_roc || 0)) * 100 },
     ]
     : [];
 
@@ -138,26 +139,34 @@ export default function ModelsPage() {
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">F1 Score</span>
-                  <p className="text-lg font-bold font-mono text-text-primary mt-0.5">{(currentModel.f1_score * 100).toFixed(2)}%</p>
+                  <p className="text-lg font-bold font-mono text-text-primary mt-0.5">
+                    {currentModel.f1_score != null ? `${(currentModel.f1_score * 100).toFixed(2)}%` : '—'}
+                  </p>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Precision</span>
-                  <p className="text-lg font-bold font-mono text-text-primary mt-0.5">{((currentModel.precision || 0.88) * 100).toFixed(2)}%</p>
+                  <p className="text-lg font-bold font-mono text-text-primary mt-0.5">
+                    {currentModel.precision != null ? `${(currentModel.precision * 100).toFixed(2)}%` : '—'}
+                  </p>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Recall</span>
-                  <p className="text-lg font-bold font-mono text-text-primary mt-0.5">{((currentModel.recall || 0.85) * 100).toFixed(2)}%</p>
+                  <p className="text-lg font-bold font-mono text-text-primary mt-0.5">
+                    {currentModel.recall != null ? `${(currentModel.recall * 100).toFixed(2)}%` : '—'}
+                  </p>
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Training Size</span>
-                  <p className="text-lg font-bold font-mono text-text-primary mt-0.5">{currentModel.training_samples?.toLocaleString() || '5,569'}</p>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Dataset / Provenance</span>
+                  <p className="text-sm font-bold font-mono text-text-primary mt-1 truncate" title={currentModel.dataset_version || 'Default Training Catalog'}>
+                    {currentModel.dataset_version ? currentModel.dataset_version.substring(0, 12) : 'Default Catalog'}
+                  </p>
                 </div>
               </div>
 
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between py-2 border-b border-white/5">
                   <span className="text-text-muted">Base Classifier</span>
-                  <span className="text-text-primary font-semibold">{currentModel.algorithm || 'Random Forest (100 estimators)'}</span>
+                  <span className="text-text-primary font-semibold">{currentModel.notes || 'Random Forest Classifier (100 estimators)'}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-white/5">
                   <span className="text-text-muted">Training Date</span>
@@ -170,7 +179,7 @@ export default function ModelsPage() {
 
             <div className="p-3 rounded-xl bg-accent/[0.04] border border-accent/20 mt-4 flex items-center justify-between text-xs">
               <span className="text-accent font-semibold">Artifact Status: Verified in memory</span>
-              <span className="text-text-muted font-mono">MD5: verified</span>
+              <span className="text-text-muted font-mono">{currentModel.artifact_path ? 'Loaded' : 'Default Pipeline'}</span>
             </div>
           </div>
         </div>
@@ -195,7 +204,7 @@ export default function ModelsPage() {
                   <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">Version Tag</th>
                   <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">Accuracy</th>
                   <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">F1 Score</th>
-                  <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">Training Samples</th>
+                  <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">Dataset Provenance</th>
                   <th className="py-3.5 px-4 text-center text-xs font-bold uppercase tracking-wider text-text-muted">Release Status</th>
                   <th className="py-3.5 px-4 text-right text-xs font-bold uppercase tracking-wider text-text-muted">Deployed At</th>
                 </tr>
@@ -210,7 +219,9 @@ export default function ModelsPage() {
                     <td className="py-4 px-4 font-mono text-sm">
                       {v.f1_score != null ? `${(v.f1_score * 100).toFixed(2)}%` : '—'}
                     </td>
-                    <td className="py-4 px-4 font-mono text-sm">{v.training_samples?.toLocaleString() || '—'}</td>
+                    <td className="py-4 px-4 font-mono text-xs text-text-muted">
+                      {v.dataset_version ? v.dataset_version.substring(0, 12) : 'Default Catalog'}
+                    </td>
                     <td className="py-4 px-4 text-center">
                       <Badge variant={v.is_active ? 'success' : 'neutral'}>
                         {v.is_active ? 'Production' : 'Archived'}

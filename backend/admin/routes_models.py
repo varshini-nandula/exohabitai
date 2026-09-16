@@ -28,10 +28,18 @@ def list_models():
             .order_by(ModelVersion.created_at.desc())
             .all()
         )
+        active = ModelVersion.query.filter_by(is_active=True).first()
+        model_dicts = [m.to_dict() for m in models]
+        active_dict = active.to_dict() if active else (model_dicts[0] if model_dicts else None)
+
         return _admin_response(
             "success",
             f"Retrieved {len(models)} model version(s)",
-            {"models": [m.to_dict() for m in models]},
+            {
+                "models": model_dicts,
+                "current_model": active_dict,
+                "version_history": model_dicts,
+            },
         )
     except Exception as exc:
         logger.exception("Model list error")

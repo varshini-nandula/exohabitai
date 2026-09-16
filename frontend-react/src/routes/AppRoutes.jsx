@@ -14,6 +14,7 @@ import RegisterPage from '../pages/RegisterPage';
 import AddPlanetPage from '../pages/AddPlanetPage';
 import HistoryPage from '../pages/HistoryPage';
 import ProfilePage from '../pages/ProfilePage';
+import NotFoundPage from '../pages/NotFoundPage';
 
 // Admin Pages
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
@@ -57,8 +58,8 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* 404 Catch-All */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

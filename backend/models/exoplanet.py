@@ -75,6 +75,7 @@ class Exoplanet(db.Model):
     status = db.Column(
         db.String(20), nullable=False, default=PlanetStatus.PENDING, index=True,
     )
+    rejection_reason = db.Column(db.Text, nullable=True)
 
     # Audit & continuous learning
     raw_input_json = db.Column(db.Text)       # full input payload

@@ -160,7 +160,7 @@ export default function AddPlanetPage() {
 
       <section className="max-w-4xl mx-auto w-full">
         {errorState && (
-          <div className="mb-8">
+          <div id="planet-form-error" role="alert" aria-live="polite" className="mb-8">
             <ErrorState variant={errorState.variant} message={errorState.message} onRetry={handleSubmit} />
           </div>
         )}
@@ -174,6 +174,8 @@ export default function AddPlanetPage() {
                 type="text" id="planet_name" value={formData.planet_name}
                 onChange={(e) => handleInputChange('planet_name', e.target.value)}
                 placeholder="e.g. KOI-351.01" required disabled={loading}
+                aria-invalid={!!errorState}
+                aria-describedby={errorState ? 'planet-form-error' : undefined}
               />
             </div>
 
@@ -195,7 +197,10 @@ export default function AddPlanetPage() {
                     </div>
                     <input type="number" id={f.id} step={f.step} min={f.min} max={f.max}
                       value={formData[f.id]} onChange={(e) => handleInputChange(f.id, e.target.value)}
-                      required disabled={loading} />
+                      required disabled={loading}
+                      aria-invalid={!!errorState}
+                      aria-describedby={errorState ? 'planet-form-error' : undefined}
+                    />
                   </div>
                 ))}
               </div>
@@ -214,7 +219,10 @@ export default function AddPlanetPage() {
                     </div>
                     <input type="number" id={f.id} step={f.step} min={f.min} max={f.max}
                       value={formData[f.id]} onChange={(e) => handleInputChange(f.id, e.target.value)}
-                      required disabled={loading} />
+                      required disabled={loading}
+                      aria-invalid={!!errorState}
+                      aria-describedby={errorState ? 'planet-form-error' : undefined}
+                    />
                   </div>
                 ))}
               </div>
@@ -234,7 +242,10 @@ export default function AddPlanetPage() {
                     </div>
                     <input type="number" id={f.id} step={f.step} min={f.min} max={f.max}
                       value={formData[f.id]} onChange={(e) => handleInputChange(f.id, e.target.value)}
-                      required disabled={loading} />
+                      required disabled={loading}
+                      aria-invalid={!!errorState}
+                      aria-describedby={errorState ? 'planet-form-error' : undefined}
+                    />
                   </div>
                 ))}
               </div>

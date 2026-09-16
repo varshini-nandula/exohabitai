@@ -138,6 +138,11 @@ export default function AdminLayout() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-space-950 text-text-primary overflow-hidden relative">
+      {/* Skip Navigation */}
+      <a href="#admin-main-content" className="skip-nav">
+        Skip to main content
+      </a>
+
       {/* Subtle Deep Space Starfield */}
       <Starfield speed={0.03} count={35} />
 
@@ -237,7 +242,7 @@ export default function AdminLayout() {
                 </Link>
                 <div className="px-3 text-[11px] text-[#64748b] flex items-center justify-between">
                   <span>ML Engine</span>
-                  <span className="font-mono font-bold text-[#2dd4bf]">v1.0 • RF</span>
+                  <span className="font-mono font-bold text-[#2dd4bf]">Active • Random Forest</span>
                 </div>
               </div>
             </motion.aside>
@@ -284,7 +289,7 @@ export default function AdminLayout() {
           {/* Telemetry Status Pill */}
           <div className="hidden md:flex items-center gap-2 px-3.5 py-1 rounded-full bg-success/10 border border-success/25 text-xs font-medium text-success">
             <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-            <span>Systems Nominal</span>
+            <span>Telemetry Nominal</span>
           </div>
 
           {/* Exit to Public App */}
@@ -374,7 +379,7 @@ export default function AdminLayout() {
       </header>
 
       {/* ── 3. Scrollable Page Content Canvas ─────────────────────── */}
-      <main className="flex-1 min-w-0 overflow-y-auto bg-space-950/40 relative">
+      <main id="admin-main-content" tabIndex={-1} className="flex-1 min-w-0 overflow-y-auto bg-space-950/40 relative outline-none">
         <div className="site-container section-padding">
           <Outlet />
         </div>

@@ -95,10 +95,10 @@ export default function AuditLogsPage() {
                 {logs.map((log, i) => (
                   <tr key={log.id || i} className="hover:bg-white/[0.02] transition-colors">
                     <td className="py-4 px-4 text-text-muted text-xs font-mono whitespace-nowrap">
-                      {log.created_at ? new Date(log.created_at).toLocaleString() : '—'}
+                      {log.timestamp || log.created_at ? new Date(log.timestamp || log.created_at).toLocaleString() : '—'}
                     </td>
                     <td className="py-4 px-4 font-bold text-text-primary text-sm font-mono">
-                      {log.action || log.event_type || '—'}
+                      {log.action || log.event_type || (log.model_version ? `Model Retrain (${log.model_version})` : 'Model Retraining')}
                     </td>
                     <td className="py-4 px-4 text-center">
                       <Badge
@@ -114,10 +114,14 @@ export default function AuditLogsPage() {
                       </Badge>
                     </td>
                     <td className="py-4 px-4 text-text-secondary text-sm">
-                      {log.triggered_by || log.user || 'system'}
+                      {log.requested_by || log.triggered_by || log.user || 'system'}
                     </td>
-                    <td className="py-4 px-4 text-text-muted text-xs max-w-md truncate">
-                      {log.details || log.notes || '—'}
+                    <td className="py-4 px-4 text-text-muted text-xs max-w-md">
+                      {log.reason || log.details || log.notes || (
+                        log.accuracy != null
+                          ? `Acc: ${(log.accuracy * 100).toFixed(1)}% | F1: ${(log.f1_score * 100).toFixed(1)}% | Dataset: ${log.dataset_size || 'N/A'}`
+                          : '—'
+                      )}
                     </td>
                   </tr>
                 ))}
