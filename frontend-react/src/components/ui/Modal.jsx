@@ -18,10 +18,11 @@ export default function Modal({
   const previousActiveRef = useRef(null);
 
   const sizeClass = {
-    sm: 'max-w-md',
-    md: 'max-w-xl',
-    lg: 'max-w-2xl',
-  }[size] || 'max-w-xl';
+    sm: 'max-w-lg',
+    md: 'max-w-2xl',
+    lg: 'max-w-4xl',
+    xl: 'max-w-5xl',
+  }[size] || 'max-w-2xl';
 
   // Focus trap
   const trapFocus = useCallback((e) => {
@@ -92,30 +93,30 @@ export default function Modal({
             aria-hidden="true"
           />
 
-          {/* Content */}
+          {/* Content Card using exact GlassCard styling */}
           <motion.div
             ref={modalRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? 'modal-title' : undefined}
             aria-describedby={description ? 'modal-desc' : undefined}
-            className={`relative w-full ${sizeClass} max-h-[90vh] overflow-y-auto glass-strong rounded-2xl shadow-lg`}
+            className={`relative w-full ${sizeClass} max-h-[90vh] overflow-y-auto glass backdrop-blur-md border border-white/10 surface-raised rounded-2xl p-8 sm:p-10 shadow-2xl glow-border`}
             initial={{ opacity: 0, y: 20, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.97 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Header */}
+            {/* Header with exact Predict card divider */}
             {(title || showClose) && (
-              <div className="flex items-start justify-between p-7 sm:p-8 pb-2">
+              <div className="flex items-start justify-between border-b border-white/5 pb-6 mb-8 gap-4">
                 <div className="flex-1 min-w-0">
                   {title && (
-                    <h3 id="modal-title" className="text-xl font-bold text-text-primary tracking-tight">
+                    <h2 id="modal-title" className="text-base sm:text-lg md:text-xl font-bold text-text-primary tracking-wide uppercase">
                       {title}
-                    </h3>
+                    </h2>
                   )}
                   {description && (
-                    <p id="modal-desc" className="text-sm text-text-secondary mt-2 leading-relaxed">
+                    <p id="modal-desc" className="text-xs text-text-muted mt-1 leading-relaxed">
                       {description}
                     </p>
                   )}
@@ -123,7 +124,7 @@ export default function Modal({
                 {showClose && (
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors ml-4 flex-shrink-0 cursor-pointer"
+                    className="p-2 -mr-2 -mt-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-white/10 transition-colors flex-shrink-0 cursor-pointer"
                     aria-label="Close dialog"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -135,7 +136,7 @@ export default function Modal({
             )}
 
             {/* Body */}
-            <div className="p-7 sm:p-8 pt-4">
+            <div>
               {children}
             </div>
           </motion.div>

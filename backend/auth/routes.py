@@ -16,6 +16,7 @@ Design decisions:
     - /auth/me allows the frontend to verify token validity and get user info
 """
 
+import re
 import logging
 from datetime import datetime, timezone
 
@@ -26,8 +27,10 @@ from flask_jwt_extended import (
     get_jwt,
 )
 
+from extensions import db
+from models.user import User
 from auth.decorators import get_current_user
-from auth.services import register_user, authenticate_user
+from auth.services import register_user, authenticate_user, EMAIL_REGEX
 
 logger = logging.getLogger("exohabitai.auth")
 
@@ -203,6 +206,76 @@ def me():
         "User profile retrieved",
         {"user": user.to_dict()},
     )
+
+
+# ==========================================================================
+# PUT/PATCH /auth/me — Update current user profile
+# ==========================================================================
+
+@auth_bp.route("/me", methods=["PUT", "PATCH"])
+@jwt_required()
+def update_me():
+    """
+    Update the authenticated user's profile (e.g. username, email).
+    Sensitive attributes (role, id, password) are protected and not modified here.
+    """
+    user = get_current_user()
+    if user is None:
+        return _auth_response(
+            "error",
+            "User not found or account deactivated",
+            code=401,
+        )
+
+    data = request.get_json(silent=True)
+    if not data or not isinstance(data, dict):
+        return _auth_response("error", "Request body must be valid JSON", code=400)
+
+    new_username = data.get("username")
+    new_email = data.get("email")
+
+    if new_username is not None:
+        new_username = str(new_username).strip()
+        if len(new_username) < 3:
+            return _auth_response("error", "Username must be at least 3 characters", code=400)
+        if len(new_username) > 80:
+            return _auth_response("error", "Username must not exceed 80 characters", code=400)
+        if not re.match(r"^[a-zA-Z0-9_-]+$", new_username):
+            return _auth_response(
+                "error",
+                "Username can only contain letters, numbers, underscores, and hyphens",
+                code=400,
+            )
+
+        if new_username != user.username:
+            existing = User.query.filter(User.username == new_username).first()
+            if existing and existing.id != user.id:
+                return _auth_response("error", "Username is already taken", code=409)
+            user.username = new_username
+
+    if new_email is not None:
+        new_email = str(new_email).strip().lower()
+        if len(new_email) > 120 or not EMAIL_REGEX.match(new_email):
+            return _auth_response("error", "Invalid email format", code=400)
+
+        if new_email != user.email:
+            existing = User.query.filter(User.email == new_email).first()
+            if existing and existing.id != user.id:
+                return _auth_response("error", "Email is already registered", code=409)
+            user.email = new_email
+
+    try:
+        db.session.commit()
+        logger.info("User #%s updated profile: username=%s, email=%s", user.id, user.username, user.email)
+        return _auth_response(
+            "success",
+            "Profile updated successfully",
+            {"user": user.to_dict()},
+        )
+    except Exception as exc:
+        db.session.rollback()
+        logger.exception("Failed to update user profile")
+        return _auth_response("error", f"Profile update failed: {exc}", code=500)
 
 
 # ==========================================================================

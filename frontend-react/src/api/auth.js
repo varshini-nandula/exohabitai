@@ -10,6 +10,9 @@ export const authAPI = {
   getProfile: () =>
     client.get('/auth/me'),
 
+  updateProfile: (data) =>
+    client.put('/auth/me', data),
+
   logout: () =>
     client.post('/auth/logout'),
 };

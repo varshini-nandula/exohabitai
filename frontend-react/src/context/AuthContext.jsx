@@ -148,6 +148,15 @@ export function AuthProvider({ children }) {
     navigate('/');
   }, [performLogout, navigate]);
 
+  // Update user in state and local storage
+  const updateUser = useCallback((updatedUserData) => {
+    setUser((prev) => {
+      const nextUser = { ...prev, ...updatedUserData };
+      localStorage.setItem('exohabitai_user', JSON.stringify(nextUser));
+      return nextUser;
+    });
+  }, []);
+
   const value = {
     user,
     token,
@@ -158,6 +167,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
+    updateUser,
   };
 
   return (

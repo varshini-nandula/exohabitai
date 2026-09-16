@@ -11,9 +11,8 @@ import RankingsPage from '../pages/RankingsPage';
 import AboutPage from '../pages/AboutPage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
+import UserDashboardPage from '../pages/UserDashboardPage';
 import AddPlanetPage from '../pages/AddPlanetPage';
-import HistoryPage from '../pages/HistoryPage';
-import ProfilePage from '../pages/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 
 // Admin Pages
@@ -39,9 +38,12 @@ export default function AppRoutes() {
 
         {/* Protected User Routes */}
         <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<UserDashboardPage />} />
+          {/* Backwards Compatibility Redirects */}
+          <Route path="/profile" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/history" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/my-predictions" element={<Navigate to="/dashboard" replace />} />
           <Route path="/add-planet" element={<AddPlanetPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
 

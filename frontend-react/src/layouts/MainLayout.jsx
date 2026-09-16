@@ -100,21 +100,12 @@ export default function MainLayout({ children }) {
               </NavLink>
             ))}
 
-            {isAuthenticated && (
-              <NavLink to="/add-planet" className={activeClassName}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Planet
-              </NavLink>
-            )}
-
             {/* User area */}
             {isAuthenticated ? (
               <div className="relative border-l border-white/10 pl-4 ml-3" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2.5 group py-1.5 px-2 rounded-xl hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2.5 group py-1.5 px-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
                   aria-label="User menu"
                   aria-expanded={userMenuOpen}
                 >
@@ -159,24 +150,14 @@ export default function MainLayout({ children }) {
                           Account
                         </span>
                         <Link
-                          to="/profile"
+                          to="/dashboard"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-white/10 rounded-xl transition-all"
                         >
                           <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                           </svg>
-                          Profile
-                        </Link>
-                        <Link
-                          to="/history"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-white/10 rounded-xl transition-all"
-                        >
-                          <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          My Predictions
+                          Dashboard
                         </Link>
                       </div>
 
@@ -203,7 +184,7 @@ export default function MainLayout({ children }) {
                       <div className="border-t border-white/5 mt-1 pt-1">
                         <button
                           onClick={handleLogout}
-                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-danger/90 hover:text-danger hover:bg-danger/10 transition-all w-full text-left rounded-xl"
+                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-danger/90 hover:text-danger hover:bg-danger/10 transition-all w-full text-left rounded-xl cursor-pointer"
                         >
                           <svg className="w-4 h-4 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -284,19 +265,6 @@ export default function MainLayout({ children }) {
                 </NavLink>
               ))}
 
-              {isAuthenticated && (
-                <NavLink
-                  to="/add-planet"
-                  className={mobileActiveClassName}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Planet
-                </NavLink>
-              )}
-
               {isAuthenticated ? (
                 <div className="mt-8 pt-6 border-t border-white/5">
                   <div className="flex items-center gap-3 px-4 mb-4">
@@ -308,14 +276,17 @@ export default function MainLayout({ children }) {
                       <span className="text-xs text-text-muted truncate">{user?.email}</span>
                     </div>
                   </div>
-                  <NavLink to="/profile" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
-                    Profile
-                  </NavLink>
-                  <NavLink to="/history" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
-                    My Predictions
+                  <NavLink to="/dashboard" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Dashboard
                   </NavLink>
                   {user?.role === 'admin' && (
                     <NavLink to="/admin" className={mobileActiveClassName} onClick={() => setMobileMenuOpen(false)}>
+                      <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
                       Admin Panel
                     </NavLink>
                   )}
@@ -323,6 +294,9 @@ export default function MainLayout({ children }) {
                     onClick={handleLogout}
                     className="w-full btn-danger justify-start mt-4"
                   >
+                    <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
                     Sign Out
                   </button>
                 </div>
