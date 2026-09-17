@@ -25,9 +25,11 @@ export default function LoginPage() {
   }, [isAuthenticated, navigate, redirectPath]);
 
   useEffect(() => {
-    clearError?.();
-    return () => clearError?.();
-  }, []);
+    if (clearError) clearError();
+    return () => {
+      if (clearError) clearError();
+    };
+  }, [clearError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

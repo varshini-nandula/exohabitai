@@ -19,7 +19,7 @@ export default function RegisterPage() {
   const location = useLocation();
 
   const queryParams = new URLSearchParams(location.search);
-  const redirectPath = queryParams.get('redirect') || '/';
+  const redirectPath = queryParams.get('redirect') || '/dashboard';
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -28,9 +28,11 @@ export default function RegisterPage() {
   }, [isAuthenticated, navigate, redirectPath]);
 
   useEffect(() => {
-    clearError?.();
-    return () => clearError?.();
-  }, []);
+    if (clearError) clearError();
+    return () => {
+      if (clearError) clearError();
+    };
+  }, [clearError]);
 
   const validateForm = () => {
     const usernameRegex = /^[a-zA-Z0-9_-]{3,80}$/;

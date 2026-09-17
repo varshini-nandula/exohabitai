@@ -57,22 +57,24 @@ class TestRankingBasics:
 class TestRankingWithData:
     """Verify ranking after storing planets."""
 
-    def test_stored_planets_appear_ranked(self, client, earth_like_payload,
+    def test_stored_planets_appear_ranked(self, client, auth_headers, earth_like_payload,
                                            gas_giant_payload):
         """Stored planets should appear in the ranking."""
         client.post("/predict_and_store_batch",
-                     json=[earth_like_payload, gas_giant_payload])
+                     json=[earth_like_payload, gas_giant_payload],
+                     headers=auth_headers)
         approve_all_planets()
         resp = client.get("/rank")
         data = resp.get_json()["data"]
         assert data["returned_count"] == 2
         assert len(data["planets"]) == 2
 
-    def test_ranking_is_descending(self, client, earth_like_payload,
+    def test_ranking_is_descending(self, client, auth_headers, earth_like_payload,
                                      gas_giant_payload):
         """Planets must be ordered by habitability_probability descending."""
         client.post("/predict_and_store_batch",
-                     json=[earth_like_payload, gas_giant_payload])
+                     json=[earth_like_payload, gas_giant_payload],
+                     headers=auth_headers)
         approve_all_planets()
         resp = client.get("/rank")
         planets = resp.get_json()["data"]["planets"]
@@ -81,20 +83,21 @@ class TestRankingWithData:
             f"Ranking is not in descending order: {probs}"
         )
 
-    def test_rank_numbers_are_sequential(self, client, earth_like_payload,
+    def test_rank_numbers_are_sequential(self, client, auth_headers, earth_like_payload,
                                           gas_giant_payload):
         """Rank numbers should be 1, 2, 3, ... (sequential)."""
         client.post("/predict_and_store_batch",
-                     json=[earth_like_payload, gas_giant_payload])
+                     json=[earth_like_payload, gas_giant_payload],
+                     headers=auth_headers)
         approve_all_planets()
         resp = client.get("/rank")
         planets = resp.get_json()["data"]["planets"]
         ranks = [p["rank"] for p in planets]
         assert ranks == list(range(1, len(planets) + 1))
 
-    def test_each_planet_has_required_fields(self, client, earth_like_payload):
+    def test_each_planet_has_required_fields(self, client, auth_headers, earth_like_payload):
         """Each planet in the ranking must have rank, name, and probability."""
-        client.post("/predict_and_store_batch", json=[earth_like_payload])
+        client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         approve_all_planets()
         resp = client.get("/rank")
         planet = resp.get_json()["data"]["planets"][0]
@@ -115,30 +118,32 @@ class TestRankingPagination:
     at once, which would be slow and memory-intensive.
     """
 
-    def test_limit_returns_correct_count(self, client, earth_like_payload,
+    def test_limit_returns_correct_count(self, client, auth_headers, earth_like_payload,
                                           gas_giant_payload):
         """limit=1 should return exactly 1 planet."""
         client.post("/predict_and_store_batch",
-                     json=[earth_like_payload, gas_giant_payload])
+                     json=[earth_like_payload, gas_giant_payload],
+                     headers=auth_headers)
         approve_all_planets()
         resp = client.get("/rank?limit=1")
         data = resp.get_json()["data"]
         assert len(data["planets"]) == 1
         assert data["returned_count"] == 1
 
-    def test_limit_all_returns_everything(self, client, earth_like_payload,
+    def test_limit_all_returns_everything(self, client, auth_headers, earth_like_payload,
                                             gas_giant_payload):
         """limit=all returns all planets."""
         client.post("/predict_and_store_batch",
-                     json=[earth_like_payload, gas_giant_payload])
+                     json=[earth_like_payload, gas_giant_payload],
+                     headers=auth_headers)
         approve_all_planets()
         resp = client.get("/rank?limit=all")
         data = resp.get_json()["data"]
         assert data["returned_count"] == 2
 
-    def test_default_limit_is_all(self, client, earth_like_payload):
+    def test_default_limit_is_all(self, client, auth_headers, earth_like_payload):
         """No limit parameter → returns all planets."""
-        client.post("/predict_and_store_batch", json=[earth_like_payload])
+        client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         approve_all_planets()
         resp = client.get("/rank")
         assert resp.get_json()["data"]["returned_count"] >= 1
@@ -172,17 +177,17 @@ class TestStalePredictionTracking:
     but NOT auto-recompute (that's /recompute's job).
     """
 
-    def test_stale_predictions_field_present(self, client, earth_like_payload):
+    def test_stale_predictions_field_present(self, client, auth_headers, earth_like_payload):
         """Response must include stale_predictions count."""
-        client.post("/predict_and_store_batch", json=[earth_like_payload])
+        client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         resp = client.get("/rank")
         data = resp.get_json()["data"]
         assert "stale_predictions" in data
         assert isinstance(data["stale_predictions"], int)
 
-    def test_fresh_predictions_not_stale(self, client, earth_like_payload):
+    def test_fresh_predictions_not_stale(self, client, auth_headers, earth_like_payload):
         """Predictions made with current model should not be stale."""
-        client.post("/predict_and_store_batch", json=[earth_like_payload])
+        client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         resp = client.get("/rank")
         data = resp.get_json()["data"]
         assert data["stale_predictions"] == 0

@@ -67,6 +67,7 @@ export default function UserDashboardPage() {
   const [errorState, setErrorState] = useState(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedPlanet, setSelectedPlanet] = useState(null);
 
   // Edit Profile Modal State
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
@@ -615,25 +616,64 @@ export default function UserDashboardPage() {
 
               {/* Status Filters */}
               {planets.length > 0 && (
-                <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 p-1 rounded-xl self-start sm:self-auto">
+                <div
+                  className="flex flex-wrap items-center self-start sm:self-auto shadow-lg"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '6px 8px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(12px)',
+                  }}
+                >
                   {[
-                    { id: 'all', label: 'All' },
-                    { id: 'pending', label: 'Pending' },
-                    { id: 'approved', label: 'Approved' },
-                    { id: 'rejected', label: 'Rejected' },
-                  ].map((filter) => (
-                    <button
-                      key={filter.id}
-                      onClick={() => setStatusFilter(filter.id)}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer ${
-                        statusFilter === filter.id
-                          ? 'bg-primary text-space-900 shadow-sm'
-                          : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
-                      }`}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
+                    { id: 'all', label: 'All', count: planets.length },
+                    { id: 'pending', label: 'Pending', count: planets.filter((p) => p.status === 'pending').length },
+                    { id: 'approved', label: 'Approved', count: planets.filter((p) => p.status === 'approved').length },
+                    { id: 'rejected', label: 'Rejected', count: planets.filter((p) => p.status === 'rejected').length },
+                  ].map((filter) => {
+                    const isActive = statusFilter === filter.id;
+                    return (
+                      <button
+                        key={filter.id}
+                        onClick={() => setStatusFilter(filter.id)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '8px 18px',
+                          borderRadius: '9999px',
+                          fontSize: '0.875rem',
+                          fontWeight: isActive ? 700 : 500,
+                          color: isActive ? '#0A0E1A' : '#94A3B8',
+                          backgroundColor: isActive ? '#4F8CFF' : 'transparent',
+                          boxShadow: isActive ? '0 2px 12px rgba(79, 140, 255, 0.35)' : 'none',
+                          border: isActive ? '1px solid #4F8CFF' : '1px solid transparent',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          whiteSpace: 'nowrap',
+                        }}
+                        className={!isActive ? 'hover:text-white hover:bg-white/[0.08]' : ''}
+                      >
+                        <span>{filter.label}</span>
+                        <span
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '9999px',
+                            backgroundColor: isActive ? 'rgba(10, 14, 26, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+                            color: isActive ? '#0A0E1A' : '#94A3B8',
+                          }}
+                        >
+                          {filter.count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -658,69 +698,313 @@ export default function UserDashboardPage() {
                 />
               </GlassCard>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredPlanets.map((p) => {
-                  const status = STATUS_MAP[p.status] || STATUS_MAP.pending;
-                  const prob = p.habitability_probability != null
-                    ? (p.habitability_probability * 100).toFixed(1)
-                    : null;
-                  const isHabitable = p.habitability === 1;
+              <div className="rounded-2xl bg-space-900/60 border border-white/10 overflow-hidden shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="data-table w-full">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/[0.02]">
+                        <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                          Planet Candidate
+                        </th>
+                        <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                          Recorded Date
+                        </th>
+                        <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                          Review Status
+                        </th>
+                        <th className="py-3.5 px-4 text-right text-xs font-bold uppercase tracking-wider text-text-muted">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {filteredPlanets.map((p) => {
+                        const status = STATUS_MAP[p.status] || STATUS_MAP.pending;
 
-                  return (
-                    <GlassCard
-                      key={p.id}
-                      glow={false}
-                      hoverable={true}
-                      padding="md"
-                      className="flex flex-col justify-between gap-4 border border-white/10 hover:border-primary/40 transition-all group"
-                    >
-                      <div>
-                        {/* Card Header */}
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-bold text-base text-text-primary truncate group-hover:text-primary transition-colors">
-                              {p.planet_name}
-                            </h3>
-                            <span className="text-[11px] text-text-muted mt-0.5 block">
-                              Recorded: {formatDate(p.created_at)}
-                            </span>
-                          </div>
-                          <Badge variant={status.variant}>{status.label}</Badge>
-                        </div>
-
-                        {/* Habitability Score Banner */}
-                        <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
-                          <div>
-                            <span className="text-[10px] uppercase font-bold tracking-wider text-text-muted block">
-                              Habitability Score
-                            </span>
-                            <span className="font-mono text-xl font-bold text-primary">
-                              {prob !== null ? `${prob}%` : '—'}
-                            </span>
-                          </div>
-                          <span
-                            className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
-                              isHabitable
-                                ? 'text-success border-success/30 bg-success/10'
-                                : 'text-text-muted border-white/10 bg-white/5'
-                            }`}
+                        return (
+                          <tr
+                            key={p.id}
+                            onClick={() => setSelectedPlanet(p)}
+                            className="hover:bg-white/[0.02] transition-colors cursor-pointer group"
                           >
-                            {isHabitable ? 'Habitable' : 'Non-Habitable'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Card Footer */}
-                      <div className="flex items-center justify-between pt-3 border-t border-white/5 text-xs text-text-muted">
-                        <span>Model: {p.model_version || 'v2-ensemble'}</span>
-                        <span className="font-mono text-[11px]">ID #{p.id}</span>
-                      </div>
-                    </GlassCard>
-                  );
-                })}
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center font-bold text-primary text-xs uppercase shrink-0 group-hover:scale-105 transition-transform">
+                                  🪐
+                                </div>
+                                <div>
+                                  <div className="font-bold text-text-primary text-sm group-hover:text-primary transition-colors">
+                                    {p.planet_name}
+                                  </div>
+                                  <div className="text-[11px] font-mono text-text-muted">
+                                    ID #{p.id}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 text-text-secondary text-sm">
+                              {formatDate(p.created_at)}
+                            </td>
+                            <td className="py-4 px-4">
+                              <Badge variant={status.variant}>
+                                {status.label}
+                              </Badge>
+                            </td>
+                            <td className="py-4 px-4 text-right">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary group-hover:text-accent transition-colors">
+                                <span>View Details</span>
+                                <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
+
+          {/* Dynamic Candidate Assessment Modal ("This box") */}
+          <Modal
+            isOpen={!!selectedPlanet}
+            onClose={() => setSelectedPlanet(null)}
+            title="Exoplanet Assessment Record"
+            description="Complete candidate assessment telemetry, habitability rating, and verification state."
+            size="md"
+          >
+            {selectedPlanet && (
+              <div className="flex flex-col gap-4">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/5">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">
+                      {selectedPlanet.planet_name}
+                    </h3>
+                    <span className="text-xs text-text-muted mt-1 block">
+                      Recorded: {formatDate(selectedPlanet.created_at)}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '8px 22px',
+                      minHeight: '34px',
+                      borderRadius: '9999px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      lineHeight: 1.2,
+                      whiteSpace: 'nowrap',
+                      boxSizing: 'border-box',
+                      backgroundColor:
+                        selectedPlanet.status === 'approved'
+                          ? 'rgba(34, 197, 94, 0.18)'
+                          : selectedPlanet.status === 'rejected'
+                          ? 'rgba(239, 68, 68, 0.18)'
+                          : 'rgba(245, 158, 11, 0.18)',
+                      color:
+                        selectedPlanet.status === 'approved'
+                          ? '#22C55E'
+                          : selectedPlanet.status === 'rejected'
+                          ? '#EF4444'
+                          : '#F59E0B',
+                      border:
+                        selectedPlanet.status === 'approved'
+                          ? '1.5px solid rgba(34, 197, 94, 0.45)'
+                          : selectedPlanet.status === 'rejected'
+                          ? '1.5px solid rgba(239, 68, 68, 0.45)'
+                          : '1.5px solid rgba(245, 158, 11, 0.45)',
+                    }}
+                  >
+                    {STATUS_MAP[selectedPlanet.status]?.label || selectedPlanet.status}
+                  </span>
+                </div>
+
+                {/* Habitability Score Banner */}
+                <div
+                  style={{
+                    padding: '16px 20px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <div>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: '0.6875rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: '#94A3B8',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      Habitability Score
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'monospace',
+                        fontSize: '1.65rem',
+                        fontWeight: 800,
+                        color: '#4F8CFF',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {selectedPlanet.habitability_probability != null
+                        ? `${(selectedPlanet.habitability_probability * 100).toFixed(1)}%`
+                        : '—'}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '8px 22px',
+                      minHeight: '34px',
+                      borderRadius: '9999px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      lineHeight: 1.2,
+                      whiteSpace: 'nowrap',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                      backgroundColor: selectedPlanet.habitability === 1 ? 'rgba(34, 197, 94, 0.18)' : 'rgba(255, 255, 255, 0.08)',
+                      color: selectedPlanet.habitability === 1 ? '#22C55E' : '#94A3B8',
+                      border: selectedPlanet.habitability === 1 ? '1.5px solid rgba(34, 197, 94, 0.45)' : '1.5px solid rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    {selectedPlanet.habitability === 1 ? 'Habitable' : 'Non-Habitable'}
+                  </span>
+                </div>
+
+                {/* Rejection Reason (if rejected) with clear breathing room */}
+                {selectedPlanet.status === 'rejected' && selectedPlanet.rejection_reason && (
+                  <div
+                    style={{
+                      padding: '16px 18px',
+                      borderRadius: '14px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                      border: '1.5px solid rgba(239, 68, 68, 0.35)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 18px',
+                          minHeight: '28px',
+                          borderRadius: '9999px',
+                          backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                          border: '1.5px solid rgba(239, 68, 68, 0.55)',
+                          color: '#EF4444',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          lineHeight: 1.2,
+                          whiteSpace: 'nowrap',
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Rejection Reason</span>
+                      </span>
+                    </div>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: '0.8125rem',
+                        lineHeight: '1.55',
+                        color: '#CBD5E1',
+                        paddingLeft: '2px',
+                      }}
+                    >
+                      {selectedPlanet.rejection_reason}
+                    </p>
+                  </div>
+                )}
+
+                {/* Submitted Parameters */}
+                {selectedPlanet.features && Object.keys(selectedPlanet.features).length > 0 && (
+                  <div className="flex flex-col gap-2 pt-1">
+                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-text-muted px-0.5">
+                      <span className="flex items-center gap-1.5 text-accent font-bold">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Submitted Parameters
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs">
+                      <div className="flex items-center justify-between py-1 border-b border-white/[0.03]">
+                        <span className="text-text-muted text-[11px]">Radius</span>
+                        <span className="font-mono font-medium text-text-primary text-[11.5px]">{selectedPlanet.features.P_RADIUS ?? '—'} <span className="text-text-muted text-[10px]">R⊕</span></span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-white/[0.03]">
+                        <span className="text-text-muted text-[11px]">Mass</span>
+                        <span className="font-mono font-medium text-text-primary text-[11.5px]">{selectedPlanet.features.P_MASS ?? '—'} <span className="text-text-muted text-[10px]">M⊕</span></span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-white/[0.03]">
+                        <span className="text-text-muted text-[11px]">Density</span>
+                        <span className="font-mono font-medium text-text-primary text-[11.5px]">{selectedPlanet.features.P_DENSITY ?? '—'} <span className="text-text-muted text-[10px]">g/cm³</span></span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-white/[0.03]">
+                        <span className="text-text-muted text-[11px]">Surf Temp</span>
+                        <span className="font-mono font-medium text-text-primary text-[11.5px]">{selectedPlanet.features.P_TEMP_SURF ?? '—'} <span className="text-text-muted text-[10px]">K</span></span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-white/[0.03]">
+                        <span className="text-text-muted text-[11px]">Period</span>
+                        <span className="font-mono font-medium text-text-primary text-[11.5px]">{selectedPlanet.features.P_PERIOD ?? '—'} <span className="text-text-muted text-[10px]">d</span></span>
+                      </div>
+                      <div className="flex items-center justify-between py-1 border-b border-white/[0.03]">
+                        <span className="text-text-muted text-[11px]">Semi-Major</span>
+                        <span className="font-mono font-medium text-text-primary text-[11.5px]">{selectedPlanet.features.P_SEMI_MAJOR_AXIS ?? '—'} <span className="text-text-muted text-[10px]">AU</span></span>
+                      </div>
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-text-muted text-[11px]">Star Temp</span>
+                        <span className="font-mono font-medium text-text-primary text-[11.5px]">{selectedPlanet.features.S_TEMPERATURE ?? '—'} <span className="text-text-muted text-[10px]">K</span></span>
+                      </div>
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-text-muted text-[11px]">Star Lum</span>
+                        <span className="font-mono font-medium text-text-primary text-[11.5px]">{selectedPlanet.features.S_LUMINOSITY ?? '—'} <span className="text-text-muted text-[10px]">L☉</span></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Candidate Footer */}
+                <div className="flex items-center justify-between pt-3 border-t border-white/5 text-xs text-text-muted">
+                  <span className="text-text-muted">Candidate Submission</span>
+                  <span className="font-mono text-text-secondary">ID #{selectedPlanet.id}</span>
+                </div>
+              </div>
+            )}
+          </Modal>
         </>
       )}
 
@@ -845,11 +1129,10 @@ export default function UserDashboardPage() {
                   {(predictResult.habitability_probability * 100).toFixed(1)}%
                 </span>
                 <span
-                  className={`text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border mt-1 ${
-                    predictResult.habitability === 1
+                  className={`text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border mt-1 ${predictResult.habitability === 1
                       ? 'text-success border-success/40 bg-success/10'
                       : 'text-text-secondary border-white/10 bg-white/5'
-                  }`}
+                    }`}
                 >
                   {predictResult.habitability === 1 ? 'Potentially Habitable' : 'Non-Habitable'}
                 </span>

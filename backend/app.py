@@ -236,6 +236,14 @@ def _check_rate_limit() -> bool:
     """Return True if the request is allowed, False if rate-limited."""
     ip = request.remote_addr or "unknown"
     now = _monotime()
+
+    # Periodic cleanup to prevent unbounded memory growth
+    if len(_rate_limit_store) > 500:
+        cutoff = now - 60.0
+        keys_to_remove = [k for k, t in _rate_limit_store.items() if t < cutoff]
+        for k in keys_to_remove:
+            _rate_limit_store.pop(k, None)
+
     last = _rate_limit_store.get(ip, 0.0)
     # Read from app.config so TestConfig overrides take effect
     limit_seconds = app.config.get("RATE_LIMIT_SECONDS", Config.RATE_LIMIT_SECONDS)
@@ -1081,12 +1089,20 @@ def predict_and_store():
 
 # ---- PREDICT AND STORE BATCH (Task 7 — bulk insert optimization) ----
 @app.route("/predict_and_store_batch", methods=["POST"])
+@jwt_required()
 def predict_and_store_batch():
     """
     Optimised batch predict-and-store: validates all items, runs batch
     prediction, and commits all new rows in a single DB transaction.
+    Requires authentication to attribute submissions to the user.
     """
     try:
+        # Identify the submitting user for ownership tracking.
+        try:
+            current_user_id = int(get_jwt_identity())
+        except (TypeError, ValueError):
+            current_user_id = None
+
         payload = request.get_json(silent=True)
         if payload is None:
             return api_response("error", "Request body must be valid JSON", code=400)
@@ -1154,6 +1170,7 @@ def predict_and_store_batch():
                     model_version=MODEL_VERSION,
                     raw_input_json=json.dumps(item, default=str),
                     is_user_generated=True,
+                    created_by_user_id=current_user_id,
                     **feature_kwargs,
                 )
                 db.session.add(planet)
@@ -1440,9 +1457,10 @@ def my_planets():
     """
     Return the submissions created by the authenticated user.
 
-    Powers the frontend History page: each entry includes the moderation
-    status (pending / approved / rejected) and the prediction result so the
-    user can track what they submitted and whether it has been approved.
+    Powers the frontend Dashboard & History: each entry includes the moderation
+    status (pending / approved / rejected), rejection reason (if rejected),
+    stored physical features, and prediction result so the user can track what
+    they submitted and inspect their candidate details.
     """
     try:
         try:
@@ -1450,12 +1468,29 @@ def my_planets():
         except (TypeError, ValueError):
             return api_response("error", "Invalid user identity", code=401)
 
-        planets = (
+        query = (
             Exoplanet.query
             .filter(Exoplanet.created_by_user_id == current_user_id)
             .order_by(Exoplanet.created_at.desc())
-            .all()
         )
+
+        total_count = query.count()
+
+        # Optional pagination support
+        page = request.args.get("page", type=int)
+        per_page = request.args.get("per_page", type=int)
+        limit = request.args.get("limit", type=int)
+
+        if page is not None and per_page is not None:
+            if page < 1 or per_page < 1:
+                return api_response("error", "page and per_page must be positive integers", code=400)
+            planets = query.paginate(page=page, per_page=per_page, error_out=False).items
+        elif limit is not None:
+            if limit < 1:
+                return api_response("error", "limit must be a positive integer", code=400)
+            planets = query.limit(limit).all()
+        else:
+            planets = query.all()
 
         entries = [
             {
@@ -1467,8 +1502,13 @@ def my_planets():
                     if p.habitability_probability is not None else None
                 ),
                 "status": p.status,
+                "rejection_reason": p.rejection_reason,
                 "model_version": p.model_version,
                 "created_at": p.created_at.isoformat() if p.created_at else None,
+                "features": {
+                    feat: getattr(p, feat, None)
+                    for feat in Exoplanet.STORED_FEATURES
+                },
             }
             for p in planets
         ]
@@ -1476,7 +1516,11 @@ def my_planets():
         return api_response(
             "success",
             f"Retrieved {len(entries)} submission(s)",
-            {"count": len(entries), "planets": entries},
+            {
+                "count": len(entries),
+                "total_count": total_count,
+                "planets": entries,
+            },
         )
 
     except Exception as exc:

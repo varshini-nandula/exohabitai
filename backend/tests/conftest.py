@@ -124,6 +124,12 @@ def admin_user(client):
     return data["user"], headers
 
 
+@pytest.fixture(scope="function")
+def auth_headers(client):
+    """Return Authorization headers dict with a valid Bearer token for a normal user."""
+    return get_auth_header(client, username="testuser", password="securepassword123")
+
+
 # ===========================================================================
 # 3. SAMPLE DATA FIXTURES — realistic planet payloads
 # ===========================================================================

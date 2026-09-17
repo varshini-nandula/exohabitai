@@ -550,12 +550,7 @@ export default function PredictPage() {
     markTouched(field);
   }, [runFieldValidation, markTouched]);
 
-  const handleBlur = useCallback((field) => {
-    markTouched(field);
-    runFieldValidation(field, undefined);  // placeholder — we'll read current value below
-  }, [markTouched, runFieldValidation]);
-
-  // We need the actual current value in handleBlur, so wrap it:
+  // We need the actual current value in blur validation:
   const handleFieldBlur = useCallback((field) => {
     markTouched(field);
     // Use functional state to read current value
@@ -778,7 +773,7 @@ export default function PredictPage() {
                     onChange={(e) => setShouldStore(e.target.checked)}
                     className="w-4 h-4 rounded border-white/10 bg-white/5 focus:ring-primary accent-primary cursor-pointer outline-none"
                   />
-                  Save prediction to rankings
+                  Save prediction to my account (submits for ranking review)
                 </label>
               ) : (
                 <span className="text-xs text-text-muted">
@@ -932,10 +927,15 @@ export default function PredictPage() {
                 </div>
               )}
 
-              {/* Storage confirmation (if saved) */}
-              {result.stored && (
-                <div className="text-[10px] text-success bg-success/5 border border-success/10 p-4 rounded-lg text-center font-medium">
-                  ✅ Prediction saved to your account and observatory database.
+              {/* Storage confirmation / warning */}
+              {result.stored === true && (
+                <div className="text-xs text-success bg-success/10 border border-success/20 p-3.5 rounded-lg text-center font-medium">
+                  ✅ Prediction saved to your account and submitted for moderation review.
+                </div>
+              )}
+              {result.stored === false && (
+                <div className="text-xs text-warning bg-warning/10 border border-warning/25 p-3.5 rounded-lg text-center font-medium leading-relaxed">
+                  ⚠️ Prediction calculated, but not saved to account: {result.storage_message || 'Planet name already exists in database.'}
                 </div>
               )}
 

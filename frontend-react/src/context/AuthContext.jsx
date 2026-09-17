@@ -39,6 +39,15 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Internal logout helper
+  const performLogout = useCallback(() => {
+    clearLogoutTimer();
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('exohabitai_token');
+    localStorage.removeItem('exohabitai_user');
+  }, [clearLogoutTimer]);
+
   // Schedule auto-logout based on JWT expiration
   const scheduleAutoLogout = useCallback((jwt) => {
     clearLogoutTimer();
@@ -57,16 +66,7 @@ export function AuthProvider({ children }) {
     logoutTimerRef.current = setTimeout(() => {
       performLogout();
     }, timeUntilExpiry);
-  }, [clearLogoutTimer]);
-
-  // Internal logout helper
-  const performLogout = useCallback(() => {
-    clearLogoutTimer();
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('exohabitai_token');
-    localStorage.removeItem('exohabitai_user');
-  }, [clearLogoutTimer]);
+  }, [clearLogoutTimer, performLogout]);
 
   // Validate token on mount
   useEffect(() => {
@@ -92,7 +92,7 @@ export function AuthProvider({ children }) {
     }
 
     validateToken();
-  }, []);
+  }, [performLogout, scheduleAutoLogout]);
 
   // Listen for auth:expired events from the Axios interceptor
   useEffect(() => {
