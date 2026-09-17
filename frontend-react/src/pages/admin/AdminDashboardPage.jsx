@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { adminAPI } from "../../api/admin";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
@@ -70,6 +70,7 @@ function StatCard({ label, value, subtext, icon, accentClass, bgClass, borderCla
 /* Main page                                                             */
 /* ------------------------------------------------------------------ */
 export default function AdminDashboardPage() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -418,65 +419,122 @@ export default function AdminDashboardPage() {
           5. RECENT SUBMISSIONS
       ════════════════════════════════════════════════════════════ */}
       <section>
-        <div className="flex items-center justify-between mb-6">
-          <div className="pb-5 border-b border-white/10 mb-7">
+        <div className="flex items-center justify-between pb-5 border-b border-white/10 mb-7">
+          <div>
             <h2 className="text-xl font-bold text-text-primary">Recent Submissions</h2>
             <p className="text-sm text-text-muted mt-1">Latest candidate exoplanets proposed by observatory members</p>
           </div>
           <Link to="/admin/moderation" className="text-sm font-semibold text-primary hover:text-accent transition-colors flex items-center gap-1.5">
-            View All
+            View All Moderation Queue
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
         </div>
 
-        <GlassCard padding="none" variant="raised" hoverable={false}>
-          {recent_submissions.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center gap-5">
-              <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                <svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="text-center">
-                <p className="text-base font-semibold text-text-primary">No Submissions Yet</p>
-                <p className="text-sm text-text-muted mt-1 max-w-sm">
-                  Candidate exoplanets proposed by observatory members will appear here for review.
-                </p>
-              </div>
+        {recent_submissions.length === 0 ? (
+          <GlassCard padding="lg" className="py-20 flex flex-col items-center justify-center gap-5 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+              <svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-          ) : (
+            <div>
+              <p className="text-base font-semibold text-text-primary">No Submissions Yet</p>
+              <p className="text-sm text-text-muted mt-1 max-w-sm">
+                Candidate exoplanets proposed by observatory members will appear here for review.
+              </p>
+            </div>
+          </GlassCard>
+        ) : (
+          <div className="rounded-2xl bg-space-900/60 border border-white/10 overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="data-table w-full">
                 <thead>
-                  <tr className="border-b border-white/8 bg-white/[0.02]">
-                    <th className="py-4 px-6 text-left text-xs font-semibold text-text-muted">Planet</th>
-                    <th className="py-4 px-6 text-left text-xs font-semibold text-text-muted">Submitter</th>
-                    <th className="py-4 px-6 text-right text-xs font-semibold text-text-muted">Habitability</th>
-                    <th className="py-4 px-6 text-center text-xs font-semibold text-text-muted">Status</th>
+                  <tr className="border-b border-white/10 bg-white/[0.02]">
+                    <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                      Planet Candidate
+                    </th>
+                    <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                      Submitter
+                    </th>
+                    <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                      Recorded Date
+                    </th>
+                    <th className="py-3.5 px-4 text-left text-xs font-bold uppercase tracking-wider text-text-muted">
+                      Review Status
+                    </th>
+                    <th className="py-3.5 px-4 text-right text-xs font-bold uppercase tracking-wider text-text-muted">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {recent_submissions.map((p) => (
-                    <tr key={p.id} className="hover:bg-white/[0.025] transition-colors">
-                      <td className="py-4 px-6 text-sm font-semibold text-text-primary">{p.planet_name}</td>
-                      <td className="py-4 px-6 text-sm text-text-secondary">{p.submitter || "Anonymous"}</td>
-                      <td className="py-4 px-6 text-right text-sm font-mono font-bold text-accent">
-                        {p.habitability_probability != null ? `${(p.habitability_probability * 100).toFixed(1)}%` : "N/A"}
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <Badge variant={p.status === "approved" ? "success" : p.status === "rejected" ? "danger" : "warning"}>
-                          {p.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
+                  {recent_submissions.map((p) => {
+                    const statusVariant =
+                      p.status === "approved"
+                        ? "success"
+                        : p.status === "rejected"
+                        ? "danger"
+                        : "warning";
+                    const statusLabel = p.status
+                      ? p.status.charAt(0).toUpperCase() + p.status.slice(1)
+                      : "Pending";
+
+                    return (
+                      <tr
+                        key={p.id}
+                        onClick={() => navigate("/admin/moderation")}
+                        className="hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                      >
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center font-bold text-primary text-xs uppercase shrink-0 group-hover:scale-105 transition-transform">
+                              🪐
+                            </div>
+                            <div>
+                              <div className="font-bold text-text-primary text-sm group-hover:text-primary transition-colors">
+                                {p.planet_name}
+                              </div>
+                              <div className="text-[11px] font-mono text-text-muted">
+                                ID #{p.id}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-text-secondary text-sm">
+                          <span className="font-medium text-text-primary">{p.submitter || "Anonymous"}</span>
+                        </td>
+                        <td className="py-4 px-4 text-text-secondary text-sm">
+                          {p.created_at
+                            ? new Date(p.created_at).toLocaleDateString(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : "N/A"}
+                        </td>
+                        <td className="py-4 px-4">
+                          <Badge variant={statusVariant}>
+                            {statusLabel}
+                          </Badge>
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary group-hover:text-accent transition-colors">
+                            <span>Moderate</span>
+                            <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-          )}
-        </GlassCard>
+          </div>
+        )}
       </section>
 
     </div>
