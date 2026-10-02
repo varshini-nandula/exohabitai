@@ -1,15 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import Starfield from '../components/Starfield';
 
 export default function AdminLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const userMenuRef = useRef(null);
 
   const handleLogout = async () => {
@@ -32,358 +31,332 @@ export default function AdminLayout() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile sidebar on route change
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [location.pathname]);
-
-  const navSections = [
+  const adminNavItems = [
     {
-      label: 'OVERVIEW',
-      items: [
-        {
-          name: 'Dashboard',
-          path: '/admin',
-          end: true,
-          icon: (
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          ),
-        },
-      ],
+      name: 'Dashboard',
+      path: '/admin',
+      end: true,
+      icon: (
+        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+      ),
     },
     {
-      label: 'MODERATION & USERS',
-      items: [
-        {
-          name: 'Submissions',
-          path: '/admin/moderation',
-          icon: (
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-          ),
-        },
-        {
-          name: 'Users',
-          path: '/admin/users',
-          icon: (
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          ),
-        },
-      ],
+      name: 'Moderation',
+      path: '/admin/moderation',
+      icon: (
+        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+      ),
     },
     {
-      label: 'MACHINE LEARNING',
-      items: [
-        {
-          name: 'Models',
-          path: '/admin/models',
-          icon: (
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          ),
-        },
-        {
-          name: 'Datasets',
-          path: '/admin/datasets',
-          icon: (
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-            </svg>
-          ),
-        },
-        {
-          name: 'Training',
-          path: '/admin/training',
-          icon: (
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          ),
-        },
-        {
-          name: 'Audit Logs',
-          path: '/admin/logs',
-          icon: (
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          ),
-        },
-      ],
+      name: 'Users',
+      path: '/admin/users',
+      icon: (
+        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Models',
+      path: '/admin/models',
+      icon: (
+        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Datasets',
+      path: '/admin/datasets',
+      icon: (
+        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Training',
+      path: '/admin/training',
+      icon: (
+        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Audit Logs',
+      path: '/admin/logs',
+      icon: (
+        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
     },
   ];
 
-  const getNavLinkClass = ({ isActive }) =>
-    `flex items-center gap-4 px-5 py-7 transition-all duration-200 text-[16px] ${isActive
-      ? 'bg-[#0d1b3e] text-[#4f8cff] font-semibold border-l-[3px] border-[#4f8cff]'
-      : 'text-[#7a8fa8] hover:text-white font-medium hover:bg-white/[0.05] border-l-[3px] border-transparent'
-    }`;
-
-  // Close sidebar on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setSidebarOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   return (
-    <div className="h-screen w-screen flex flex-col bg-space-950 text-text-primary overflow-hidden relative">
+    <div className="min-h-screen w-screen flex bg-space-950 text-text-primary overflow-x-hidden relative">
       {/* Skip Navigation */}
       <a href="#admin-main-content" className="skip-nav">
         Skip to main content
       </a>
 
-      {/* Subtle Deep Space Starfield */}
+      {/* Deep Space Starfield Background */}
       <Starfield speed={0.03} count={35} />
 
-      {/* ── Slide-Out Sidebar Drawer & Backdrop (Opens ONLY on Hamburger Click) ── */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-50 flex">
-            {/* Backdrop */}
-            <motion.div
-              className="fixed inset-0 bg-black/75 backdrop-blur-sm cursor-pointer"
-              onClick={() => setSidebarOpen(false)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              aria-hidden="true"
-            />
-
-            {/* Slide-in Drawer */}
-            <motion.aside
-              className="relative flex flex-col w-80 max-w-[85vw] h-full bg-[#050914] border-r border-white/10 p-6 overflow-y-auto justify-between shadow-2xl z-10"
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-            >
-              <div>
-                {/* Drawer Header with Logo & Close Button */}
-                <div className="flex items-center justify-between pb-6 mb-6 border-b border-white/10">
-                  <Link
-                    to="/admin"
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-3 group"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center p-0.5 shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
-                      <div className="w-full h-full bg-space-900 rounded-[8px] flex items-center justify-center">
-                        <div className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
-                      </div>
-                    </div>
-                    <div>
-                      <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent block">
-                        ExoHabitAI
-                      </span>
-                      <span className="inline-block text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/25 mt-0.5">
-                        Operations Console
-                      </span>
-                    </div>
-                  </Link>
-
-                  <button
-                    onClick={() => setSidebarOpen(false)}
-                    className="p-2 text-text-muted hover:text-text-primary hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
-                    aria-label="Close admin navigation"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Drawer Navigation Links */}
-                <nav className="space-y-8">
-                  {navSections.map((section) => (
-                    <div key={section.label}>
-                      <span className="text-[11px] font-bold text-[#64748b] uppercase tracking-[0.18em] px-4 mb-2.5 block">
-                        {section.label}
-                      </span>
-                      <div className="space-y-1">
-                        {section.items.map((item) => (
-                          <NavLink
-                            key={item.name}
-                            to={item.path}
-                            end={item.end}
-                            className={getNavLinkClass}
-                            onClick={() => setSidebarOpen(false)}
-                          >
-                            <span className="flex-shrink-0">{item.icon}</span>
-                            <span>{item.name}</span>
-                          </NavLink>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </nav>
-              </div>
-
-              {/* Drawer Footer */}
-              <div className="pt-6 border-t border-white/10 space-y-3 mt-8">
-                <Link
-                  to="/"
-                  onClick={() => setSidebarOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 text-[14px] font-semibold text-[#8a9bb5] hover:text-white transition-colors rounded-xl hover:bg-white/5"
-                >
-                  <svg className="w-4 h-4 text-[#8a9bb5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                  <span>Back to Public App</span>
-                </Link>
-                <div className="px-3 text-[11px] text-[#64748b] flex items-center justify-between">
-                  <span>ML Engine</span>
-                  <span className="font-mono font-bold text-[#2dd4bf]">Active • Random Forest</span>
+      {/* ── 1. Left Sidebar Navigation (Hover-Expanded) ───────────── */}
+      <aside
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`fixed left-0 top-0 bottom-0 z-50 flex flex-col justify-between bg-[#080d1e] border-r border-white/10 backdrop-blur-2xl transition-all duration-300 ease-in-out shadow-2xl ${
+          isHovered ? 'w-56' : 'w-14'
+        }`}
+      >
+        {/* Top: Single-line Logo Lockup */}
+        <div>
+          <div className="h-14 px-3 border-b border-white/10 flex items-center overflow-hidden">
+            <Link to="/admin" className="flex items-center gap-2.5 group min-w-0">
+              <div className="w-7.5 h-7.5 rounded-lg bg-gradient-to-tr from-primary to-accent flex items-center justify-center p-0.5 shadow-md shadow-primary/20 shrink-0 group-hover:scale-105 transition-transform">
+                <div className="w-full h-full bg-space-900 rounded-[6px] flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                 </div>
               </div>
-            </motion.aside>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ── 2. Top Navigation Bar with Hamburger Button ──────────── */}
-      <header className="h-18 flex-shrink-0 border-b border-white/10 bg-[#050914]/90 backdrop-blur-xl flex items-center justify-between px-6 sm:px-10 lg:px-16 z-30">
-        {/* Left: Brand Identity + Hamburger Trigger Button beside it */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          {/* Brand Logo & Console Badge */}
-          <Link to="/admin" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center p-0.5 shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-space-900 rounded-[8px] flex items-center justify-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
-              </div>
-            </div>
-            <div>
-              <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent block">
-                ExoHabitAI
-              </span>
-              <span className="hidden sm:inline-block text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/25">
-                Operations Console
-              </span>
-            </div>
-          </Link>
-
-          {/* Hamburger Trigger Button (Beside the brand green dot logo) */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex items-center justify-center p-2 sm:p-2.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-text-primary border border-white/10 hover:border-primary/40 transition-all duration-200 cursor-pointer group shadow-sm ml-1 sm:ml-2"
-            aria-label="Open navigation menu"
-            title="Open navigation menu"
-          >
-            <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-[#4f8cff] group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Right: Telemetry Status, Exit link, Profile Dropdown */}
-        <div className="flex items-center gap-3 sm:gap-5">
-          {/* Telemetry Status Pill */}
-          <div className="hidden md:flex items-center gap-2 px-3.5 py-1 rounded-full bg-success/10 border border-success/25 text-xs font-medium text-success">
-            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-            <span>Telemetry Nominal</span>
-          </div>
-
-          {/* Exit to Public App */}
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-xs sm:text-sm font-medium text-text-secondary hover:text-text-primary px-3.5 py-1.5 rounded-xl hover:bg-white/5 transition-colors border border-white/10"
-            title="Return to public observatory application"
-          >
-            <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <span className="hidden sm:inline">Exit to App</span>
-          </Link>
-
-          {/* Admin User Profile Dropdown */}
-          <div className="relative" ref={userMenuRef}>
-            <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-2.5 p-1.5 px-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] transition-colors border border-white/10 cursor-pointer"
-              aria-label="Admin user menu"
-              aria-expanded={userMenuOpen}
-            >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-accent to-primary flex items-center justify-center font-bold text-space-950 uppercase text-xs">
-                {user?.username?.[0] || 'A'}
-              </div>
-              <div className="hidden md:flex flex-col text-left pr-1">
-                <span className="text-xs font-semibold text-text-primary leading-tight">
-                  {user?.username || 'admin'}
-                </span>
-                <span className="text-[10px] text-accent font-medium leading-none">
-                  Administrator
-                </span>
-              </div>
-              <svg
-                className={`w-3.5 h-3.5 text-text-muted transition-transform hidden sm:block ${userMenuOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+              <span
+                className={`font-bold text-sm tracking-tight text-white truncate group-hover:text-primary-light transition-all duration-200 ${
+                  isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-3 pointer-events-none hidden'
+                }`}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {/* Dropdown Menu */}
-            <AnimatePresence>
-              {userMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-[#050914] border border-white/15 p-2 shadow-2xl shadow-black/80 backdrop-blur-xl z-50"
-                >
-                  <div className="p-3 rounded-xl bg-white/[0.04] border border-white/5 mb-1.5">
-                    <p className="text-xs font-bold text-text-primary truncate">{user?.username}</p>
-                    <p className="text-[11px] text-text-muted truncate mt-0.5">{user?.email}</p>
-                    <span className="inline-block mt-1.5 text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-accent/20 text-accent">
-                      Admin Access
-                    </span>
-                  </div>
-
-                  <Link
-                    to="/profile"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 rounded-lg transition-colors"
-                  >
-                    <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    Profile Settings
-                  </Link>
-
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors mt-1 border-t border-white/5 cursor-pointer"
-                  >
-                    <svg className="w-4 h-4 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Sign Out
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                ExoHabit
+              </span>
+            </Link>
           </div>
-        </div>
-      </header>
 
-      {/* ── 3. Scrollable Page Content Canvas ─────────────────────── */}
-      <main id="admin-main-content" tabIndex={-1} className="flex-1 min-w-0 overflow-y-auto bg-space-950/40 relative outline-none">
-        <div className="site-container section-padding">
-          <Outlet />
+          {/* Navigation Links with Compact Vertical Spacing */}
+          <nav className="py-2.5 px-2 flex flex-col gap-1">
+            {adminNavItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.end}
+                className={({ isActive }) =>
+                  `flex items-center h-9 rounded-lg transition-all duration-200 group relative ${
+                    isHovered
+                      ? 'w-full px-2.5 gap-2.5 justify-start'
+                      : 'w-9 mx-auto justify-center'
+                  } ${
+                    isActive
+                      ? 'bg-primary/15 text-primary border border-primary/30 font-semibold shadow-[0_0_12px_rgba(79,140,255,0.18)]'
+                      : 'text-text-secondary hover:text-white hover:bg-white/[0.06] border border-transparent'
+                  }`
+                }
+                title={!isHovered ? item.name : undefined}
+              >
+                <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                  {item.icon}
+                </div>
+                {isHovered && (
+                  <span className="text-[13px] font-medium tracking-wide whitespace-nowrap animate-fadeIn">
+                    {item.name}
+                  </span>
+                )}
+              </NavLink>
+            ))}
+          </nav>
         </div>
-      </main>
+
+        {/* Bottom: Minimal Status Indicator */}
+        <div className="p-2.5 border-t border-white/10 flex items-center">
+          {!isHovered ? (
+            <div className="w-full flex justify-center" title="System Online">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+              <span className="text-[11px] font-medium text-text-muted">System Online</span>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* ── 2. Main Content Canvas ────────────────────────────────── */}
+      <div className="flex-1 min-w-0 pl-14 flex flex-col transition-all duration-300">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-40 w-full h-14 flex-shrink-0 border-b border-white/10 bg-[#050914]/80 backdrop-blur-xl">
+          <div className="site-container h-full flex items-center justify-between gap-4">
+            {/* Left Header Breadcrumb / Title Indicator */}
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="text-xs font-mono uppercase tracking-widest text-text-muted">Observatory Admin</span>
+              <span className="text-white/20">/</span>
+              <span className="text-xs font-semibold text-text-secondary">Operations Hub</span>
+            </div>
+
+            {/* Right: Exit to App & Admin Profile Dropdown */}
+            <div className="flex items-center gap-3 sm:gap-4 ml-auto">
+              {/* Exit to Public App Button */}
+              <Link
+                to="/"
+                className="btn-secondary flex items-center gap-2 px-4 py-2.5 text-sm font-semibold flex-shrink-0 cursor-pointer shadow-sm"
+                title="Return to public observatory application"
+              >
+                <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Exit to App</span>
+              </Link>
+
+              {/* Admin User Profile Dropdown (Exact match to MainLayout navbar dropdown style) */}
+              <div className="relative border-l border-white/10 pl-3 sm:pl-4 ml-1" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2.5 group py-1.5 px-3.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 transition-all cursor-pointer shadow-sm"
+                  aria-label="Admin user menu"
+                  aria-expanded={userMenuOpen}
+                >
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-extrabold text-space-900 uppercase text-xs shadow-sm shrink-0">
+                    {user?.username?.[0] || 'A'}
+                  </div>
+                  <span className="text-sm text-text-primary font-medium hidden sm:block">
+                    {user?.username || 'admin'}
+                  </span>
+                  <svg
+                    className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${userMenuOpen ? 'rotate-180 text-primary' : ''}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu - Exact MainLayout Cosmic Card Style */}
+                <AnimatePresence>
+                  {userMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute right-0 top-full mt-3 w-80 rounded-3xl border border-white/15 shadow-2xl z-50 flex flex-col"
+                      style={{
+                        padding: '22px 20px 18px 20px',
+                        background: 'linear-gradient(145deg, rgba(16, 22, 40, 0.96) 0%, rgba(5, 8, 22, 0.98) 100%)',
+                        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(249, 115, 22, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(28px)',
+                        WebkitBackdropFilter: 'blur(28px)',
+                      }}
+                    >
+                      {/* Ambient glowing radial flare contained inside rounded mask */}
+                      <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+                        <div
+                          className="absolute -top-12 -left-12 w-40 h-40 rounded-full opacity-40 blur-2xl"
+                          style={{
+                            background: 'radial-gradient(circle, rgba(249, 115, 22, 0.6) 0%, rgba(79, 140, 255, 0.3) 60%, transparent 100%)',
+                          }}
+                        />
+                      </div>
+
+                      {/* Integrated User Header with generous inset */}
+                      <div
+                        className="relative z-10 flex items-center gap-3.5"
+                        style={{
+                          padding: '0 8px 16px 8px',
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                          marginBottom: '16px',
+                        }}
+                      >
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-extrabold text-space-900 uppercase text-sm shrink-0 shadow-md">
+                          {user?.username?.[0] || 'A'}
+                        </div>
+                        <div className="min-w-0 flex-grow">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white tracking-tight truncate">{user?.username || 'admin'}</span>
+                            <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-accent/20 text-accent border border-accent/35 uppercase tracking-wider shrink-0">
+                              Admin
+                            </span>
+                          </div>
+                          <p className="text-xs text-text-muted truncate" style={{ marginTop: '4px' }}>{user?.email || 'admin@exohabit.ai'}</p>
+                        </div>
+                      </div>
+
+                      {/* Navigation Items (Profile & Sign Out) - Clean list */}
+                      <div className="relative z-10 flex flex-col" style={{ gap: '6px' }}>
+                        {/* 1. Profile / Dashboard */}
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setUserMenuOpen(false)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                          }}
+                          className="text-[15px] font-medium text-text-secondary hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer"
+                        >
+                          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span>User Dashboard & Profile</span>
+                        </Link>
+
+                        {/* 2. Admin Operations */}
+                        <Link
+                          to="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                          }}
+                          className="text-[15px] font-medium text-accent hover:text-accent hover:bg-accent/10 transition-all cursor-pointer"
+                        >
+                          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                          <span>Admin Operations</span>
+                        </Link>
+
+                        {/* 3. Sign Out */}
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            handleLogout();
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '14px',
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                          }}
+                          className="text-[15px] font-medium text-danger hover:text-danger-light hover:bg-danger/10 transition-all w-full text-left cursor-pointer group"
+                        >
+                          <svg className="w-5 h-5 text-danger shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Body Page Content */}
+        <main id="admin-main-content" tabIndex={-1} className="flex-1 min-w-0 overflow-y-auto bg-space-950/40 relative outline-none">
+          <div className="site-container section-padding">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
