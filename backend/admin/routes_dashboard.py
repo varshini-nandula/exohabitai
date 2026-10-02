@@ -45,4 +45,4 @@ def dashboard():
         return _admin_response("success", "Dashboard data retrieved", data)
     except Exception as exc:
         logger.exception("Dashboard error")
-        return _admin_response("error", f"Dashboard failed: {exc}", code=500)
+        return _admin_response("error", "Failed to retrieve dashboard data. Please try again.", code=500)

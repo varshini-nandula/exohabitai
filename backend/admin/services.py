@@ -134,12 +134,16 @@ def get_planets_by_status(status=None, search=None, page=1, per_page=20):
     """
     Query planets with optional status filter, search, and pagination.
 
+    Uses a single query with User outerjoin to prevent N+1 queries.
     Returns (items_list, total_count, page, per_page).
     """
-    query = Exoplanet.query
+    query = (
+        db.session.query(Exoplanet, User.username)
+        .outerjoin(User, Exoplanet.created_by_user_id == User.id)
+    )
 
     if status and PlanetStatus.is_valid(status):
-        query = query.filter_by(status=status)
+        query = query.filter(Exoplanet.status == status)
 
     if search:
         search_term = f"%{search}%"
@@ -151,16 +155,11 @@ def get_planets_by_status(status=None, search=None, page=1, per_page=20):
     items = query.offset((page - 1) * per_page).limit(per_page).all()
 
     results = []
-    for p in items:
-        submitter = None
-        if p.created_by_user_id:
-            user = User.query.get(p.created_by_user_id)
-            if user:
-                submitter = user.username
+    for p, submitter_username in items:
         results.append({
             "id": p.id,
             "planet_name": p.planet_name,
-            "submitter": submitter,
+            "submitter": submitter_username,
             "submitter_id": p.created_by_user_id,
             "habitability_probability": (
                 round(p.habitability_probability, 6)
@@ -268,8 +267,8 @@ def moderate_planet(planet_id: int, new_status: str, rejection_reason: str | Non
         }, f"Planet '{planet.planet_name}' {new_status}"
     except Exception as exc:
         db.session.rollback()
-        logger.error("Moderation DB error: %s", exc)
-        return None, f"Database error: {exc}"
+        logger.exception("Moderation DB error: %s", exc)
+        return None, "Database operation failed. Please try again."
 
 
 # ==========================================================================
@@ -279,6 +278,8 @@ def moderate_planet(planet_id: int, new_status: str, rejection_reason: str | Non
 def get_users(search=None, role=None, is_active=None, page=1, per_page=20):
     """
     Query users with optional filters and pagination.
+
+    Uses a single group-by query for submission counts to prevent N+1 queries.
     """
     query = User.query
 
@@ -302,13 +303,25 @@ def get_users(search=None, role=None, is_active=None, page=1, per_page=20):
 
     items = query.offset((page - 1) * per_page).limit(per_page).all()
 
+    # Bulk-fetch submission counts in 1 single grouped query
+    user_ids = [u.id for u in items]
+    counts_map = {}
+    if user_ids:
+        counts = (
+            db.session.query(
+                Exoplanet.created_by_user_id,
+                db.func.count(Exoplanet.id),
+            )
+            .filter(Exoplanet.created_by_user_id.in_(user_ids))
+            .group_by(Exoplanet.created_by_user_id)
+            .all()
+        )
+        counts_map = dict(counts)
+
     results = []
     for u in items:
-        submission_count = Exoplanet.query.filter_by(
-            created_by_user_id=u.id
-        ).count()
         user_dict = u.to_dict()
-        user_dict["submission_count"] = submission_count
+        user_dict["submission_count"] = counts_map.get(u.id, 0)
         results.append(user_dict)
 
     return results, total, page, per_page
@@ -359,7 +372,8 @@ def update_user_status(user_id: int, active: bool, admin_user_id: int) -> tuple[
         return user.to_dict(), f"User '{user.username}' {action}"
     except Exception as exc:
         db.session.rollback()
-        return None, f"Database error: {exc}"
+        logger.exception("Failed to update user status: %s", exc)
+        return None, "Database operation failed. Please try again."
 
 
 def update_user_role(user_id: int, new_role: str, admin_user_id: int) -> tuple[dict | None, str]:
@@ -392,7 +406,8 @@ def update_user_role(user_id: int, new_role: str, admin_user_id: int) -> tuple[d
         return user.to_dict(), f"User '{user.username}' role changed to {new_role}"
     except Exception as exc:
         db.session.rollback()
-        return None, f"Database error: {exc}"
+        logger.exception("Failed to update user role: %s", exc)
+        return None, "Database operation failed. Please try again."
 
 
 # ==========================================================================
@@ -438,10 +453,10 @@ def seed_initial_model_version(model_version_hash: str, artifact_path: str):
     version = ModelVersion(
         version="v1.0",
         artifact_path=artifact_path,
-        dataset_version=model_version_hash,
+        dataset_version=None,
         is_active=True,
         created_by="system",
-        notes="Initial model — seeded from existing pipeline on first startup",
+        notes=f"Initial baseline model seeded on startup (pipeline hash: {model_version_hash})",
     )
     db.session.add(version)
     try:

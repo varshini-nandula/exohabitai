@@ -517,8 +517,18 @@ def retrain_from_dataset(additional_csv_path: str = None,
         )
 
     # ── 3. Prepare features and target ───────────────────────────────
+    # Defensively drop any rows where target is missing
+    if TARGET in combined_df.columns:
+        missing_target_count = int(combined_df[TARGET].isnull().sum())
+        if missing_target_count > 0:
+            logger.warning(
+                "Dropping %d row(s) with missing target '%s' before training split",
+                missing_target_count, TARGET,
+            )
+            combined_df = combined_df.dropna(subset=[TARGET])
+
     X = combined_df.drop(columns=[TARGET, "P_NAME"], errors="ignore")
-    y = combined_df[TARGET]
+    y = combined_df[TARGET].astype(int)
 
     numerical_cols = X.select_dtypes(include=["number"]).columns.tolist()
     categorical_cols = X.select_dtypes(exclude=["number"]).columns.tolist()

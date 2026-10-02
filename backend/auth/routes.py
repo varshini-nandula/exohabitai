@@ -28,6 +28,7 @@ from flask_jwt_extended import (
 )
 
 from extensions import db
+from sqlalchemy.exc import IntegrityError
 from models.user import User
 from auth.decorators import get_current_user
 from auth.services import register_user, authenticate_user, EMAIL_REGEX
@@ -266,16 +267,19 @@ def update_me():
 
     try:
         db.session.commit()
-        logger.info("User #%s updated profile: username=%s, email=%s", user.id, user.username, user.email)
+        logger.info("User #%s updated profile successfully", user.id)
         return _auth_response(
             "success",
             "Profile updated successfully",
             {"user": user.to_dict()},
         )
+    except IntegrityError:
+        db.session.rollback()
+        return _auth_response("error", "Username or email is already in use", code=409)
     except Exception as exc:
         db.session.rollback()
-        logger.exception("Failed to update user profile")
-        return _auth_response("error", f"Profile update failed: {exc}", code=500)
+        logger.exception("Failed to update user profile: %s", exc)
+        return _auth_response("error", "Profile update failed. Please try again.", code=500)
 
 
 # ==========================================================================

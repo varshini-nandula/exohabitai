@@ -177,8 +177,8 @@ def upload_dataset():
 
     except Exception as exc:
         db.session.rollback()
-        logger.exception("Dataset upload error")
-        return _admin_response("error", f"Upload failed: {exc}", code=500)
+        logger.exception("Dataset upload error: %s", exc)
+        return _admin_response("error", "Upload failed. Please check the file and try again.", code=500)
 
 
 @admin_bp.route("/datasets", methods=["GET"])
@@ -197,8 +197,8 @@ def list_datasets():
             {"datasets": [d.to_dict() for d in datasets]},
         )
     except Exception as exc:
-        logger.exception("Dataset list error")
-        return _admin_response("error", f"Failed to list datasets: {exc}", code=500)
+        logger.exception("Dataset list error: %s", exc)
+        return _admin_response("error", "Failed to list datasets. Please try again.", code=500)
 
 
 @admin_bp.route("/datasets/<int:dataset_id>", methods=["GET"])
@@ -243,8 +243,8 @@ def delete_dataset(dataset_id):
 
     except Exception as exc:
         db.session.rollback()
-        logger.exception("Dataset delete error")
-        return _admin_response("error", f"Delete failed: {exc}", code=500)
+        logger.exception("Dataset delete error: %s", exc)
+        return _admin_response("error", "Failed to delete dataset. Please try again.", code=500)
 
 
 @admin_bp.route("/datasets/<int:dataset_id>/validate", methods=["POST"])
@@ -258,7 +258,7 @@ def validate_dataset_endpoint(dataset_id):
     if not os.path.isfile(dataset.storage_path):
         return _admin_response(
             "error",
-            f"Dataset file not found on disk: {dataset.storage_path}",
+            f"Dataset file not found on disk for '{dataset.name}'",
             code=500,
         )
 
@@ -301,8 +301,8 @@ def validate_dataset_endpoint(dataset_id):
 
     except Exception as exc:
         db.session.rollback()
-        logger.exception("Dataset validation error")
-        return _admin_response("error", f"Validation failed: {exc}", code=500)
+        logger.exception("Dataset validation error: %s", exc)
+        return _admin_response("error", "Validation failed. Please check server logs.", code=500)
 
 
 @admin_bp.route("/datasets/<int:dataset_id>/ready", methods=["POST"])
@@ -332,4 +332,5 @@ def mark_dataset_ready(dataset_id):
         )
     except Exception as exc:
         db.session.rollback()
-        return _admin_response("error", f"Failed to update status: {exc}", code=500)
+        logger.exception("Failed to mark dataset ready: %s", exc)
+        return _admin_response("error", "Failed to update status. Please try again.", code=500)

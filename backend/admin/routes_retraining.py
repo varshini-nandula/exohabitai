@@ -84,19 +84,21 @@ def start_retraining():
             if not os.path.isfile(dataset.storage_path):
                 return _admin_response(
                     "error",
-                    f"Dataset file not found on disk: {dataset.storage_path}",
+                    f"Dataset file not found on disk for '{dataset.name}'",
                     code=500,
                 )
             additional_csv_path = dataset.storage_path
             reason = f"{reason} (dataset: {dataset.name})"
 
         # --- Prevent concurrent retraining ---
+        lock_acquired = False
         if not app_module._retrain_lock.acquire(blocking=False):
             return _admin_response(
                 "error",
                 "Retraining already in progress. Check GET /admin/retraining/status.",
                 code=409,
             )
+        lock_acquired = True
 
         logger.info(
             "Admin retraining accepted — reason='%s', by='%s', dataset_id=%s",
@@ -135,15 +137,15 @@ def start_retraining():
         )
 
     except Exception as exc:
-        # Release lock if we acquired it but failed before thread launch
-        import app as app_module
-        if app_module._retrain_lock.locked():
+        # Release lock ONLY if this request acquired it but failed before thread handoff
+        if 'lock_acquired' in locals() and lock_acquired:
+            import app as app_module
             try:
                 app_module._retrain_lock.release()
             except RuntimeError:
                 pass
         logger.exception("Admin retraining trigger error")
-        return _admin_response("error", f"Retraining trigger failed: {exc}", code=500)
+        return _admin_response("error", "Retraining trigger failed. Please check server logs.", code=500)
 
 
 @admin_bp.route("/retraining/status", methods=["GET"])

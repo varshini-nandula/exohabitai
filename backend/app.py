@@ -366,6 +366,21 @@ VALID_IMPUTATION_STRATEGIES = {"median", "earth", "zeros", "non_habitable"}
 
 with app.app_context():
     db.create_all()
+
+    # Ensure existing SQLite tables have all required columns (e.g. rejection_reason)
+    try:
+        engine = db.engine
+        if engine.name == "sqlite":
+            with engine.connect() as conn:
+                res = conn.execute(db.text("PRAGMA table_info(exoplanets)")).fetchall()
+                col_names = {row[1] for row in res}
+                if "rejection_reason" not in col_names and len(col_names) > 0:
+                    conn.execute(db.text("ALTER TABLE exoplanets ADD COLUMN rejection_reason TEXT"))
+                    conn.commit()
+                    logger.info("Auto-migrated exoplanets table: added rejection_reason column")
+    except Exception as exc:
+        logger.warning("Startup schema verification warning: %s", exc)
+
     logger.info("Database tables ready (exoplanets, retraining_logs, users, "
                 "training_datasets, model_versions)")
 
@@ -1431,12 +1446,12 @@ def stats():
         active_model = ModelVersion.query.filter_by(is_active=True).first()
         active_model_dict = active_model.to_dict() if active_model else {
             "version": MODEL_VERSION,
-            "accuracy": 0.962,
-            "f1_score": 0.940,
-            "roc_auc": 0.985,
-            "pr_auc": 0.979,
-            "precision": 0.935,
-            "recall": 0.945,
+            "accuracy": None,
+            "f1_score": None,
+            "roc_auc": None,
+            "pr_auc": None,
+            "precision": None,
+            "recall": None,
         }
 
         return api_response(

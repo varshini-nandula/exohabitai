@@ -205,11 +205,12 @@ def validate_dataset(csv_path: str, expected_columns: list[str] | None = None) -
                     f"(minority is {minority / majority:.1%} of majority)"
                 )
 
-        # Warn about missing labels
+        # Error on missing labels in target column
         label_missing = int(df[TARGET_COLUMN].isnull().sum())
         if label_missing > 0:
-            warnings.append(
-                f"{label_missing} row(s) missing target label {TARGET_COLUMN}"
+            errors.append(
+                f"{label_missing} row(s) missing target label {TARGET_COLUMN}. "
+                f"All rows in a training dataset must have a binary label (0 or 1)."
             )
 
     # --- Out-of-range values ---

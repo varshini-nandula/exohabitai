@@ -122,6 +122,16 @@ def migrate():
     else:
         logger.info("Column status already exists — skipping")
 
+    # ── rejection_reason (moderation workflow) ───────────────────────
+    if "rejection_reason" not in existing:
+        logger.info("Adding column: rejection_reason (TEXT)")
+        cursor.execute(
+            "ALTER TABLE exoplanets ADD COLUMN rejection_reason TEXT"
+        )
+        migrations_applied += 1
+    else:
+        logger.info("Column rejection_reason already exists — skipping")
+
     # ── users table ──────────────────────────────────────────────────
     cursor.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"

@@ -32,8 +32,8 @@ logger = logging.getLogger("exohabitai.admin")
 @admin_required()
 def pending_planets():
     """List pending planet submissions with pagination."""
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 20, type=int)
+    page = max(1, request.args.get("page", 1, type=int))
+    per_page = min(100, max(1, request.args.get("per_page", 20, type=int)))
     search = request.args.get("search", None)
 
     items, total, pg, pp = get_planets_by_status(
@@ -54,8 +54,8 @@ def pending_planets():
 @admin_required()
 def all_planets():
     """List all planets with optional status filter, search, and pagination."""
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 20, type=int)
+    page = max(1, request.args.get("page", 1, type=int))
+    per_page = min(100, max(1, request.args.get("per_page", 20, type=int)))
     status = request.args.get("status", None)
     search = request.args.get("search", None)
 

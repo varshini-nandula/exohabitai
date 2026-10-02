@@ -45,8 +45,8 @@ def _get_admin_user_id() -> int | None:
 @admin_required()
 def list_users():
     """List all users with optional search, role filter, and pagination."""
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 20, type=int)
+    page = max(1, request.args.get("page", 1, type=int))
+    per_page = min(100, max(1, request.args.get("per_page", 20, type=int)))
     search = request.args.get("search", None)
     role = request.args.get("role", None)
 
@@ -86,6 +86,8 @@ def user_detail(user_id):
 def activate_user(user_id):
     """Reactivate a deactivated user account."""
     admin_id = _get_admin_user_id()
+    if admin_id is None:
+        return _admin_response("error", "Unauthorized: invalid user identity in token", code=401)
     result, message = update_user_status(user_id, active=True, admin_user_id=admin_id)
     if result is None:
         return _admin_response("error", message, code=400)
@@ -97,6 +99,8 @@ def activate_user(user_id):
 def deactivate_user(user_id):
     """Deactivate a user account (preserves audit trail)."""
     admin_id = _get_admin_user_id()
+    if admin_id is None:
+        return _admin_response("error", "Unauthorized: invalid user identity in token", code=401)
     result, message = update_user_status(user_id, active=False, admin_user_id=admin_id)
     if result is None:
         return _admin_response("error", message, code=400)
@@ -108,6 +112,8 @@ def deactivate_user(user_id):
 def promote_user(user_id):
     """Promote a regular user to admin role."""
     admin_id = _get_admin_user_id()
+    if admin_id is None:
+        return _admin_response("error", "Unauthorized: invalid user identity in token", code=401)
     result, message = update_user_role(user_id, UserRole.ADMIN, admin_user_id=admin_id)
     if result is None:
         return _admin_response("error", message, code=400)
@@ -119,6 +125,8 @@ def promote_user(user_id):
 def demote_user(user_id):
     """Demote an admin user to regular user role."""
     admin_id = _get_admin_user_id()
+    if admin_id is None:
+        return _admin_response("error", "Unauthorized: invalid user identity in token", code=401)
     result, message = update_user_role(user_id, UserRole.USER, admin_user_id=admin_id)
     if result is None:
         return _admin_response("error", message, code=400)

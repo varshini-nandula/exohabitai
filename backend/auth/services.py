@@ -176,15 +176,15 @@ def authenticate_user(username: str, password: str) -> tuple[User | None, str]:
 
     # Intentionally vague error — prevents username enumeration
     if user is None:
-        logger.info("Login failed — user not found: %s", identifier)
+        logger.info("Login failed — user not found")
         return None, "Invalid credentials"
 
     if not user.check_password(password):
-        logger.info("Login failed — wrong password: username=%s", username)
+        logger.info("Login failed — wrong password for user id=%s", user.id)
         return None, "Invalid credentials"
 
     if not user.is_active:
-        logger.warning("Login attempt on deactivated account: username=%s", username)
+        logger.warning("Login attempt on deactivated account for user id=%s", user.id)
         return None, "Account is deactivated. Contact an administrator."
 
     # Update last login timestamp
