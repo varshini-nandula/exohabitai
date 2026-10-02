@@ -11,18 +11,29 @@ export default function LoginPage() {
   const [localError, setLocalError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login, isAuthenticated, error: authError, clearError } = useAuth();
+  const { login, isAuthenticated, user, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const queryParams = new URLSearchParams(location.search);
-  const redirectPath = queryParams.get('redirect') || '/';
+  const explicitRedirect = queryParams.get('redirect');
+
+  const getDestination = (targetUser) => {
+    if (explicitRedirect) {
+      if (explicitRedirect === '/dashboard' && targetUser?.role === 'admin') {
+        return '/admin';
+      }
+      return explicitRedirect;
+    }
+    return targetUser?.role === 'admin' ? '/admin' : '/dashboard';
+  };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate(redirectPath, { replace: true });
+    if (isAuthenticated && user) {
+      const destination = getDestination(user);
+      navigate(destination, { replace: true });
     }
-  }, [isAuthenticated, navigate, redirectPath]);
+  }, [isAuthenticated, user, navigate, location.search]);
 
   useEffect(() => {
     if (clearError) clearError();
@@ -43,7 +54,9 @@ export default function LoginPage() {
     }
 
     try {
-      await login(username.trim(), password);
+      const loggedInUser = await login(username.trim(), password);
+      const destination = getDestination(loggedInUser);
+      navigate(destination, { replace: true });
     } catch (err) {
       console.error('Login error:', err);
     } finally {
