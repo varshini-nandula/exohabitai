@@ -54,9 +54,12 @@ export default function TrainingPage() {
             if (!status.is_running) {
               setPollingActive(false);
               clearInterval(poller);
+              const outcome = typeof status.last_result === 'object' && status.last_result !== null
+                ? status.last_result.status
+                : status.last_result;
               showToast(
-                `Model training job finished: ${status.last_result}`,
-                status.last_result === 'success' ? 'success' : 'warning'
+                `Model training job finished: ${outcome || 'completed'}`,
+                outcome === 'success' ? 'success' : 'warning'
               );
             }
           }
@@ -149,9 +152,16 @@ export default function TrainingPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Last Job Outcome</span>
               <div className="mt-1">
                 {retrainStatus.last_result ? (
-                  <Badge variant={retrainStatus.last_result === 'success' ? 'success' : 'danger'}>
-                    {retrainStatus.last_result.toUpperCase()}
-                  </Badge>
+                  (() => {
+                    const outcome = typeof retrainStatus.last_result === 'object' && retrainStatus.last_result !== null
+                      ? retrainStatus.last_result.status
+                      : retrainStatus.last_result;
+                    return (
+                      <Badge variant={outcome === 'success' ? 'success' : 'danger'}>
+                        {String(outcome || 'DONE').toUpperCase()}
+                      </Badge>
+                    );
+                  })()
                 ) : (
                   <span className="text-text-muted text-sm">—</span>
                 )}
