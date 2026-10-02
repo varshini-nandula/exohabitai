@@ -43,6 +43,15 @@ Thumbs.db
 .idea/
 .coverage
 
-#Unnecessary files
+# Frontend & Node
+node_modules/
+**/node_modules/
+dist/
+dist-ssr/
+.vite/
+frontend-react/.vite/
+*.local
+
+# Unnecessary files
 /scratch
 .agents
