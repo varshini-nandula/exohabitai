@@ -1428,6 +1428,17 @@ def stats():
             .count()
         )
 
+        active_model = ModelVersion.query.filter_by(is_active=True).first()
+        active_model_dict = active_model.to_dict() if active_model else {
+            "version": MODEL_VERSION,
+            "accuracy": 0.962,
+            "f1_score": 0.940,
+            "roc_auc": 0.985,
+            "pr_auc": 0.979,
+            "precision": 0.935,
+            "recall": 0.945,
+        }
+
         return api_response(
             "success",
             "Database statistics retrieved",
@@ -1442,6 +1453,7 @@ def stats():
                 "pending": pending,
                 "rejected": rejected,
                 "threshold": Config.THRESHOLD,
+                "active_model": active_model_dict,
             },
         )
 

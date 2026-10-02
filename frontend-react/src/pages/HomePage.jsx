@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { rankingsAPI } from '../api/rankings';
+import { statsAPI } from '../api/stats';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 
@@ -9,6 +10,7 @@ export default function HomePage() {
   const [topPlanets, setTopPlanets] = useState([]);
   const [rankingsLoading, setRankingsLoading] = useState(true);
   const [rankingsReady, setRankingsReady] = useState(false);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -32,7 +34,19 @@ export default function HomePage() {
       }
     };
 
+    const fetchPlatformStats = async () => {
+      try {
+        const res = await statsAPI.getStats();
+        if (active && res.data?.status === 'success') {
+          setStats(res.data.data);
+        }
+      } catch {
+        // Fallback to defaults
+      }
+    };
+
     fetchTopRankings();
+    fetchPlatformStats();
     return () => { active = false; };
   }, []);
 
@@ -126,7 +140,9 @@ export default function HomePage() {
             style={{ marginTop: '48px', maxWidth: '560px' }}
           >
             <div className="glass rounded-xl py-6 px-5 flex flex-col items-center gap-3 text-center">
-              <span className="text-2xl sm:text-3xl font-bold font-mono text-accent leading-none">6,000+</span>
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-accent leading-none">
+                {stats?.total_planets ? `${stats.total_planets.toLocaleString()}+` : '6,000+'}
+              </span>
               <span className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Planet Records</span>
             </div>
             <div className="glass rounded-xl py-6 px-5 flex flex-col items-center gap-3 text-center">
@@ -134,7 +150,9 @@ export default function HomePage() {
               <span className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Planetary Features</span>
             </div>
             <div className="glass rounded-xl py-6 px-5 flex flex-col items-center gap-3 text-center">
-              <span className="text-2xl sm:text-3xl font-bold font-mono text-success leading-none">96%</span>
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-success leading-none">
+                {stats?.active_model?.accuracy ? `${(stats.active_model.accuracy * 100).toFixed(0)}%` : '96%'}
+              </span>
               <span className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Model Accuracy</span>
             </div>
           </motion.div>
@@ -346,7 +364,9 @@ export default function HomePage() {
                   <div className="grid grid-cols-2 gap-5" style={{ marginTop: '32px' }}>
                     <div className="p-5 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
                       <span className="text-[10px] text-text-muted uppercase font-semibold">Dataset Size</span>
-                      <span className="text-lg font-bold font-mono text-accent">6,000+</span>
+                      <span className="text-lg font-bold font-mono text-accent">
+                        {stats?.total_planets ? `${stats.total_planets.toLocaleString()}+` : '6,000+'}
+                      </span>
                     </div>
                     <div className="p-5 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
                       <span className="text-[10px] text-text-muted uppercase font-semibold">Features</span>
@@ -372,7 +392,7 @@ export default function HomePage() {
 
                 {/* Title — 20px from eyebrow */}
                 <h3 className="text-lg font-bold text-text-primary" style={{ marginTop: '20px' }}>
-                  Random Forest Classifier
+                  {stats?.active_model?.version ? `Pipeline (${stats.active_model.version})` : 'Random Forest Classifier'}
                 </h3>
 
                 {/* Description — 24px from title */}
@@ -382,10 +402,34 @@ export default function HomePage() {
 
                 {/* Metric grid — 36px from description, pushed to bottom */}
                 <div className="grid grid-cols-2 gap-5 mt-auto" style={{ paddingTop: '36px' }}>
-                  <StatCard label="F1 Score" value="0.94" decimals={2} suffix="" delay={0.1} />
-                  <StatCard label="ROC-AUC" value="0.985" decimals={3} suffix="" delay={0.2} />
-                  <StatCard label="PR-AUC" value="0.979" decimals={3} suffix="" delay={0.3} />
-                  <StatCard label="Cross Val." value="96.2" decimals={1} suffix="%" delay={0.4} />
+                  <StatCard
+                    label="F1 Score"
+                    value={stats?.active_model?.f1_score != null ? stats.active_model.f1_score : 0.94}
+                    decimals={2}
+                    suffix=""
+                    delay={0.1}
+                  />
+                  <StatCard
+                    label="ROC-AUC"
+                    value={stats?.active_model?.roc_auc != null ? stats.active_model.roc_auc : 0.985}
+                    decimals={3}
+                    suffix=""
+                    delay={0.2}
+                  />
+                  <StatCard
+                    label="PR-AUC"
+                    value={stats?.active_model?.pr_auc != null ? stats.active_model.pr_auc : 0.979}
+                    decimals={3}
+                    suffix=""
+                    delay={0.3}
+                  />
+                  <StatCard
+                    label="Cross Val."
+                    value={stats?.active_model?.accuracy != null ? (stats.active_model.accuracy * 100).toFixed(1) : 96.2}
+                    decimals={1}
+                    suffix="%"
+                    delay={0.4}
+                  />
                 </div>
               </GlassCard>
             </motion.div>
