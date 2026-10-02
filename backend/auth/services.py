@@ -169,11 +169,14 @@ def authenticate_user(username: str, password: str) -> tuple[User | None, str]:
     if not username or not password:
         return None, "Username and password are required"
 
-    user = User.query.filter_by(username=username.strip()).first()
+    identifier = username.strip()
+    user = User.query.filter(
+        (User.username == identifier) | (db.func.lower(User.email) == identifier.lower())
+    ).first()
 
     # Intentionally vague error — prevents username enumeration
     if user is None:
-        logger.info("Login failed — user not found: %s", username)
+        logger.info("Login failed — user not found: %s", identifier)
         return None, "Invalid credentials"
 
     if not user.check_password(password):

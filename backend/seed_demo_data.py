@@ -19,45 +19,62 @@ def seed_demo():
     with app.app_context():
         print("Seeding Demo Users and Mock Data into exoplanets.db...")
 
-        # 1. Seed or update Demo User
-        demo_user = User.query.filter_by(username="demo_astronomer").first()
-        if not demo_user:
-            demo_user = User(
-                username="demo_astronomer",
-                email="demo@exohabit.ai",
-                password_hash=generate_password_hash("Password123!"),
-                role=UserRole.USER,
-                is_active=True,
-            )
-            db.session.add(demo_user)
-            db.session.flush()
-            print("Created demo user: demo_astronomer / Password123!")
-        else:
-            demo_user.password_hash = generate_password_hash("Password123!")
-            demo_user.is_active = True
-            db.session.flush()
-            print("Updated demo user password: Password123!")
+        users_to_seed = [
+            # Admins
+            {
+                "username": "admin",
+                "email": "admin@exohabit.ai",
+                "password": "AdminPassword123!",
+                "role": UserRole.ADMIN,
+            },
+            {
+                "username": "admin_demo",
+                "email": "admindemo@exohabit.ai",
+                "password": "AdminPassword123!",
+                "role": UserRole.ADMIN,
+            },
+            # Standard Users
+            {
+                "username": "demo_astronomer",
+                "email": "demo@exohabit.ai",
+                "password": "Password123!",
+                "role": UserRole.USER,
+            },
+            {
+                "username": "user",
+                "email": "user@exohabit.ai",
+                "password": "UserPassword123!",
+                "role": UserRole.USER,
+            },
+        ]
 
-        # 2. Seed or update Admin User
-        admin_user = User.query.filter_by(username="admin_demo").first()
-        if not admin_user:
-            admin_user = User(
-                username="admin_demo",
-                email="admin@exohabit.ai",
-                password_hash=generate_password_hash("AdminPassword123!"),
-                role=UserRole.ADMIN,
-                is_active=True,
-            )
-            db.session.add(admin_user)
-            db.session.flush()
-            print("Created admin user: admin_demo / AdminPassword123!")
-        else:
-            admin_user.password_hash = generate_password_hash("AdminPassword123!")
-            admin_user.role = UserRole.ADMIN
-            admin_user.is_active = True
-            db.session.flush()
-            print("Updated admin user password: AdminPassword123!")
+        seeded_user_map = {}
+        for u_data in users_to_seed:
+            user = User.query.filter(
+                (User.username == u_data["username"]) | (User.email == u_data["email"])
+            ).first()
+            if not user:
+                user = User(
+                    username=u_data["username"],
+                    email=u_data["email"],
+                    password_hash=generate_password_hash(u_data["password"]),
+                    role=u_data["role"],
+                    is_active=True,
+                )
+                db.session.add(user)
+                db.session.flush()
+                print(f"Created {u_data['role']} user: {u_data['username']} / {u_data['password']}")
+            else:
+                user.username = u_data["username"]
+                user.email = u_data["email"]
+                user.password_hash = generate_password_hash(u_data["password"])
+                user.role = u_data["role"]
+                user.is_active = True
+                db.session.flush()
+                print(f"Updated {u_data['role']} user: {u_data['username']} / {u_data['password']}")
+            seeded_user_map[u_data["username"]] = user
 
+        demo_user = seeded_user_map.get("demo_astronomer") or seeded_user_map.get("user")
         user_id = demo_user.id
         now = datetime.now(timezone.utc)
 
