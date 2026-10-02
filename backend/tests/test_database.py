@@ -269,10 +269,10 @@ class TestRetrainingLogModel:
 class TestModelVersionTracking:
     """Validate model version is stored with predictions."""
 
-    def test_prediction_stores_model_version(self, client, earth_like_payload):
+    def test_prediction_stores_model_version(self, client, auth_headers, earth_like_payload):
         """Stored predictions should include the current model version."""
         from models.exoplanet import Exoplanet
-        client.post("/predict_and_store_batch", json=[earth_like_payload])
+        client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
 
         planet = Exoplanet.query.filter_by(planet_name="Earth-Twin-Test").first()
         assert planet is not None

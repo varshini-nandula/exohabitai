@@ -1,43 +1,32 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { statsAPI } from '../api/stats';
 import GlassCard from '../components/GlassCard';
-import FlipCard from '../components/FlipCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function AboutPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
-  const [health, setHealth] = useState(null);
-  const [retraining, setRetraining] = useState(null);
-  const [error, setError] = useState(false);
 
   useEffect(() => {
     let active = true;
-    const fetchTelemetry = async () => {
+    const fetchStats = async () => {
       try {
-        const [statsRes, healthRes, retrainRes] = await Promise.all([
-          statsAPI.getStats(),
-          statsAPI.getHealth(),
-          statsAPI.getRetrainingStatus(),
-        ]);
-
+        const res = await statsAPI.getStats();
         if (active) {
-          setStats(statsRes.data?.data || null);
-          setHealth(healthRes.data?.data || null);
-          setRetraining(retrainRes.data?.data || null);
+          setStats(res.data?.data || null);
           setLoading(false);
         }
       } catch (err) {
-        console.error('Telemetry fetch error on about page:', err);
+        console.error('Stats fetch error:', err);
         if (active) {
-          setError(true);
           setLoading(false);
         }
       }
     };
 
-    fetchTelemetry();
+    fetchStats();
     return () => {
       active = false;
     };
@@ -47,13 +36,13 @@ export default function AboutPage() {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.15,
+        staggerChildren: 0.12,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 25 },
     visible: {
       opacity: 1,
       y: 0,
@@ -64,35 +53,51 @@ export default function AboutPage() {
   const capabilities = [
     {
       icon: '🎯',
-      title: 'Prediction Engine',
-      description: 'Real-time classification based on specific exoplanetary physical dimensions, stellar properties, and orbit.',
+      title: 'Habitability Classification',
+      description: 'Multi-parametric machine learning model assessing planetary size, thermal equilibrium, host star radiation, and atmospheric retention capacity.',
+      badge: 'Core ML',
+      badgeColor: 'text-primary border-primary/20 bg-primary/10',
     },
     {
       icon: '⚡',
-      title: 'Adaptive Batch Mode',
-      description: 'Batch prediction capabilities integrated seamlessly, allowing swift analysis of multiple space systems.',
+      title: 'Smart Imputation Engine',
+      description: 'Handles observational gaps in astronomical survey data using domain-informed astrophysically constrained missing-data strategies.',
+      badge: 'Data Pipeline',
+      badgeColor: 'text-accent border-accent/20 bg-accent/10',
     },
     {
       icon: '📊',
-      title: 'Observation Rankings',
-      description: 'Interactive rankings compiled from database queries. Filters exoplanets sorted by habitability probability.',
+      title: 'Curated Observatory Rankings',
+      description: 'Continuously updated leaderboard ranking confirmed and candidate exoplanets by calculated habitability probability index.',
+      badge: 'Exploration',
+      badgeColor: 'text-highlight border-highlight/20 bg-highlight/10',
     },
     {
-      icon: '⏳',
-      title: 'Telemetry Retraining',
-      description: 'Continuous optimization module enabling the core Random Forest models to adapt as the database grows.',
+      icon: '🔭',
+      title: 'Exoplanet Preset Library',
+      description: 'Instant benchmarks against iconic worlds like Kepler-442b, TRAPPIST-1e, and Proxima Centauri b alongside archetype archetypes.',
+      badge: 'Reference',
+      badgeColor: 'text-success border-success/20 bg-success/10',
+    },
+    {
+      icon: '🌌',
+      title: 'Community Catalog Submissions',
+      description: 'Allows researchers and space enthusiasts to propose custom orbital configurations with automated AI peer verification.',
+      badge: 'Research',
+      badgeColor: 'text-accent border-accent/20 bg-accent/10',
     },
     {
       icon: '🛡️',
-      title: 'Secure Mainframe JWT',
-      description: 'Role-based web access using authenticated JSON Web Token structures to lock down database writing access.',
-    },
-    {
-      icon: '🛰️',
-      title: 'Add Candidate Planets',
-      description: 'Submit newly charted candidates to the repository catalog database for future retraining cycles.',
+      title: 'Secure Scientific History',
+      description: 'Authenticated personal workspace to track, revisit, and compare individual planetary evaluations over time.',
+      badge: 'Workspace',
+      badgeColor: 'text-primary border-primary/20 bg-primary/10',
     },
   ];
+
+  const totalPlanetsDisplay = stats?.total_planets && stats.total_planets > 0
+    ? stats.total_planets.toLocaleString()
+    : '6,000+';
 
   return (
     <motion.div
@@ -107,15 +112,15 @@ export default function AboutPage() {
         <div className="site-container">
           <motion.div variants={itemVariants} className="page-header" style={{ marginBottom: '0' }}>
             <span className="page-eyebrow text-accent border border-accent/20 bg-accent/5 px-4 py-1.5 rounded-full inline-block">
-              Behind the System
+              About the Platform
             </span>
             <h1>
               <span className="bg-gradient-to-r from-primary via-[#89B4FF] to-accent bg-clip-text text-transparent">
-                About ExoHabitAI
+                The Science Behind ExoHabitAI
               </span>
             </h1>
             <p>
-              Explore the technical infrastructure, platform capabilities, and live system telemetry powering our habitability predictions.
+              Bridging observational astrophysics and machine learning to evaluate the habitable potential of worlds beyond our Solar System.
             </p>
           </motion.div>
         </div>
@@ -125,113 +130,90 @@ export default function AboutPage() {
       <div className="section-divider" style={{ marginTop: '64px' }} />
 
       {/* ============================================================
-          OBSERVATORY TELEMETRY STATUS
+          SCIENTIFIC FOUNDATION & ML ARCHITECTURE
           ============================================================ */}
       <section className="section-padding">
         <div className="site-container">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
             {/* Dataset credibility section */}
             <motion.div variants={itemVariants} className="lg:col-span-7 flex flex-col justify-between">
-              <GlassCard glow={true} variant="raised" className="h-full flex flex-col justify-between gap-7 p-10">
+              <GlassCard glow={true} variant="raised" className="h-full flex flex-col justify-between gap-8 p-7 sm:p-9 md:p-11">
                 <div>
-                  <span className="font-mono text-xs font-semibold text-primary tracking-wider uppercase">
+                  <span className="text-xs font-semibold text-primary tracking-wider uppercase">
                     SCIENTIFIC FOUNDATION
                   </span>
-                  <h3 className="text-xl font-bold font-mono text-text-primary mt-5">
-                    PHL Exoplanet Catalog Archive
+                  <h3 className="text-xl sm:text-2xl font-bold text-text-primary mt-4">
+                    PHL Exoplanet Catalog & NASA Archive
                   </h3>
-                  <p className="text-sm text-text-secondary mt-5" style={{ lineHeight: '1.7', maxWidth: '50ch' }}>
-                    Our classification networks are trained on verified data curated by the Planetary Habitability Laboratory (PHL) at UPR Arecibo.
+                  <p className="text-sm text-text-secondary mt-4 leading-relaxed" style={{ lineHeight: '1.8' }}>
+                    ExoHabitAI is trained on rigorously curated exoplanet datasets from the <strong>Planetary Habitability Laboratory (PHL)</strong> at UPR Arecibo and the <strong>NASA Exoplanet Archive</strong>. Our models evaluate key astrophysical parameters to estimate whether an exoplanet could maintain liquid water on its surface under an Earth-like atmosphere.
                   </p>
-                  <div className="grid grid-cols-2 gap-5 mt-10">
-                    <div className="p-6 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
-                      <span className="text-[10px] text-text-muted font-mono uppercase font-semibold">
-                        Catalog Records
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 mt-8">
+                    <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col gap-2.5">
+                      <span className="text-[10px] text-text-muted uppercase font-semibold tracking-wider">
+                        Cataloged Worlds
                       </span>
-                      <span className="text-lg font-bold font-mono text-accent">
-                        {stats ? stats.total_planets.toLocaleString() : '6,000+'}
+                      <span className="text-3xl font-bold font-mono text-accent">
+                        {loading ? '...' : totalPlanetsDisplay}
                       </span>
+                      <span className="text-xs text-text-muted">Confirmed & candidate planets</span>
                     </div>
-                    <div className="p-6 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-3">
-                      <span className="text-[10px] text-text-muted font-mono uppercase font-semibold">
-                        Parameters Loaded
+                    <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col gap-2.5">
+                      <span className="text-[10px] text-text-muted uppercase font-semibold tracking-wider">
+                        Core Feature Vector
                       </span>
-                      <span className="text-lg font-bold font-mono text-accent">
-                        9 Dimensions
+                      <span className="text-3xl font-bold font-mono text-primary">
+                        9+ Dimensions
                       </span>
+                      <span className="text-xs text-text-muted">Planetary & stellar metrics</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-7 border-t border-white/5 text-xs text-text-muted leading-relaxed" style={{ lineHeight: '1.7' }}>
-                  <strong>Dataset Attributes Evaluated:</strong> Planet Radius, Planet Mass, Stellar Temperature, Semi-Major Axis, Stellar Luminosity, Orbital Period, Planet Density, Planet Surface Temperature, Stellar Metallicity.
+                <div className="pt-6 border-t border-white/5 text-xs text-text-muted leading-relaxed" style={{ lineHeight: '1.75' }}>
+                  <strong className="text-text-secondary">Primary Evaluated Dimensions:</strong> Planet Radius (R⊕), Mass (M⊕), Mean Density, Equilibrium Temperature (K), Semi-Major Axis (AU), Orbital Period (days), Stellar Luminosity (L☉), Stellar Effective Temperature (K), and Metallicity ([Fe/H]).
                 </div>
               </GlassCard>
             </motion.div>
 
-            {/* Model Status control panel */}
+            {/* Methodology & Model Architecture card */}
             <motion.div variants={itemVariants} className="lg:col-span-5">
-              <GlassCard glow={true} hoverable={false} variant="raised" className="h-full flex flex-col justify-between gap-7 border-accent/20 p-10">
+              <GlassCard glow={true} hoverable={false} variant="raised" className="h-full flex flex-col justify-between gap-8 border-accent/20 p-7 sm:p-9 md:p-11">
                 <div>
-                  <span className="font-mono text-xs font-semibold text-accent tracking-wider uppercase flex items-center gap-1.5">
-                    <span className="relative flex h-2 w-2">
-                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${error ? 'bg-danger' : 'bg-success'}`}></span>
-                      <span className={`relative inline-flex rounded-full h-2 w-2 ${error ? 'bg-danger' : 'bg-success'}`}></span>
-                    </span>
-                    Observatory Telemetry Status
+                  <span className="text-xs font-semibold text-accent tracking-wider uppercase flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
+                    AI MODEL ARCHITECTURE
                   </span>
-                  <h3 className="text-xl font-bold font-mono text-text-primary mt-5">
-                    Mainframe Control Panel
+                  <h3 className="text-xl sm:text-2xl font-bold text-text-primary mt-4">
+                    Random Forest Ensemble
                   </h3>
 
-                  {loading ? (
-                    <div className="py-8">
-                      <LoadingSpinner message="Querying satellite dish..." size="sm" />
+                  <div className="flex flex-col gap-4 mt-6 text-xs text-text-secondary">
+                    <div className="p-5 rounded-xl bg-white/[0.03] border border-white/5">
+                      <span className="font-semibold text-text-primary block mb-1.5 text-sm">Ensemble Decision Trees</span>
+                      <p className="text-xs leading-relaxed text-text-muted">
+                        Utilizes an ensemble of uncorrelated decision trees to capture non-linear relationships between stellar radiation and planetary retention.
+                      </p>
                     </div>
-                  ) : error ? (
-                    <div className="flex flex-col gap-3 py-6">
-                      <div className="text-xs text-danger font-mono bg-danger/10 border border-danger/25 p-4 rounded-lg leading-relaxed" style={{ lineHeight: '1.7' }}>
-                        MAIN FRAME OFFLINE: Unable to contact telemetry servers. Falling back to local satellite mode.
-                      </div>
+
+                    <div className="p-5 rounded-xl bg-white/[0.03] border border-white/5">
+                      <span className="font-semibold text-text-primary block mb-1.5 text-sm">Astrophysical Imputation</span>
+                      <p className="text-xs leading-relaxed text-text-muted">
+                        Automatically derives missing physical quantities using Keplerian mechanics and empirical mass-radius relations when telescope data is incomplete.
+                      </p>
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-4 mt-8 font-mono text-xs text-text-secondary">
-                      <div className="flex justify-between items-center py-3.5 border-b border-white/5">
-                        <span>Model Engine</span>
-                        <span className="text-text-primary font-semibold">Random Forest</span>
-                      </div>
-                      <div className="flex justify-between items-center py-3.5 border-b border-white/5">
-                        <span>Version</span>
-                        <span className="text-text-primary font-semibold">
-                          {health?.model_version || 'v1.0.0'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-3.5 border-b border-white/5">
-                        <span>Database Connection</span>
-                        <span className={health?.db_connected ? 'text-success font-semibold' : 'text-danger font-semibold'}>
-                          {health?.db_connected ? 'ACTIVE' : 'OFFLINE'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-3.5 border-b border-white/5">
-                        <span>Retraining State</span>
-                        <span className={retraining?.is_running ? 'text-warning font-semibold animate-pulse' : 'text-text-muted font-semibold'}>
-                          {retraining?.is_running ? 'RUNNING' : 'STANDBY'}
-                        </span>
-                      </div>
-                      {retraining?.last_completed && (
-                        <div className="flex justify-between items-center py-3.5 border-b border-white/5">
-                          <span>Last Engine Calibr.</span>
-                          <span className="text-text-primary text-[10px]">
-                            {new Date(retraining.last_completed).toLocaleDateString()}
-                          </span>
-                        </div>
-                      )}
+
+                    <div className="p-5 rounded-xl bg-white/[0.03] border border-white/5">
+                      <span className="font-semibold text-text-primary block mb-1.5 text-sm">Calibrated Probabilities</span>
+                      <p className="text-xs leading-relaxed text-text-muted">
+                        Outputs calibrated habitability probability scores from 0% to 100%, with 50% representing the standard threshold for potential habitability.
+                      </p>
                     </div>
-                  )}
+                  </div>
                 </div>
 
-                <div className="text-[10px] text-text-muted font-mono text-center pt-5">
-                  SATELLITE INTERFEROMETRY SYSTEM ONBOARD &amp; ACTIVE.
+                <div className="text-xs text-text-muted text-center pt-4 border-t border-white/5">
+                  Trained & validated against peer-reviewed exoplanetary baselines.
                 </div>
               </GlassCard>
             </motion.div>
@@ -243,43 +225,96 @@ export default function AboutPage() {
       <div className="section-divider" />
 
       {/* ============================================================
-          PLATFORM CAPABILITIES — FlipCards
+          PLATFORM CAPABILITIES — Static Glass Cards
           ============================================================ */}
       <section className="section-padding">
         <div className="site-container flex flex-col items-center">
-          {/* Section header */}
           <div className="section-header">
+            <span className="page-eyebrow text-primary">Capabilities</span>
             <h2>Platform Capabilities</h2>
             <p>
-              Professional analytics and data recording instruments deployed at your command.
+              Comprehensive tools designed for researchers, students, and space enthusiasts.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full">
             {capabilities.map((cap, i) => (
-              <FlipCard
+              <GlassCard
                 key={i}
-                className="min-h-[220px]"
-                front={
-                  <>
-                    <div className="text-3xl mb-4">{cap.icon}</div>
-                    <h4 className="font-bold font-mono text-text-primary text-sm">{cap.title}</h4>
-                  </>
-                }
-                back={
-                  <>
-                    <div className="text-xl mb-2">{cap.icon}</div>
-                    <h4 className="font-bold font-mono text-text-primary text-xs mb-3">{cap.title}</h4>
-                    <p className="text-xs text-text-secondary" style={{ lineHeight: '1.7', maxWidth: '30ch' }}>
-                      {cap.description}
-                    </p>
-                  </>
-                }
-              />
+                hoverable={true}
+                className="flex flex-col justify-between p-7 sm:p-8 gap-6"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <span className="text-3xl">{cap.icon}</span>
+                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border ${cap.badgeColor}`}>
+                      {cap.badge}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-text-primary text-base mb-2.5">{cap.title}</h4>
+                  <p className="text-xs text-text-secondary leading-relaxed" style={{ lineHeight: '1.75' }}>
+                    {cap.description}
+                  </p>
+                </div>
+              </GlassCard>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Section Divider */}
+      <div className="section-divider" />
+
+      {/* ============================================================
+          SCIENTIFIC LIMITATIONS & DISCLAIMER
+          ============================================================ */}
+      <section className="section-padding">
+        <div className="site-container">
+          <GlassCard variant="raised" className="p-7 sm:p-9 md:p-11 border-white/10">
+            <div className="flex flex-col md:flex-row gap-6 sm:gap-8 items-start">
+              <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent text-2xl shrink-0">
+                🔭
+              </div>
+              <div className="flex flex-col gap-4">
+                <h3 className="text-lg sm:text-xl font-bold text-text-primary">
+                  Understanding Habitability Scores & Astronomical Limitations
+                </h3>
+                <p className="text-xs sm:text-sm text-text-secondary leading-relaxed" style={{ lineHeight: '1.8' }}>
+                  <strong>Habitable Zone ≠ Inhabited:</strong> A high habitability score indicates that a planet possesses physical, thermal, and orbital characteristics compatible with liquid surface water under standard atmospheric assumptions. It is <em>not</em> confirmation of extraterrestrial life or a breathable atmosphere.
+                </p>
+                <p className="text-xs sm:text-sm text-text-secondary leading-relaxed" style={{ lineHeight: '1.8' }}>
+                  <strong>Observational Uncertainty:</strong> Many exoplanetary parameters are estimated via transit photometry or radial velocity measurements and carry observational margins of error. ExoHabitAI provides a probabilistic framework to prioritize candidates for upcoming spectroscopic follow-up (such as the James Webb Space Telescope and future ARIEL missions).
+                </p>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      </section>
+
+      {/* ============================================================
+          CALL TO ACTION
+          ============================================================ */}
+      <section className="section-padding pt-0">
+        <div className="site-container">
+          <GlassCard glow={true} className="p-8 sm:p-12 md:p-16 text-center flex flex-col items-center gap-6 sm:gap-8 border-primary/20 bg-gradient-to-b from-space-800/80 to-space-900/90">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary">
+              Ready to Explore Candidate Worlds?
+            </h2>
+            <p className="text-sm sm:text-base text-text-secondary max-w-xl leading-relaxed">
+              Input custom planetary parameters to run an instant AI evaluation, or browse the leaderboard of top-ranked exoplanets.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center mt-2">
+              <Link to="/predict" className="btn-primary px-8 py-3.5 text-sm font-semibold shadow-[0_0_25px_rgba(79,140,255,0.3)]">
+                Predict Habitability →
+              </Link>
+              <Link to="/rankings" className="btn-secondary px-8 py-3.5 text-sm font-semibold border-white/10 bg-white/5">
+                Explore Rankings
+              </Link>
+            </div>
+          </GlassCard>
         </div>
       </section>
     </motion.div>
   );
 }
+

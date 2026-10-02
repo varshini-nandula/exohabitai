@@ -4,28 +4,33 @@ import GlassCard from './GlassCard';
 export default function StatCard({
   icon,
   label,
+  title,
   value,
+  description,
   suffix = '',
   decimals = 0,
   glow = false,
   delay = 0,
+  highlight = false,
+  trend,
 }) {
   const [displayValue, setDisplayValue] = useState(0);
 
+  // Support both 'label' and 'title' props for backward compat
+  const displayLabel = label || title || '';
+
   useEffect(() => {
-    // Parse value as number for counting animation
     const numValue = parseFloat(value);
     if (isNaN(numValue)) {
       setDisplayValue(value);
       return;
     }
 
-    let start = 0;
-    const duration = 1200; // ms
-    const stepTime = 16; // ~60fps
+    let currentStep = 0;
+    const duration = 1200;
+    const stepTime = 16;
     const steps = Math.ceil(duration / stepTime);
     const increment = numValue / steps;
-    let currentStep = 0;
 
     const timer = setInterval(() => {
       currentStep++;
@@ -33,17 +38,14 @@ export default function StatCard({
         setDisplayValue(numValue);
         clearInterval(timer);
       } else {
-        setDisplayValue((prev) => {
-          const next = parseFloat((start + increment * currentStep).toFixed(decimals));
-          return next > numValue ? numValue : next;
-        });
+        const next = parseFloat((increment * currentStep).toFixed(decimals));
+        setDisplayValue(next > numValue ? numValue : next);
       }
     }, stepTime);
 
     return () => clearInterval(timer);
   }, [value, decimals]);
 
-  // Format helper for display
   const formattedValue = typeof displayValue === 'number'
     ? displayValue.toLocaleString(undefined, {
       minimumFractionDigits: decimals,
@@ -52,21 +54,40 @@ export default function StatCard({
     : displayValue;
 
   return (
-    <GlassCard glow={glow} hoverable={true} animate={true} delay={delay} className="flex flex-col gap-5 min-w-[140px] flex-1 p-7">
+    <GlassCard
+      glow={glow}
+      hoverable={true}
+      animate={true}
+      delay={delay}
+      padding="md"
+      className={`flex flex-col justify-between gap-5 min-w-[150px] flex-1 ${highlight ? 'border-warning/25 bg-warning/[0.03]' : ''}`}
+    >
       <div className="flex items-center justify-between gap-3 text-text-secondary">
-        <span className="text-[10px] uppercase tracking-wider font-semibold font-mono leading-tight">{label}</span>
-        {icon && <div className="text-primary text-lg">{icon}</div>}
+        <span className="text-xs uppercase tracking-wider font-semibold leading-tight text-text-muted">
+          {displayLabel}
+        </span>
+        {icon && <div className="text-primary text-xl flex-shrink-0">{icon}</div>}
       </div>
-      <div className="flex items-baseline gap-1.5 mt-auto">
-        <span className="text-2xl font-bold font-mono text-text-primary tracking-tight">
+      <div className="flex items-baseline gap-2 my-1">
+        <span className="text-2xl sm:text-3xl font-bold font-mono text-text-primary tracking-tight">
           {formattedValue}
         </span>
         {suffix && (
-          <span className="text-xs font-semibold text-accent font-mono">
+          <span className="text-xs font-semibold text-accent">
             {suffix}
           </span>
         )}
       </div>
+      {(description || trend) && (
+        <div className="flex items-center justify-between text-xs text-text-muted pt-2 border-t border-white/5">
+          {description && <span className="truncate">{description}</span>}
+          {trend && (
+            <span className={`font-semibold flex-shrink-0 ml-2 ${trend > 0 ? 'text-success' : trend < 0 ? 'text-danger' : 'text-text-muted'}`}>
+              {trend > 0 ? '↑' : trend < 0 ? '↓' : '→'} {Math.abs(trend)}%
+            </span>
+          )}
+        </div>
+      )}
     </GlassCard>
   );
 }

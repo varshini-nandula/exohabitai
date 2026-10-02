@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { predictionAPI } from '../api/prediction';
 import { extractError } from '../api/client';
@@ -7,6 +8,28 @@ import HabitabilityGauge from '../components/HabitabilityGauge';
 import Tooltip from '../components/Tooltip';
 import ErrorState from '../components/ErrorState';
 import ImputationModal, { computeMissingFeatures } from '../components/ImputationModal';
+
+export const FIELD_HUMAN_NAMES = {
+  P_RADIUS: 'Planet Radius',
+  P_MASS: 'Planet Mass',
+  P_DENSITY: 'Planet Density',
+  P_TEMP_SURF: 'Surface Temperature',
+  P_PERIOD: 'Orbital Period',
+  P_SEMI_MAJOR_AXIS: 'Semi-Major Axis',
+  P_ECCENTRICITY: 'Eccentricity',
+  P_INCLINATION: 'Inclination',
+  P_HILL_SPHERE: 'Hill Sphere',
+  S_TEMPERATURE: 'Host Star Temperature',
+  S_LUMINOSITY: 'Host Star Luminosity',
+  S_METALLICITY: 'Host Star Metallicity',
+  S_MAG: 'Host Star Apparent Magnitude',
+  S_DISTANCE: 'Distance to Star',
+  S_MASS: 'Host Star Mass',
+  S_RADIUS: 'Host Star Radius',
+  S_AGE: 'Host Star Age',
+  S_LOG_G: 'Host Star Surface Gravity',
+};
+
 
 const EMPTY_FORM_STATE = {
   planet_name: '',
@@ -370,39 +393,39 @@ function rangeHint(field) {
 
 const COLUMN_DEFS = [
   {
-    label: 'Planet Dimensions',
+    label: 'Planetary Dimensions & Orbit',
     colorClass: 'text-primary',
     fields: [
-      { key: 'P_RADIUS',     label: 'Radius (R_Earth)' },
-      { key: 'P_MASS',       label: 'Mass (M_Earth)' },
-      { key: 'P_DENSITY',    label: 'Density (g/cm³)' },
-      { key: 'P_TEMP_SURF',  label: 'Surf Temp (K)' },
-      { key: 'P_HILL_SPHERE', label: 'Hill Sphere (AU)' },
-    ],
-  },
-  {
-    label: 'Orbital Mechanics',
-    colorClass: 'text-accent',
-    fields: [
+      { key: 'P_RADIUS',          label: 'Radius (R_Earth)' },
+      { key: 'P_MASS',            label: 'Mass (M_Earth)' },
+      { key: 'P_DENSITY',         label: 'Density (g/cm³)' },
+      { key: 'P_TEMP_SURF',       label: 'Surf Temp (K)' },
       { key: 'P_PERIOD',          label: 'Period (Days)' },
       { key: 'P_SEMI_MAJOR_AXIS', label: 'Semi-Major Axis (AU)' },
-      { key: 'P_ECCENTRICITY',    label: 'Eccentricity' },
-      { key: 'P_INCLINATION',     label: 'Inclination (°)' },
     ],
   },
   {
-    label: 'Stellar Attributes',
+    label: 'Orbital & System Dynamics',
+    colorClass: 'text-accent',
+    fields: [
+      { key: 'P_ECCENTRICITY',    label: 'Eccentricity' },
+      { key: 'P_INCLINATION',     label: 'Inclination (°)' },
+      { key: 'P_HILL_SPHERE',     label: 'Hill Sphere (AU)' },
+      { key: 'S_MAG',             label: 'Star Apparent Mag' },
+      { key: 'S_DISTANCE',        label: 'Distance (parsecs)' },
+      { key: 'S_AGE',             label: 'Star Age (Gyr)' },
+    ],
+  },
+  {
+    label: 'Host Star Physics',
     colorClass: 'text-highlight',
     fields: [
-      { key: 'S_TEMPERATURE', label: 'Star Temp (K)' },
-      { key: 'S_LUMINOSITY',  label: 'Luminosity (L_Sun)' },
-      { key: 'S_METALLICITY', label: 'Metallicity ([Fe/H])' },
-      { key: 'S_MAG',         label: 'Star Apparent Mag' },
-      { key: 'S_DISTANCE',    label: 'Distance (parsecs)' },
-      { key: 'S_MASS',        label: 'Star Mass (M_Sun)' },
-      { key: 'S_RADIUS',      label: 'Star Radius (R_Sun)' },
-      { key: 'S_AGE',         label: 'Star Age (Gyr)' },
-      { key: 'S_LOG_G',       label: 'Star Gravity (log g)' },
+      { key: 'S_TEMPERATURE',     label: 'Star Temp (K)' },
+      { key: 'S_LUMINOSITY',      label: 'Luminosity (L_Sun)' },
+      { key: 'S_METALLICITY',     label: 'Metallicity ([Fe/H])' },
+      { key: 'S_MASS',            label: 'Star Mass (M_Sun)' },
+      { key: 'S_RADIUS',          label: 'Star Radius (R_Sun)' },
+      { key: 'S_LOG_G',           label: 'Star Gravity (log g)' },
     ],
   },
 ];
@@ -527,12 +550,7 @@ export default function PredictPage() {
     markTouched(field);
   }, [runFieldValidation, markTouched]);
 
-  const handleBlur = useCallback((field) => {
-    markTouched(field);
-    runFieldValidation(field, undefined);  // placeholder — we'll read current value below
-  }, [markTouched, runFieldValidation]);
-
-  // We need the actual current value in handleBlur, so wrap it:
+  // We need the actual current value in blur validation:
   const handleFieldBlur = useCallback((field) => {
     markTouched(field);
     // Use functional state to read current value
@@ -569,11 +587,11 @@ export default function PredictPage() {
       } else {
         setErrorState({
           variant: 'generic',
-          message: res.data?.message || 'The telescope returned a telemetry error.',
+          message: res.data?.message || 'Prediction failed. Please try again.',
         });
       }
     } catch (err) {
-      console.error('Telemetry prediction error:', err);
+      console.error('Prediction error:', err);
       const extracted = extractError(err);
 
       let errorVariant = 'generic';
@@ -618,7 +636,7 @@ export default function PredictPage() {
       if (key !== 'planet_name' && formData[key] !== '' && isNaN(formData[key])) {
         setErrorState({
           variant: 'validation',
-          message: `Parameter "${key}" has an invalid numeric entry. Please verify.`,
+          message: `Parameter "${FIELD_HUMAN_NAMES[key] || key}" has an invalid numeric entry. Please verify.`,
         });
         return;
       }
@@ -642,88 +660,133 @@ export default function PredictPage() {
   const submitDisabled = loading || hasErrors;
 
   return (
-    <div className="site-container section-padding flex flex-col" style={{ gap: '56px' }}>
+    <div className="site-container section-padding flex flex-col gap-10 sm:gap-12">
       {/* PAGE HEADER */}
       <div className="page-header">
-        <span className="page-eyebrow text-primary">Observatory Telemetry Terminal</span>
-        <h1 className="font-mono">Habitability Classification</h1>
+        <span className="page-eyebrow text-primary">Habitability Prediction</span>
+        <h1>Predict Habitability</h1>
         <p>
-          Input your charted astronomical properties or deploy pre-loaded planetary configurations to predict core biological suitability scores.
+          Enter planet parameters or choose a preset to predict habitability. Leave fields blank for values you don't know.
         </p>
       </div>
 
       {/* QUICK PRESETS & FAMOUS EXPLORER */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
         {/* Presets */}
-        <GlassCard variant="raised" className="flex flex-col gap-6 p-9">
-          <span className="form-section-label text-accent" style={{ marginBottom: '0' }}>
-            Quick System Configurations
-          </span>
-          <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => applyPreset('earth')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
-              🌍 Earth-like
+        <GlassCard variant="raised" padding="lg" className="flex flex-col gap-6">
+          <div className="text-center pb-2 border-b border-white/5">
+            <h3 className="text-sm sm:text-base font-bold text-accent uppercase tracking-wider">
+              Quick Presets
+            </h3>
+            <p className="text-xs text-text-muted mt-1">
+              Select a planetary archetype to auto-fill parameters
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => applyPreset('earth')}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🌍</span> Earth-like
             </button>
-            <button type="button" onClick={() => applyPreset('superEarth')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
-              🪐 Super-Earth
+            <button
+              type="button"
+              onClick={() => applyPreset('superEarth')}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🪐</span> Super-Earth
             </button>
-            <button type="button" onClick={() => applyPreset('gasGiant')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
-              🌀 Gas Giant
+            <button
+              type="button"
+              onClick={() => applyPreset('gasGiant')}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🌀</span> Gas Giant
             </button>
-            <button type="button" onClick={() => applyPreset('lavaWorld')} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow">
-              🔥 Lava World
+            <button
+              type="button"
+              onClick={() => applyPreset('lavaWorld')}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🔥</span> Lava World
             </button>
           </div>
         </GlassCard>
 
         {/* Famous explorer */}
-        <GlassCard variant="raised" className="flex flex-col gap-6 p-9">
-          <span className="form-section-label text-highlight" style={{ marginBottom: '0' }}>
-            Sample Exoplanet Explorer
-          </span>
-          <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => applyPreset('kepler442b', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
-              🔭 Kepler-442b
+        <GlassCard variant="raised" padding="lg" className="flex flex-col gap-6">
+          <div className="text-center pb-2 border-b border-white/5">
+            <h3 className="text-sm sm:text-base font-bold text-highlight uppercase tracking-wider">
+              Famous Exoplanets
+            </h3>
+            <p className="text-xs text-text-muted mt-1">
+              Real observational benchmarks from space missions
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => applyPreset('kepler442b', true)}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>🔭</span> Kepler-442b
             </button>
-            <button type="button" onClick={() => applyPreset('trappist1e', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
-              ☄️ TRAPPIST-1e
+            <button
+              type="button"
+              onClick={() => applyPreset('trappist1e', true)}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>☄️</span> TRAPPIST-1e
             </button>
-            <button type="button" onClick={() => applyPreset('proximaCentaurib', true)} className="btn-secondary text-xs px-5 py-3 border-white/5 bg-white/5 flex-grow font-semibold">
-              📡 Proxima Centauri b
+            <button
+              type="button"
+              onClick={() => applyPreset('proximaCentaurib', true)}
+              className="btn-secondary text-xs sm:text-sm py-3 px-4 border-white/10 bg-white/5 hover:bg-white/10 flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer font-medium"
+            >
+              <span>📡</span> Proxima b
             </button>
           </div>
         </GlassCard>
       </section>
 
       {/* CORE FORM & RESULTS LAYOUT */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
         {/* Input Parameters Form */}
         <form onSubmit={handleSubmit} noValidate className="lg:col-span-8 flex flex-col gap-6">
-          <GlassCard glow={true} variant="raised" className="flex flex-col gap-8 p-10">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/5 pb-6 gap-3">
-              <span className="font-mono text-sm font-bold text-text-primary tracking-wide uppercase">
-                Telemetry Inputs
-              </span>
+          <GlassCard glow={true} variant="raised" padding="lg" className="flex flex-col gap-8 sm:gap-9">
+            <div className="flex flex-col sm:flex-row items-center justify-between border-b border-white/5 pb-6 gap-4 text-center sm:text-left">
+              <div>
+                <h2 className="text-base sm:text-lg md:text-xl font-bold text-text-primary tracking-wide uppercase">
+                  Planet Parameters
+                </h2>
+                <p className="text-xs text-text-muted mt-1">
+                  Enter physical, orbital, and stellar measurements to evaluate
+                </p>
+              </div>
               {/* Optional Archiving */}
               {isAuthenticated ? (
-                <label className="inline-flex items-center gap-2 cursor-pointer font-mono text-xs text-text-secondary select-none m-0">
+                <label className="inline-flex items-center gap-2.5 cursor-pointer text-xs text-text-secondary select-none m-0">
                   <input
                     type="checkbox"
                     checked={shouldStore}
                     onChange={(e) => setShouldStore(e.target.checked)}
                     className="w-4 h-4 rounded border-white/10 bg-white/5 focus:ring-primary accent-primary cursor-pointer outline-none"
                   />
-                  Log in rankings database archives
+                  Save prediction to my account (submits for ranking review)
                 </label>
               ) : (
-                <span className="font-mono text-[10px] text-text-muted">
-                  Guest mode. Login to save candidates.
+                <span className="text-xs text-text-muted">
+                  Guest mode — sign in to save predictions.
                 </span>
               )}
             </div>
 
             {/* Candidate name */}
-            <div className="flex flex-col">
-              <label htmlFor="planet_name">Planetary Candidate Name</label>
+            <div className="form-group">
+              <label htmlFor="planet_name" className="text-center sm:text-left font-semibold">
+                Planet Name
+              </label>
               <input
                 type="text"
                 id="planet_name"
@@ -735,12 +798,14 @@ export default function PredictPage() {
             </div>
 
             {/* THREE-COLUMN GRID FIELDS — data-driven */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-9 lg:gap-10 pt-2">
               {COLUMN_DEFS.map((col) => (
-                <div key={col.label} className="flex flex-col gap-7">
-                  <span className={`form-section-label ${col.colorClass}`}>
-                    {col.label}
-                  </span>
+                <div key={col.label} className="flex flex-col gap-6 sm:gap-7">
+                  <div className="text-center pb-3 border-b border-white/10 mb-1">
+                    <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider block ${col.colorClass}`}>
+                      {col.label}
+                    </span>
+                  </div>
                   {col.fields.map((f) => (
                     <ValidatedInput
                       key={f.key}
@@ -772,7 +837,7 @@ export default function PredictPage() {
             <button
               type="submit"
               disabled={submitDisabled}
-              className="btn-primary w-full mt-6 font-mono shadow-[0_0_20px_rgba(79,140,255,0.2)]"
+              className="btn-primary w-full mt-4 shadow-[0_0_20px_rgba(79,140,255,0.25)]"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -780,7 +845,7 @@ export default function PredictPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Calculating Orbital Telemetry...
+                  Analyzing planet...
                 </span>
               ) : hasErrors ? (
                 <span className="flex items-center justify-center gap-2">
@@ -790,14 +855,14 @@ export default function PredictPage() {
                   Fix Validation Errors to Predict
                 </span>
               ) : (
-                'Run Habitability Predictor'
+                'Predict Habitability'
               )}
             </button>
           </GlassCard>
         </form>
 
-        {/* Prediction Results Board */}
-        <div className="lg:col-span-4 flex flex-col gap-6 w-full">
+        {/* Prediction Results Board — Sticky layout */}
+        <div className="lg:col-span-4 flex flex-col gap-6 w-full lg:sticky lg:top-24 self-start">
           {/* Active Error Displays */}
           {errorState && (
             <ErrorState
@@ -814,7 +879,7 @@ export default function PredictPage() {
               hoverable={false}
               animate={true}
               variant="raised"
-              className={`flex flex-col gap-7 relative border-t-4 overflow-hidden p-10 ${result.habitability
+              className={`flex flex-col gap-7 relative border-t-4 overflow-hidden p-7 sm:p-9 md:p-10 ${result.habitability
                 ? 'border-t-success border-success/15'
                 : 'border-t-danger border-danger/15'
                 }`}
@@ -825,11 +890,11 @@ export default function PredictPage() {
                   }`}
               />
 
-              <div className="text-center font-mono border-b border-white/5 pb-6">
+              <div className="text-center border-b border-white/5 pb-6">
                 <span className="text-[10px] tracking-[0.25em] text-text-secondary uppercase font-bold">
-                  Telemetry Evaluation Result
+                  Prediction Result
                 </span>
-                <h3 className="text-lg font-bold text-text-primary mt-3 truncate">
+                <h3 className="text-xl font-bold text-text-primary mt-3 truncate">
                   {result.planet_name || formData.planet_name}
                 </h3>
               </div>
@@ -840,20 +905,20 @@ export default function PredictPage() {
               {/* Classification label */}
               <div className="text-center mt-3 flex flex-col gap-3">
                 <span
-                  className={`text-xl font-bold font-mono uppercase tracking-wide ${result.habitability ? 'text-success' : 'text-danger'
+                  className={`text-xl font-bold uppercase tracking-wide ${result.habitability ? 'text-success' : 'text-danger'
                     }`}
                 >
                   {result.habitability ? 'Potentially Habitable' : 'Non-Habitable'}
                 </span>
-                <span className="text-xs text-text-secondary font-mono">
+                <span className="text-xs text-text-secondary">
                   Probability: {(result.habitability_probability * 100).toFixed(1)}% — Threshold: 50%
                 </span>
               </div>
 
               {/* Warnings (if any) */}
               {result.warnings && result.warnings.length > 0 && (
-                <div className="text-[10px] text-warning bg-warning/5 border border-warning/10 p-4 rounded-lg font-mono leading-relaxed mt-3">
-                  <div className="font-semibold uppercase tracking-wider mb-1.5">⚠️ Classifier Telemetry Warnings:</div>
+                <div className="text-[10px] text-warning bg-warning/5 border border-warning/10 p-4 rounded-lg leading-relaxed mt-3">
+                  <div className="font-semibold uppercase tracking-wider mb-1.5">⚠️ Notes:</div>
                   <ul className="list-disc pl-4 space-y-0.5">
                     {result.warnings.map((warn, i) => (
                       <li key={i}>{warn}</li>
@@ -862,47 +927,74 @@ export default function PredictPage() {
                 </div>
               )}
 
-              {/* Imputation & Calculation Details */}
-              {result.fill_info && (
-                <div className="text-[11px] text-text-secondary bg-white/5 border border-white/5 p-4 rounded-lg font-mono leading-relaxed mt-2 space-y-2">
-                  <div className="flex justify-between border-b border-white/5 pb-1.5">
-                    <span className="text-text-muted">Imputation Strategy:</span>
-                    <span className="font-bold text-text-primary capitalize">
-                      {result.fill_info.strategy_used === 'earth' && '🌍 Earth-like Defaults'}
-                      {result.fill_info.strategy_used === 'non_habitable' && '📊 Dataset Averages'}
-                      {result.fill_info.strategy_used === 'zeros' && '0️⃣ Zeros'}
-                      {result.fill_info.strategy_used === 'median' && '📊 Dataset Averages'}
-                    </span>
+              {/* Storage confirmation / warning */}
+              {result.stored === true && (
+                <div className="text-xs text-success bg-success/10 border border-success/20 p-3.5 rounded-lg text-center font-medium">
+                  ✅ Prediction saved to your account and submitted for moderation review.
+                </div>
+              )}
+              {result.stored === false && (
+                <div className="text-xs text-warning bg-warning/10 border border-warning/25 p-3.5 rounded-lg text-center font-medium leading-relaxed">
+                  ⚠️ Prediction calculated, but not saved to account: {result.storage_message || 'Planet name already exists in database.'}
+                </div>
+              )}
+
+              {/* Guest CTA — Sign in to add planet to database */}
+              {!isAuthenticated && (
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/15 via-space-800/80 to-accent/10 border border-primary/25 flex flex-col items-center gap-3 text-center mt-2 shadow-lg">
+                  <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-base">
+                    🪐
                   </div>
-                  {result.fill_info.auto_derived && result.fill_info.auto_derived.length > 0 && (
-                    <div>
-                      <div className="text-text-muted mb-1.5 font-semibold">
-                        ⚙️ Calculated Features ({result.fill_info.auto_derived.length}):
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {result.fill_info.auto_derived.map((feat) => (
-                          <span
-                            key={feat}
-                            className="px-1.5 py-0.5 rounded bg-success/10 border border-success/20 text-success text-[10px]"
-                          >
-                            {feat}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-text-primary">
+                      Save to Observatory Database
+                    </h4>
+                    <p className="text-xs text-text-secondary mt-1 leading-relaxed max-w-xs">
+                      Sign in to permanently catalog <strong>{result.planet_name || formData.planet_name}</strong> in the database and submit it for public rankings.
+                    </p>
+                  </div>
+                  <Link
+                    to="/login?redirect=/predict"
+                    className="btn-primary w-full text-xs py-2.5 px-4 shadow-[0_0_20px_rgba(79,140,255,0.3)] font-semibold justify-center mt-1"
+                  >
+                    Sign In to Add Planet
+                  </Link>
+                </div>
+              )}
+
+              {/* Next-Step Journey CTAs */}
+              <div className="flex flex-col gap-2.5 pt-4 border-t border-white/5">
+                <div className="flex gap-2">
+                  <Link
+                    to="/rankings"
+                    className="btn-secondary flex-1 text-center text-xs py-2.5 px-3 border-white/10 bg-white/5 hover:bg-white/10 justify-center"
+                  >
+                    📊 Rankings
+                  </Link>
+                  {isAuthenticated && (
+                    <Link
+                      to="/history"
+                      className="btn-secondary flex-1 text-center text-xs py-2.5 px-3 border-white/10 bg-white/5 hover:bg-white/10 justify-center"
+                    >
+                      📁 My Predictions
+                    </Link>
                   )}
                 </div>
-              )}
-
-              {/* Storage confirmation (if saved) */}
-              {result.stored && (
-                <div className="text-[10px] text-success bg-success/5 border border-success/10 p-4 rounded-lg font-mono text-center">
-                  ✅ Telemetry logged successfully inside exoplanet archives rankings.
-                </div>
-              )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResult(null);
+                    setErrorState(null);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="text-xs text-text-muted hover:text-text-primary py-1.5 transition-colors text-center cursor-pointer"
+                >
+                  Evaluate Another Candidate ↺
+                </button>
+              </div>
 
               {/* Academic Disclaimer */}
-              <div className="text-[9px] text-text-muted font-mono leading-relaxed border-t border-white/5 pt-6 text-justify select-none" style={{ lineHeight: '1.7' }}>
+              <div className="text-[10px] text-text-muted leading-relaxed border-t border-white/5 pt-4 text-justify select-none" style={{ lineHeight: '1.7' }}>
                 <strong>Science Disclaimer:</strong> Predictions are generated by a machine learning model trained on historical exoplanet datasets and should be interpreted as exploratory estimates rather than scientific confirmation of habitability.
               </div>
             </GlassCard>
@@ -918,11 +1010,11 @@ export default function PredictPage() {
               <svg className="w-12 h-12 opacity-30 animate-pulse mb-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
               </svg>
-              <h4 className="font-mono text-sm font-bold text-text-primary tracking-wide uppercase mb-4">
-                Awaiting Telemetry
+              <h4 className="text-sm font-bold text-text-primary tracking-wide uppercase mb-4">
+                Ready for Analysis
               </h4>
-              <p className="text-xs text-text-secondary max-w-[220px]" style={{ lineHeight: '1.7' }}>
-                Configure planetary properties and initiate the classifier to compile scientific evaluations.
+              <p className="text-xs text-text-secondary max-w-[240px]" style={{ lineHeight: '1.7' }}>
+                Enter planet parameters or choose a preset, then click "Predict Habitability" to see results.
               </p>
             </GlassCard>
           )}

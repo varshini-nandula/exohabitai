@@ -144,10 +144,10 @@ export default function ImputationModal({
               className="p-0 border-warning/20 overflow-hidden"
             >
               {/* Header */}
-              <div className="flex items-start gap-5 p-8 pb-0">
-                <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center">
+              <div className="flex items-start gap-5 p-6 sm:p-8 pb-0">
+                <div className="flex-shrink-0 w-12 sm:w-14 h-12 sm:h-14 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center">
                   <svg
-                    className="w-7 h-7 text-warning"
+                    className="w-6 sm:w-7 h-6 sm:h-7 text-warning"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -161,24 +161,24 @@ export default function ImputationModal({
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold font-mono text-text-primary tracking-tight">
-                    Incomplete Telemetry Data
+                  <h3 className="text-lg sm:text-xl font-bold text-text-primary tracking-tight">
+                    Missing Data
                   </h3>
                   <p className="text-sm text-text-secondary mt-2 leading-relaxed">
                     You left{' '}
                     <span className="text-primary font-semibold">
                       {needsStrategy.length}
                     </span>{' '}
-                    telemetry features unfilled. Choose a strategy to fill these missing parameters.
+                    fields unfilled. Choose how to fill these missing values.
                   </p>
                 </div>
               </div>
 
               {/* Feature breakdown */}
-              <div className="px-8 pt-6 pb-2 space-y-4">
+              <div className="px-6 sm:px-8 pt-6 pb-2 space-y-4">
                 {/* Auto-derivable */}
                 {derivable.length > 0 && (
-                  <div className="p-4 rounded-xl bg-success/5 border border-success/10">
+                  <div className="p-5 rounded-xl bg-success/5 border border-success/15">
                     <div className="flex items-center gap-2 mb-2">
                       <svg
                         className="w-4 h-4 text-success"
@@ -193,14 +193,14 @@ export default function ImputationModal({
                           d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                      <span className="text-xs font-mono font-bold text-success uppercase tracking-wider">
+                      <span className="text-xs font-bold text-success uppercase tracking-wider">
                         {derivable.length} Features Auto-Calculated
                       </span>
                     </div>
-                    <p className="text-[11px] text-text-secondary leading-relaxed">
+                    <p className="text-xs text-text-secondary leading-relaxed">
                       These will be derived from your inputs using astrophysical
                       formulas:{' '}
-                      <span className="text-text-muted">
+                      <span className="text-text-muted font-mono text-[11px]">
                         {derivable
                           .map((f) => FEATURE_LABELS[f] || f)
                           .join(', ')}
@@ -211,7 +211,7 @@ export default function ImputationModal({
 
                 {/* Needs strategy */}
                 {needsStrategy.length > 0 && (
-                  <div className="p-4 rounded-xl bg-warning/5 border border-warning/10">
+                  <div className="p-5 rounded-xl bg-warning/5 border border-warning/15">
                     <div className="flex items-center gap-2 mb-2">
                       <svg
                         className="w-4 h-4 text-warning"
@@ -226,13 +226,13 @@ export default function ImputationModal({
                           d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                         />
                       </svg>
-                      <span className="text-xs font-mono font-bold text-warning uppercase tracking-wider">
+                      <span className="text-xs font-bold text-warning uppercase tracking-wider">
                         {needsStrategy.length} Features Need Filling
                       </span>
                     </div>
-                    <p className="text-[11px] text-text-secondary leading-relaxed">
+                    <p className="text-xs text-text-secondary leading-relaxed">
                       Cannot be derived from your inputs:{' '}
-                      <span className="text-text-muted">
+                      <span className="text-text-muted font-mono text-[11px]">
                         {needsStrategy
                           .map((f) => FEATURE_LABELS[f] || f)
                           .join(', ')}
@@ -243,31 +243,31 @@ export default function ImputationModal({
               </div>
 
               {/* Strategy Selection */}
-              <div className="p-8 pt-4">
-                <span className="block text-xs font-mono font-bold text-text-secondary uppercase tracking-wider mb-4">
-                  Choose Fill Strategy
+              <div className="p-6 sm:p-8 pt-4">
+                <span className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-4">
+                  Choose a method
                 </span>
 
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                   {STRATEGIES.map((strategy) => (
                     <button
                       key={strategy.key}
                       onClick={() => onSelectStrategy(strategy.key)}
-                      className={`w-full text-left p-5 rounded-xl border transition-all duration-200 cursor-pointer group
+                      className={`w-full text-left p-5 sm:p-6 rounded-xl border transition-all duration-200 cursor-pointer group
                         ${strategy.borderClass} ${strategy.bgClass}
-                        bg-transparent`}
+                        bg-white/[0.02] hover:bg-white/[0.04]`}
                     >
-                      <div className="flex items-start gap-4">
-                        <span className="text-2xl flex-shrink-0 mt-0.5">
+                      <div className="flex items-start gap-4 sm:gap-5">
+                        <span className="text-2xl sm:text-3xl flex-shrink-0 mt-0.5">
                           {strategy.icon}
                         </span>
                         <div className="flex-1 min-w-0">
                           <span
-                            className={`text-sm font-bold font-mono block ${strategy.colorClass}`}
+                            className={`text-sm sm:text-base font-bold block ${strategy.colorClass}`}
                           >
                             {strategy.label}
                           </span>
-                          <span className="text-xs text-text-secondary mt-1 block leading-relaxed">
+                          <span className="text-xs text-text-secondary mt-1.5 block leading-relaxed">
                             {strategy.description}
                           </span>
                         </div>
@@ -291,15 +291,15 @@ export default function ImputationModal({
               </div>
 
               {/* Footer */}
-              <div className="px-8 pb-8 pt-0 flex items-center justify-between border-t border-white/5 mt-2 pt-5">
+              <div className="px-6 sm:px-8 pb-6 sm:pb-8 pt-4 flex items-center justify-between border-t border-white/5 mt-2">
                 <button
                   onClick={onClose}
-                  className="btn-ghost text-text-muted hover:text-text-primary text-xs font-mono"
+                  className="btn-ghost text-text-muted hover:text-text-primary text-xs"
                 >
                   ← Cancel & Edit Parameters
                 </button>
-                <span className="text-[10px] text-text-muted font-mono">
-                  Strategy affects unfilled features only
+                <span className="text-[10px] text-text-muted">
+                  Only affects unfilled fields
                 </span>
               </div>
             </GlassCard>

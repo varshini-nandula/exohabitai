@@ -174,9 +174,9 @@ class TestStatsEndpoint:
         data = resp.get_json()["data"]
         assert data["total_planets"] == 0
 
-    def test_stats_after_storing_planet(self, client, earth_like_payload):
+    def test_stats_after_storing_planet(self, client, auth_headers, earth_like_payload):
         """After storing a planet, stats should reflect it."""
-        client.post("/predict_and_store_batch", json=[earth_like_payload])
+        client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         resp = client.get("/stats")
         data = resp.get_json()["data"]
         assert data["total_planets"] == 1

@@ -17,7 +17,7 @@ WHAT FAILURES WOULD INDICATE:
 """
 
 import pytest
-from tests.conftest import register_user, login_user
+from tests.conftest import register_user, login_user, get_auth_header
 
 
 # ===========================================================================
@@ -27,13 +27,13 @@ from tests.conftest import register_user, login_user
 class TestBatchSuccess:
     """Happy-path batch prediction and storage tests."""
 
-    def test_batch_predict_and_store(self, client, earth_like_payload, gas_giant_payload):
+    def test_batch_predict_and_store(self, client, auth_headers, earth_like_payload, gas_giant_payload):
         """
         Two valid planets → both predicted AND stored.
         Verifies the combined predict+store workflow.
         """
         batch = [earth_like_payload, gas_giant_payload]
-        resp = client.post("/predict_and_store_batch", json=batch)
+        resp = client.post("/predict_and_store_batch", json=batch, headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -48,22 +48,27 @@ class TestBatchSuccess:
             assert 0.0 <= r["habitability_probability"] <= 1.0
             assert r["habitability"] in (0, 1)
 
-    def test_batch_results_have_planet_names(self, client, earth_like_payload,
+    def test_batch_results_have_planet_names(self, client, auth_headers, earth_like_payload,
                                               gas_giant_payload):
         """Each batch result must identify the planet by name."""
         batch = [earth_like_payload, gas_giant_payload]
-        resp = client.post("/predict_and_store_batch", json=batch)
+        resp = client.post("/predict_and_store_batch", json=batch, headers=auth_headers)
         results = resp.get_json()["data"]
         names = {r["planet_name"] for r in results}
         assert "Earth-Twin-Test" in names
         assert "HotJupiter-Test" in names
 
-    def test_single_item_batch(self, client, earth_like_payload):
+    def test_single_item_batch(self, client, auth_headers, earth_like_payload):
         """Single-item array should work (edge case for batch logic)."""
-        resp = client.post("/predict_and_store_batch", json=[earth_like_payload])
+        resp = client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         assert resp.status_code == 200
         results = resp.get_json()["data"]
         assert len(results) == 1
+
+    def test_unauthenticated_batch_rejected(self, client, earth_like_payload):
+        """Unauthenticated request to /predict_and_store_batch must be rejected with 401."""
+        resp = client.post("/predict_and_store_batch", json=[earth_like_payload])
+        assert resp.status_code == 401
 
 
 # ===========================================================================
@@ -73,33 +78,33 @@ class TestBatchSuccess:
 class TestBatchStorage:
     """Verify that batch predictions are actually written to the database."""
 
-    def test_stored_planets_appear_in_stats(self, client, earth_like_payload):
+    def test_stored_planets_appear_in_stats(self, client, auth_headers, earth_like_payload):
         """After batch storage, /stats should reflect the new records."""
         # Get baseline
         pre_stats = client.get("/stats").get_json()["data"]
         pre_total = pre_stats["total_planets"]
 
         # Store one planet
-        client.post("/predict_and_store_batch", json=[earth_like_payload])
+        client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
 
         # Check updated stats
         post_stats = client.get("/stats").get_json()["data"]
         assert post_stats["total_planets"] == pre_total + 1
 
-    def test_stored_planets_appear_in_rank(self, client, earth_like_payload):
+    def test_stored_planets_appear_in_rank(self, client, auth_headers, earth_like_payload):
         """After batch storage and approval, the planet appears in rankings."""
         from tests.conftest import approve_all_planets
-        client.post("/predict_and_store_batch", json=[earth_like_payload])
+        client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         approve_all_planets()
         resp = client.get("/rank")
         planets = resp.get_json()["data"]["planets"]
         names = [p["planet_name"] for p in planets]
         assert "Earth-Twin-Test" in names
 
-    def test_duplicate_planet_not_re_stored(self, client, earth_like_payload):
+    def test_duplicate_planet_not_re_stored(self, client, auth_headers, earth_like_payload):
         """Storing the same planet twice → second attempt marked as not stored."""
-        client.post("/predict_and_store_batch", json=[earth_like_payload])
-        resp = client.post("/predict_and_store_batch", json=[earth_like_payload])
+        client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
+        resp = client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         results = resp.get_json()["data"]
         assert results[0]["stored"] is False
         assert "already exists" in results[0]["storage_message"]
@@ -112,15 +117,15 @@ class TestBatchStorage:
 class TestBatchResponseSchema:
     """Verify batch response schema matches the API contract."""
 
-    def test_response_is_array(self, client, earth_like_payload):
+    def test_response_is_array(self, client, auth_headers, earth_like_payload):
         """Batch endpoint always returns an array of results."""
-        resp = client.post("/predict_and_store_batch", json=[earth_like_payload])
+        resp = client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         results = resp.get_json()["data"]
         assert isinstance(results, list)
 
-    def test_each_result_has_storage_info(self, client, earth_like_payload):
+    def test_each_result_has_storage_info(self, client, auth_headers, earth_like_payload):
         """Each batch result includes stored and storage_message."""
-        resp = client.post("/predict_and_store_batch", json=[earth_like_payload])
+        resp = client.post("/predict_and_store_batch", json=[earth_like_payload], headers=auth_headers)
         result = resp.get_json()["data"][0]
         assert "stored" in result
         assert "storage_message" in result
@@ -138,23 +143,24 @@ class TestBatchValidation:
     should not corrupt valid items in the same batch.
     """
 
-    def test_empty_array(self, client):
+    def test_empty_array(self, client, auth_headers):
         """Empty array → 400."""
-        resp = client.post("/predict_and_store_batch", json=[])
+        resp = client.post("/predict_and_store_batch", json=[], headers=auth_headers)
         assert resp.status_code == 400
 
-    def test_non_array_payload(self, client, earth_like_payload):
+    def test_non_array_payload(self, client, auth_headers, earth_like_payload):
         """Single object (not array) → 400. Batch requires array."""
-        resp = client.post("/predict_and_store_batch", json=earth_like_payload)
+        resp = client.post("/predict_and_store_batch", json=earth_like_payload, headers=auth_headers)
         assert resp.status_code == 400
 
-    def test_no_json_body(self, client):
+    def test_no_json_body(self, client, auth_headers):
         """No JSON body → 400."""
         resp = client.post("/predict_and_store_batch",
-                           data="not json", content_type="application/json")
+                           data="not json", content_type="application/json",
+                           headers=auth_headers)
         assert resp.status_code == 400
 
-    def test_batch_with_invalid_item(self, client, earth_like_payload):
+    def test_batch_with_invalid_item(self, client, auth_headers, earth_like_payload):
         """
         One invalid item in a batch → whole batch rejected.
 
@@ -163,13 +169,13 @@ class TestBatchValidation:
         """
         invalid = {"planet_name": "bad", "P_MASS": -5.0}
         batch = [earth_like_payload, invalid]
-        resp = client.post("/predict_and_store_batch", json=batch)
+        resp = client.post("/predict_and_store_batch", json=batch, headers=auth_headers)
         assert resp.status_code == 400
 
-    def test_batch_with_empty_item(self, client, earth_like_payload):
+    def test_batch_with_empty_item(self, client, auth_headers, earth_like_payload):
         """Empty object in batch → validation fails."""
         batch = [earth_like_payload, {}]
-        resp = client.post("/predict_and_store_batch", json=batch)
+        resp = client.post("/predict_and_store_batch", json=batch, headers=auth_headers)
         assert resp.status_code == 400
 
 
@@ -185,7 +191,7 @@ class TestBatchConsistency:
     prediction path, results will diverge — a form of train/serve skew.
     """
 
-    def test_batch_matches_single_prediction(self, client, earth_like_payload):
+    def test_batch_matches_single_prediction(self, client, auth_headers, earth_like_payload):
         """
         Prediction from /predict must match /predict_and_store_batch.
 
@@ -198,7 +204,7 @@ class TestBatchConsistency:
         # Batch prediction (different planet name to avoid DB duplicate)
         batch_payload = earth_like_payload.copy()
         batch_payload["planet_name"] = "Earth-Twin-Batch"
-        batch_resp = client.post("/predict_and_store_batch", json=[batch_payload])
+        batch_resp = client.post("/predict_and_store_batch", json=[batch_payload], headers=auth_headers)
         batch_prob = batch_resp.get_json()["data"][0]["habitability_probability"]
 
         # Results should be identical (same input → same output)

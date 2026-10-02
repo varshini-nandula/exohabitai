@@ -75,11 +75,18 @@ jwt.init_app(app)
 from auth import auth_bp  # noqa: E402
 app.register_blueprint(auth_bp)
 
+# Register admin blueprint (control plane)
+from admin import admin_bp  # noqa: E402
+app.register_blueprint(admin_bp)
+
 from cli import register_cli_commands  # noqa: E402
 register_cli_commands(app)
 
 # Import models so SQLAlchemy registers them before create_all()
-from models import User, UserRole, Exoplanet, PlanetStatus, RetrainingLog  # noqa: E402
+from models import (  # noqa: E402
+    User, UserRole, Exoplanet, PlanetStatus, RetrainingLog,
+    TrainingDataset, DatasetStatus, ModelVersion,
+)
 from auth.decorators import admin_required, get_current_user  # noqa: E402
 
 # Log JWT config warnings
@@ -229,6 +236,14 @@ def _check_rate_limit() -> bool:
     """Return True if the request is allowed, False if rate-limited."""
     ip = request.remote_addr or "unknown"
     now = _monotime()
+
+    # Periodic cleanup to prevent unbounded memory growth
+    if len(_rate_limit_store) > 500:
+        cutoff = now - 60.0
+        keys_to_remove = [k for k, t in _rate_limit_store.items() if t < cutoff]
+        for k in keys_to_remove:
+            _rate_limit_store.pop(k, None)
+
     last = _rate_limit_store.get(ip, 0.0)
     # Read from app.config so TestConfig overrides take effect
     limit_seconds = app.config.get("RATE_LIMIT_SECONDS", Config.RATE_LIMIT_SECONDS)
@@ -351,7 +366,27 @@ VALID_IMPUTATION_STRATEGIES = {"median", "earth", "zeros", "non_habitable"}
 
 with app.app_context():
     db.create_all()
-    logger.info("Database tables ready (exoplanets, retraining_logs, users)")
+
+    # Ensure existing SQLite tables have all required columns (e.g. rejection_reason)
+    try:
+        engine = db.engine
+        if engine.name == "sqlite":
+            with engine.connect() as conn:
+                res = conn.execute(db.text("PRAGMA table_info(exoplanets)")).fetchall()
+                col_names = {row[1] for row in res}
+                if "rejection_reason" not in col_names and len(col_names) > 0:
+                    conn.execute(db.text("ALTER TABLE exoplanets ADD COLUMN rejection_reason TEXT"))
+                    conn.commit()
+                    logger.info("Auto-migrated exoplanets table: added rejection_reason column")
+    except Exception as exc:
+        logger.warning("Startup schema verification warning: %s", exc)
+
+    logger.info("Database tables ready (exoplanets, retraining_logs, users, "
+                "training_datasets, model_versions)")
+
+    # Seed v1.0 model version if the registry is empty
+    from admin.services import seed_initial_model_version
+    seed_initial_model_version(MODEL_VERSION, Config.MODEL_PATH)
 
     # ── Startup stale-data check ─────────────────────────────────────
     stale_count = (
@@ -1069,12 +1104,20 @@ def predict_and_store():
 
 # ---- PREDICT AND STORE BATCH (Task 7 — bulk insert optimization) ----
 @app.route("/predict_and_store_batch", methods=["POST"])
+@jwt_required()
 def predict_and_store_batch():
     """
     Optimised batch predict-and-store: validates all items, runs batch
     prediction, and commits all new rows in a single DB transaction.
+    Requires authentication to attribute submissions to the user.
     """
     try:
+        # Identify the submitting user for ownership tracking.
+        try:
+            current_user_id = int(get_jwt_identity())
+        except (TypeError, ValueError):
+            current_user_id = None
+
         payload = request.get_json(silent=True)
         if payload is None:
             return api_response("error", "Request body must be valid JSON", code=400)
@@ -1142,6 +1185,7 @@ def predict_and_store_batch():
                     model_version=MODEL_VERSION,
                     raw_input_json=json.dumps(item, default=str),
                     is_user_generated=True,
+                    created_by_user_id=current_user_id,
                     **feature_kwargs,
                 )
                 db.session.add(planet)
@@ -1399,6 +1443,17 @@ def stats():
             .count()
         )
 
+        active_model = ModelVersion.query.filter_by(is_active=True).first()
+        active_model_dict = active_model.to_dict() if active_model else {
+            "version": MODEL_VERSION,
+            "accuracy": None,
+            "f1_score": None,
+            "roc_auc": None,
+            "pr_auc": None,
+            "precision": None,
+            "recall": None,
+        }
+
         return api_response(
             "success",
             "Database statistics retrieved",
@@ -1413,6 +1468,7 @@ def stats():
                 "pending": pending,
                 "rejected": rejected,
                 "threshold": Config.THRESHOLD,
+                "active_model": active_model_dict,
             },
         )
 
@@ -1428,9 +1484,10 @@ def my_planets():
     """
     Return the submissions created by the authenticated user.
 
-    Powers the frontend History page: each entry includes the moderation
-    status (pending / approved / rejected) and the prediction result so the
-    user can track what they submitted and whether it has been approved.
+    Powers the frontend Dashboard & History: each entry includes the moderation
+    status (pending / approved / rejected), rejection reason (if rejected),
+    stored physical features, and prediction result so the user can track what
+    they submitted and inspect their candidate details.
     """
     try:
         try:
@@ -1438,12 +1495,29 @@ def my_planets():
         except (TypeError, ValueError):
             return api_response("error", "Invalid user identity", code=401)
 
-        planets = (
+        query = (
             Exoplanet.query
             .filter(Exoplanet.created_by_user_id == current_user_id)
             .order_by(Exoplanet.created_at.desc())
-            .all()
         )
+
+        total_count = query.count()
+
+        # Optional pagination support
+        page = request.args.get("page", type=int)
+        per_page = request.args.get("per_page", type=int)
+        limit = request.args.get("limit", type=int)
+
+        if page is not None and per_page is not None:
+            if page < 1 or per_page < 1:
+                return api_response("error", "page and per_page must be positive integers", code=400)
+            planets = query.paginate(page=page, per_page=per_page, error_out=False).items
+        elif limit is not None:
+            if limit < 1:
+                return api_response("error", "limit must be a positive integer", code=400)
+            planets = query.limit(limit).all()
+        else:
+            planets = query.all()
 
         entries = [
             {
@@ -1455,8 +1529,13 @@ def my_planets():
                     if p.habitability_probability is not None else None
                 ),
                 "status": p.status,
+                "rejection_reason": p.rejection_reason,
                 "model_version": p.model_version,
                 "created_at": p.created_at.isoformat() if p.created_at else None,
+                "features": {
+                    feat: getattr(p, feat, None)
+                    for feat in Exoplanet.STORED_FEATURES
+                },
             }
             for p in planets
         ]
@@ -1464,7 +1543,11 @@ def my_planets():
         return api_response(
             "success",
             f"Retrieved {len(entries)} submission(s)",
-            {"count": len(entries), "planets": entries},
+            {
+                "count": len(entries),
+                "total_count": total_count,
+                "planets": entries,
+            },
         )
 
     except Exception as exc:
@@ -1474,7 +1557,9 @@ def my_planets():
 
 # ---- TRIGGER RETRAINING (Tasks 1,2,3,4,6 — async, validated, audited) ----
 
-def _run_retraining_background(reason: str, requested_by: str):
+def _run_retraining_background(reason: str, requested_by: str,
+                               additional_csv_path: str = None,
+                               dataset_id: int = None):
     """
     Background worker that performs the actual retraining.
 
@@ -1482,10 +1567,12 @@ def _run_retraining_background(reason: str, requested_by: str):
     Uses _retrain_lock to prevent concurrent runs and updates
     _retrain_status so /retraining_status can report progress.
 
-    Task 2: Compares new-model F1/ROC-AUC against the current model.
-             Only replaces the .pkl if the new model meets the tolerance.
-    Task 3: Logs every run (success / rejected / failed) to RetrainingLog.
-    Task 4: Records the dataset version hash for traceability.
+    Supports dataset-driven retraining:
+        - If additional_csv_path is provided, trains on planetsdata.csv + CSV.
+        - If omitted, trains on planetsdata.csv only (baseline retrain).
+        - Does NOT read from the Exoplanet prediction table.
+
+    After each run, creates a ModelVersion record in the registry.
     """
     global pipeline, PIPELINE_INPUT_COLUMNS, MODEL_VERSION
 
@@ -1494,10 +1581,9 @@ def _run_retraining_background(reason: str, requested_by: str):
     previous_version = MODEL_VERSION
 
     try:
-        from retrain_pipeline import retrain
+        from retrain_pipeline import retrain, retrain_from_dataset
 
-        # --- Capture current model's F1 for comparison (Task 2) ---
-        # We read the last *successful* retraining log to get old F1.
+        # --- Capture current model's F1 for comparison ---
         old_f1 = None
         old_roc = None
         with app.app_context():
@@ -1511,8 +1597,13 @@ def _run_retraining_background(reason: str, requested_by: str):
                 old_f1 = last_success.f1_score
                 old_roc = last_success.roc_auc
 
-        # --- Run the actual retraining ---
-        result = retrain(dry_run=False)
+        # --- Run dataset-driven retraining ---
+        if additional_csv_path:
+            result = retrain_from_dataset(
+                additional_csv_path=additional_csv_path, dry_run=False,
+            )
+        else:
+            result = retrain(dry_run=False)
 
         new_metrics = result.get("metrics", {})
         new_f1 = new_metrics.get("f1")
@@ -1561,6 +1652,30 @@ def _run_retraining_background(reason: str, requested_by: str):
                     db.session.add(log_entry)
                     db.session.commit()
 
+                    # Create a rejected ModelVersion entry for audit trail
+                    from admin.services import get_next_model_version
+                    rejected_version = get_next_model_version()
+                    mv = ModelVersion(
+                        version=rejected_version,
+                        accuracy=new_metrics.get("accuracy"),
+                        precision=new_metrics.get("precision"),
+                        recall=new_metrics.get("recall"),
+                        f1_score=new_f1,
+                        roc_auc=new_roc,
+                        pr_auc=new_metrics.get("pr_auc"),
+                        dataset_version=DATASET_VERSION,
+                        training_dataset_id=dataset_id,
+                        retraining_log_id=log_entry.id,
+                        is_active=False,
+                        created_by=requested_by,
+                        notes=(
+                            f"Rejected — F1 {new_f1:.4f} below threshold "
+                            f"(current: {old_f1:.4f}, tolerance: {tolerance})"
+                        ),
+                    )
+                    db.session.add(mv)
+                    db.session.commit()
+
                     _retrain_status["last_result"] = {
                         "status": "rejected",
                         "message": "New model did not meet performance threshold. Old model retained.",
@@ -1578,7 +1693,7 @@ def _run_retraining_background(reason: str, requested_by: str):
 
             logger.info("Pipeline hot-reloaded — new version: %s", MODEL_VERSION)
 
-            # --- Task 3: Log the successful run ---
+            # --- Log the successful run ---
             log_entry = RetrainingLog(
                 status="success",
                 model_version=new_version,
@@ -1597,9 +1712,34 @@ def _run_retraining_background(reason: str, requested_by: str):
             db.session.add(log_entry)
             db.session.commit()
 
+            # --- Create ModelVersion in registry ---
+            from admin.services import get_next_model_version
+            next_ver = get_next_model_version()
+            # Deactivate previous active version
+            ModelVersion.query.filter_by(is_active=True).update(
+                {"is_active": False}
+            )
+            mv = ModelVersion(
+                version=next_ver,
+                artifact_path=Config.MODEL_PATH,
+                accuracy=new_metrics.get("accuracy"),
+                precision=new_metrics.get("precision"),
+                recall=new_metrics.get("recall"),
+                f1_score=new_f1,
+                roc_auc=new_roc,
+                pr_auc=new_metrics.get("pr_auc"),
+                dataset_version=DATASET_VERSION,
+                training_dataset_id=dataset_id,
+                retraining_log_id=log_entry.id,
+                is_active=True,
+                created_by=requested_by,
+            )
+            db.session.add(mv)
+            db.session.commit()
+
             _retrain_status["last_result"] = {
                 "status": "success",
-                "new_model_version": new_version,
+                "new_model_version": next_ver,
                 "metrics": new_metrics,
             }
 

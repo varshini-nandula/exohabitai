@@ -43,12 +43,44 @@ client.interceptors.response.use(
   }
 );
 
+const DB_FIELD_MAP = {
+  P_RADIUS: 'Planet Radius',
+  P_MASS: 'Planet Mass',
+  P_DENSITY: 'Planet Density',
+  P_TEMP_SURF: 'Surface Temperature',
+  P_PERIOD: 'Orbital Period',
+  P_SEMI_MAJOR_AXIS: 'Semi-Major Axis',
+  P_ECCENTRICITY: 'Eccentricity',
+  P_INCLINATION: 'Inclination',
+  P_HILL_SPHERE: 'Hill Sphere',
+  S_TEMPERATURE: 'Stellar Temperature',
+  S_LUMINOSITY: 'Stellar Luminosity',
+  S_METALLICITY: 'Stellar Metallicity',
+  S_MAG: 'Apparent Magnitude',
+  S_DISTANCE: 'Distance',
+  S_MASS: 'Stellar Mass',
+  S_RADIUS: 'Stellar Radius',
+  S_AGE: 'Stellar Age',
+  S_LOG_G: 'Stellar Surface Gravity',
+};
+
+function sanitizeErrorText(msg) {
+  if (typeof msg !== 'string') return msg;
+  let sanitized = msg;
+  for (const [key, label] of Object.entries(DB_FIELD_MAP)) {
+    // Replace whole word occurrences of the DB field key
+    const regex = new RegExp(`\\b${key}\\b`, 'g');
+    sanitized = sanitized.replace(regex, label);
+  }
+  return sanitized;
+}
+
 /**
  * Extract a user-friendly error message from an Axios error.
  */
 export function extractError(error) {
   if (error.response?.data?.message) {
-    return error.response.data.message;
+    return sanitizeErrorText(error.response.data.message);
   }
   if (error.response?.status === 429) {
     return 'Rate limit exceeded. Please wait a moment and try again.';
