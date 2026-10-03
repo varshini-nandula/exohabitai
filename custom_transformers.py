@@ -29,6 +29,7 @@ class QuantileClipper(BaseEstimator, TransformerMixin):
     upper_q : float, default=0.95
         Upper quantile (0–1).  Values above this percentile are clipped.
 
+
     Attributes
     ----------
     clip_bounds_ : list[tuple[float, float] | None]
